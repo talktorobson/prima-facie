@@ -335,7 +335,8 @@
                 <span class="phase-indicator complete">✓ Fase 2: Database</span>
                 <span class="phase-indicator complete">✓ Fase 3: Auth</span>
                 <span class="phase-indicator complete">✓ Fase 4: Admin</span>
-                <span class="phase-indicator">🚧 Fase 5: Casos</span>
+                <span class="phase-indicator complete">✓ Fase 5: Casos</span>
+                <span class="phase-indicator">🚧 Fase 6: Clientes</span>
             </div>
         </div>
     </header>
@@ -355,6 +356,14 @@
                     <button class="quick-action-btn" onclick="openURL('/admin')">
                         <span class="icon">⚙️</span>
                         <span>Admin Panel</span>
+                    </button>
+                    <button class="quick-action-btn" onclick="openURL('/matters/new')">
+                        <span class="icon">📝</span>
+                        <span>Novo Processo</span>
+                    </button>
+                    <button class="quick-action-btn" onclick="openURL('/clients/new')">
+                        <span class="icon">👤</span>
+                        <span>Novo Cliente</span>
                     </button>
                     <button class="quick-action-btn" onclick="detectServerPort()">
                         <span class="icon">🔍</span>
@@ -402,6 +411,10 @@
                         <span class="icon">📋</span>
                         <span>Casos</span>
                     </button>
+                    <button class="quick-action-btn" onclick="openURL('/matters/1/workflow')">
+                        <span class="icon">🔄</span>
+                        <span>Workflow Caso</span>
+                    </button>
                     <button class="quick-action-btn" onclick="openURL('/clients')">
                         <span class="icon">👥</span>
                         <span>Clientes</span>
@@ -413,6 +426,10 @@
                     <button class="quick-action-btn" onclick="openURL('/admin/users')">
                         <span class="icon">👤</span>
                         <span>Usuários</span>
+                    </button>
+                    <button class="quick-action-btn" onclick="openURL('/portal/client/dashboard')">
+                        <span class="icon">🏛️</span>
+                        <span>Portal Cliente</span>
                     </button>
                 </div>
             </div>
@@ -634,7 +651,7 @@
 
         // Server functions
         async function detectServerPort() {
-            const ports = [3000, 3001, 3002, 3003, 3004, 3005];
+            const ports = [3001, 3000, 3002, 3003, 3004, 3005];
             let serverFound = false;
             
             logToConsole('🔍 Detectando servidor...');

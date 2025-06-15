@@ -1,0 +1,1 @@
+export { example_service } from './example_service';

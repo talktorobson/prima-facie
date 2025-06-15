@@ -44,4 +44,8 @@ prima-facie/
 - Jest is set up for testing
 
 ## Version History
+- v1.1.0 (2025-06-15): Project structure organized and cleaned up
+  - Removed misplaced System-Small-Law-Firm directory
+  - Added example services, types, and utilities
+  - Created working tests and proper project structure
 - v1.0.0 (2025-06-15): Initial project setup with TypeScript, ESLint, Prettier, and Jest

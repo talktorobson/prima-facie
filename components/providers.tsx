@@ -2,8 +2,8 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { SessionContextProvider } from '@supabase/auth-helpers-react'
+import { AuthProvider } from '@/lib/providers/auth-provider'
+import ClientOnly from './client-only'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -14,14 +14,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
       },
     },
   }))
-  
-  const [supabase] = useState(() => createClientComponentClient())
 
   return (
-    <SessionContextProvider supabaseClient={supabase}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </SessionContextProvider>
+    <QueryClientProvider client={queryClient}>
+      <ClientOnly fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      }>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </ClientOnly>
+    </QueryClientProvider>
   )
 }

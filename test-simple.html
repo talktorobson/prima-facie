@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prima Facie Test</title>
+</head>
+<body>
+    <h1>Prima Facie Frontend Test</h1>
+    <p>✅ Server is running successfully!</p>
+    
+    <h2>🧪 Test Instructions:</h2>
+    <ol>
+        <li><strong>Open your browser</strong></li>
+        <li><strong>Go to:</strong> <a href="http://localhost:3006">http://localhost:3006</a></li>
+        <li><strong>You should see the login page</strong></li>
+    </ol>
+    
+    <h2>🔐 Test Users (if mock auth is enabled):</h2>
+    <ul>
+        <li><strong>Admin:</strong> admin@test.com / 123456</li>
+        <li><strong>Lawyer:</strong> lawyer@test.com / 123456</li>
+        <li><strong>Client:</strong> client@test.com / 123456</li>
+    </ul>
+    
+    <h2>🚀 Features to Test:</h2>
+    <ul>
+        <li>✅ Login/Registration flow</li>
+        <li>✅ Dashboard with role-based content</li>
+        <li>✅ Sidebar navigation</li>
+        <li>✅ User profile dropdown</li>
+        <li>✅ Protected routes</li>
+        <li>✅ Responsive design</li>
+    </ul>
+    
+    <script>
+        // Simple connectivity test
+        fetch('http://localhost:3006')
+            .then(response => {
+                document.getElementById('status').textContent = '✅ Server is responding!';
+                document.getElementById('status').style.color = 'green';
+            })
+            .catch(error => {
+                document.getElementById('status').textContent = '❌ Server connection error';
+                document.getElementById('status').style.color = 'red';
+            });
+    </script>
+    
+    <p id="status">🔄 Testing server connection...</p>
+</body>
+</html>

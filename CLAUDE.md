@@ -1,7 +1,7 @@
 # CLAUDE.md - Prima Facie Project
 
 ## Project Overview
-Prima Facie is a Next.js 14 application for legal practice management (Sistema de Gestão para Escritórios de Advocacia) with TypeScript, Tailwind CSS, Supabase authentication, and a comprehensive dashboard.
+Prima Facie is a Next.js 14 Legal-as-a-Service (LaaS) platform for modern law firm management. It combines traditional legal practice management with subscription-based consulting services, creating a hybrid revenue model that includes recurring subscriptions, case billing, and performance-based success fees. Built with TypeScript, Tailwind CSS, Supabase, and Stripe integration for comprehensive financial management.
 
 ## Project Structure
 ```
@@ -70,16 +70,44 @@ prima-facie/
 - `npm run typecheck` - Type check without compiling
 
 ## Key Features
+
+### Legal Practice Management
 - Multi-tenant architecture support
 - Role-based access control (Admin, Staff, Client)
-- Legal matter/case management
-- Client relationship management
+- Legal matter/case management with Brazilian legal compliance
+- Client relationship management with CPF/CNPJ support
+- Real-time chat & WhatsApp Business integration
 - Document storage and management
-- Financial/billing tracking
-- Calendar integration
-- Task management
-- Reporting and analytics
-- Client and staff portals
+- Calendar integration and task management
+
+### Legal-as-a-Service (LaaS) Platform
+- **Subscription-based Consulting Services**
+  - Recurring legal consulting plans (Labor Law, Corporate, etc.)
+  - Monthly/yearly billing cycles with auto-renewal
+  - Service inclusion management and consumption tracking
+  
+- **Hybrid Billing System**
+  - Multi-modal case billing: Hourly/Percentage/Fixed rates
+  - Success fees based on case outcomes
+  - Minimum fee enforcement per case type
+  - Cross-selling discounts for subscribers
+  
+- **Payment Plan Management**
+  - Split case payments into N installments
+  - Automated payment scheduling and collections
+  - Late fee calculation and dunning management
+  
+- **Revenue Analytics**
+  - Monthly Recurring Revenue (MRR) tracking
+  - Customer Lifetime Value (CLV) analysis
+  - Case profitability and cross-selling performance
+  - Financial forecasting and cash flow management
+
+### Advanced Integrations
+- Stripe payment processing (subscriptions + one-time payments)
+- Supabase real-time features and authentication
+- WhatsApp Business API for client communication
+- Brazilian banking and tax compliance features
 
 ## Authentication Flow
 - Middleware handles route protection
@@ -182,7 +210,7 @@ Copy `.env.local.example` to `.env.local` and configure:
 
 ## Current Status
 🎯 **Phase 7 Complete**: Real-time Chat & WhatsApp Integration with comprehensive testing
-🚧 **Next**: Phase 8 - Time Tracking & Billing
+🚧 **Next**: Phase 8 - Hybrid Legal Billing & Subscription System (Legal-as-a-Service Platform)
 
 ### Recent Achievements (Phase 7):
 - ✅ Real-time messaging system with Supabase integration
@@ -195,3 +223,18 @@ Copy `.env.local.example` to `.env.local` and configure:
 - ✅ Enhanced test-frontend.html with Phase 7 testing capabilities
 - ✅ Multi-user session management for live testing scenarios
 - ✅ Production-ready chat system with mock/live mode flexibility
+
+### Upcoming Phase 8: Legal-as-a-Service (LaaS) Platform
+**Revolutionary Hybrid Billing System:**
+- 🔄 **Subscription Plans**: Recurring legal consulting services (Labor Law, Corporate, etc.)
+- 💰 **Multi-Modal Case Billing**: Hourly/Percentage/Fixed + Success Fees
+- 📅 **Payment Plans**: Split case payments into N installments
+- 🎯 **Cross-Selling Discounts**: Subscribers get X% off litigation services
+- 📊 **Revenue Analytics**: MRR tracking + Case profitability + Client lifetime value
+
+**Business Model Innovation:**
+- Triple revenue streams: Subscriptions + Case billing + Success fees
+- Client retention through recurring services
+- Cross-selling automation with discount incentives
+- Flexible payment terms reducing engagement barriers
+- Performance-aligned success fee system

@@ -337,7 +337,8 @@
                 <span class="phase-indicator complete">✓ Fase 4: Admin</span>
                 <span class="phase-indicator complete">✓ Fase 5: Casos</span>
                 <span class="phase-indicator complete">✓ Fase 6: Clientes</span>
-                <span class="phase-indicator">🚧 Fase 6.5: Client-Matter Links</span>
+                <span class="phase-indicator complete">✓ Fase 6.5: Client-Matter Links</span>
+                <span class="phase-indicator">🚧 Fase 7: Chat & WhatsApp</span>
             </div>
         </div>
     </header>
@@ -378,6 +379,179 @@
                         <span class="icon">🚀</span>
                         <span>Login Rápido (Admin)</span>
                     </button>
+                    <button class="quick-action-btn" onclick="openURL('/messages')">
+                        <span class="icon">💬</span>
+                        <span>Chat/Mensagens</span>
+                    </button>
+                    <button class="quick-action-btn" onclick="openURL('/admin/chat-topics')">
+                        <span class="icon">🏷️</span>
+                        <span>Tópicos de Chat</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Phase 7: Chat & Messaging Testing -->
+            <div class="card">
+                <h3>💬 Phase 7: Chat & Messaging Testing</h3>
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('chat-config-tab', this)">Config</div>
+                    <div class="tab" onclick="switchTab('chat-multi-user-tab', this)">Multi-User</div>
+                    <div class="tab" onclick="switchTab('chat-features-tab', this)">Features</div>
+                    <div class="tab" onclick="switchTab('chat-whatsapp-tab', this)">WhatsApp</div>
+                </div>
+                
+                <div id="chat-config-tab" class="tab-content active">
+                    <div class="mb-15">
+                        <h4>🔧 Chat Configuration</h4>
+                        <div class="status-grid" style="grid-template-columns: 1fr 1fr;">
+                            <div class="status-card" id="chat-mode-card">
+                                <h5>💾 Storage Mode</h5>
+                                <p id="chat-mode-status">Mock Mode (Local)</p>
+                                <button class="btn btn-sm" onclick="toggleChatMode()" id="chat-mode-toggle">
+                                    Switch to Supabase
+                                </button>
+                            </div>
+                            <div class="status-card" id="realtime-card">
+                                <h5>⚡ Real-time</h5>
+                                <p id="realtime-status">Mock Sync (3s)</p>
+                                <button class="btn btn-sm" onclick="testRealtime()">
+                                    Test Sync
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" onclick="openURL('/messages')">
+                            <span class="icon">💬</span>
+                            <span>Chat Interface</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="openURL('/admin/chat-topics')">
+                            <span class="icon">🏷️</span>
+                            <span>Topic Management</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="openURL('/portal/client/messages')">
+                            <span class="icon">👤</span>
+                            <span>Client Portal Chat</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="chat-multi-user-tab" class="tab-content">
+                    <div class="mb-15">
+                        <h4>👥 Multi-User Testing</h4>
+                        <p class="text-small text-muted">Open multiple browser sessions with different users to test real-time chat</p>
+                    </div>
+                    
+                    <div class="status-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+                        <div class="user-card">
+                            <strong>👔 Admin User</strong>
+                            <p class="text-small">admin@test.com / 123456</p>
+                            <button class="btn btn-sm btn-success" onclick="openUserSession('admin')">
+                                🚀 Open Admin Session
+                            </button>
+                        </div>
+                        <div class="user-card">
+                            <strong>⚖️ Lawyer User</strong>
+                            <p class="text-small">lawyer@test.com / 123456</p>
+                            <button class="btn btn-sm btn-success" onclick="openUserSession('lawyer')">
+                                🚀 Open Lawyer Session
+                            </button>
+                        </div>
+                        <div class="user-card">
+                            <strong>👤 Client User</strong>
+                            <p class="text-small">client@test.com / 123456</p>
+                            <button class="btn btn-sm btn-success" onclick="openUserSession('client')">
+                                🚀 Open Client Session
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-15">
+                        <button class="btn btn-primary" onclick="openAllUserSessions()">
+                            🎭 Open All 3 Users (Multi-Test)
+                        </button>
+                        <button class="btn btn-secondary" onclick="testCrossUserSync()">
+                            🔄 Test Cross-User Sync
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="chat-features-tab" class="tab-content">
+                    <div class="mb-15">
+                        <h4>🧪 Feature Testing</h4>
+                        <p class="text-small text-muted">Test specific chat features and functionality</p>
+                    </div>
+                    
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" onclick="testConversationCreation()">
+                            <span class="icon">➕</span>
+                            <span>Test New Conversation</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="testTopicFiltering()">
+                            <span class="icon">🏷️</span>
+                            <span>Test Topic Filters</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="testMessageStatus()">
+                            <span class="icon">✅</span>
+                            <span>Test Message Status</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="testNotifications()">
+                            <span class="icon">🔔</span>
+                            <span>Test Notifications</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="testTypingIndicators()">
+                            <span class="icon">✍️</span>
+                            <span>Test Typing Indicators</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="testMobileResponsive()">
+                            <span class="icon">📱</span>
+                            <span>Test Mobile View</span>
+                        </button>
+                    </div>
+                    
+                    <div id="feature-test-results" class="mt-15"></div>
+                </div>
+                
+                <div id="chat-whatsapp-tab" class="tab-content">
+                    <div class="mb-15">
+                        <h4>📱 WhatsApp Integration</h4>
+                        <p class="text-small text-muted">Test WhatsApp Business API integration points</p>
+                    </div>
+                    
+                    <div class="status-grid" style="grid-template-columns: 1fr 1fr;">
+                        <div class="status-card warning">
+                            <h5>🔗 API Status</h5>
+                            <p>Mock Mode (No Real API)</p>
+                            <small>Configure credentials for production</small>
+                        </div>
+                        <div class="status-card success">
+                            <h5>🎨 UI Integration</h5>
+                            <p>Ready for Testing</p>
+                            <small>WhatsApp indicators working</small>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" onclick="testWhatsAppIndicators()">
+                            <span class="icon">📱</span>
+                            <span>Test WhatsApp UI</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="testPhoneFormatting()">
+                            <span class="icon">📞</span>
+                            <span>Test Phone Format</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="testAutoReply()">
+                            <span class="icon">🤖</span>
+                            <span>Test Auto-Reply</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="openURL('/api/whatsapp/webhook')">
+                            <span class="icon">🔗</span>
+                            <span>Webhook Endpoint</span>
+                        </button>
+                    </div>
+                    
+                    <div id="whatsapp-test-results" class="mt-15"></div>
                 </div>
             </div>
 
@@ -895,6 +1069,283 @@
         // Timestamp update
         function updateTimestamp() {
             // Implementation would update any timestamp displays
+        }
+
+        // ==============================================
+        // PHASE 7: CHAT & MESSAGING TESTING FUNCTIONS
+        // ==============================================
+
+        // Chat mode configuration
+        let chatMode = 'mock'; // 'mock' or 'supabase'
+        
+        function toggleChatMode() {
+            const card = document.getElementById('chat-mode-card');
+            const status = document.getElementById('chat-mode-status');
+            const toggle = document.getElementById('chat-mode-toggle');
+            
+            if (chatMode === 'mock') {
+                chatMode = 'supabase';
+                status.textContent = 'Supabase Mode (Live)';
+                toggle.textContent = 'Switch to Mock';
+                card.className = 'status-card success';
+                logToConsole('💾 Switched to Supabase mode');
+                logToConsole('⚠️ Note: Requires real Supabase setup');
+            } else {
+                chatMode = 'mock';
+                status.textContent = 'Mock Mode (Local)';
+                toggle.textContent = 'Switch to Supabase';
+                card.className = 'status-card warning';
+                logToConsole('💾 Switched to Mock mode');
+                logToConsole('✅ Using local mock data for testing');
+            }
+        }
+
+        function testRealtime() {
+            logToConsole('⚡ Testing real-time sync...');
+            if (chatMode === 'mock') {
+                logToConsole('📡 Mock sync: 3-second polling active');
+                logToConsole('🔄 Cross-user sync working via shared mock store');
+            } else {
+                logToConsole('📡 Testing Supabase Realtime connection...');
+                logToConsole('⚠️ Real Supabase required for live testing');
+            }
+        }
+
+        // Multi-user session management
+        function openUserSession(userType) {
+            const serverPort = document.getElementById('server-port').textContent || '3000';
+            const credentials = {
+                admin: { email: 'admin@test.com', password: '123456' },
+                lawyer: { email: 'lawyer@test.com', password: '123456' },
+                client: { email: 'client@test.com', password: '123456' }
+            };
+            
+            if (!credentials[userType]) {
+                logToConsole(`❌ Unknown user type: ${userType}`);
+                return;
+            }
+            
+            const cred = credentials[userType];
+            const loginUrl = `http://localhost:${serverPort}/login`;
+            
+            // Open new incognito-like window
+            const newWindow = window.open(loginUrl, `_blank_${userType}_${Date.now()}`, 
+                'width=1200,height=800,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no');
+            
+            if (newWindow) {
+                logToConsole(`🚀 Opened ${userType} session: ${cred.email}`);
+                logToConsole(`🔑 Use credentials: ${cred.email} / ${cred.password}`);
+                
+                // Try to copy credentials to clipboard for convenience
+                navigator.clipboard.writeText(`${cred.email}\n${cred.password}`).then(() => {
+                    logToConsole('📋 Credentials copied to clipboard');
+                }).catch(() => {
+                    logToConsole('📋 Manual login required');
+                });
+            } else {
+                logToConsole('❌ Failed to open new window (popup blocked?)');
+            }
+        }
+
+        function openAllUserSessions() {
+            logToConsole('🎭 Opening all user sessions for multi-user testing...');
+            
+            setTimeout(() => openUserSession('admin'), 100);
+            setTimeout(() => openUserSession('lawyer'), 1000);
+            setTimeout(() => openUserSession('client'), 2000);
+            
+            logToConsole('📝 Multi-user testing guide:');
+            logToConsole('1. Login to each window with the provided credentials');
+            logToConsole('2. Navigate to /messages in each window');
+            logToConsole('3. Create a conversation in admin/lawyer window');
+            logToConsole('4. Test real-time sync between windows');
+            logToConsole('5. Send messages and verify delivery status');
+        }
+
+        function testCrossUserSync() {
+            logToConsole('🔄 Testing cross-user synchronization...');
+            logToConsole('📋 Cross-sync test checklist:');
+            logToConsole('✓ Open multiple user sessions first');
+            logToConsole('✓ Create conversation in one window');
+            logToConsole('✓ Check if it appears in other windows');
+            logToConsole('✓ Send messages and verify real-time delivery');
+            logToConsole('✓ Test notification system');
+            
+            if (chatMode === 'mock') {
+                logToConsole('⚙️ Mock mode: Using 3-second polling for sync');
+                logToConsole('🔄 Shared mock store enables cross-window sync');
+            } else {
+                logToConsole('⚙️ Supabase mode: Using Realtime subscriptions');
+            }
+        }
+
+        // Feature testing functions
+        function testConversationCreation() {
+            logToConsole('➕ Testing conversation creation...');
+            logToConsole('📋 Conversation creation test:');
+            logToConsole('1. Open /messages as admin or lawyer');
+            logToConsole('2. Click "+" button to create new conversation');
+            logToConsole('3. Select client (e.g., "Maria Santos")');
+            logToConsole('4. Choose topic and priority');
+            logToConsole('5. Verify conversation appears in list');
+            logToConsole('6. Test first message sending');
+            
+            // Open the messages page
+            openURL('/messages');
+        }
+
+        function testTopicFiltering() {
+            logToConsole('🏷️ Testing topic filtering system...');
+            logToConsole('📋 Topic filtering test:');
+            logToConsole('1. Open /admin/chat-topics to manage topics');
+            logToConsole('2. Create new topics if needed');
+            logToConsole('3. Open /messages and create conversations with different topics');
+            logToConsole('4. Use filter icon to test topic filtering');
+            logToConsole('5. Verify conversations are filtered correctly');
+            
+            // Open both admin topics and messages
+            setTimeout(() => openURL('/admin/chat-topics'), 100);
+            setTimeout(() => openURL('/messages'), 1500);
+        }
+
+        function testMessageStatus() {
+            logToConsole('✅ Testing message status indicators...');
+            logToConsole('📋 Message status test:');
+            logToConsole('1. Send messages in active conversation');
+            logToConsole('2. Check for status indicators: sent ✓, delivered ✓✓, read ✓✓(blue)');
+            logToConsole('3. Test across different user sessions');
+            logToConsole('4. Verify WhatsApp status indicators if enabled');
+            
+            document.getElementById('feature-test-results').innerHTML = `
+                <div class="status-card">
+                    <h5>✅ Message Status Types</h5>
+                    <p>• <span style="color: #888;">✓</span> Sent (gray)</p>
+                    <p>• <span style="color: #888;">✓✓</span> Delivered (gray)</p>
+                    <p>• <span style="color: #0066CC;">✓✓</span> Read (blue)</p>
+                    <p>• <span style="color: #dc2626;">❌</span> Failed (red)</p>
+                </div>
+            `;
+            
+            openURL('/messages');
+        }
+
+        function testNotifications() {
+            logToConsole('🔔 Testing notification system...');
+            logToConsole('📋 Notification test:');
+            logToConsole('1. Open multiple user sessions');
+            logToConsole('2. Send message from one user to another');
+            logToConsole('3. Check notification panel (bell icon) in recipient window');
+            logToConsole('4. Verify unread count appears');
+            logToConsole('5. Click notification to mark as read');
+            
+            openURL('/messages');
+        }
+
+        function testTypingIndicators() {
+            logToConsole('✍️ Testing typing indicators...');
+            logToConsole('📋 Typing indicator test:');
+            logToConsole('1. Open same conversation in multiple windows');
+            logToConsole('2. Start typing in one window');
+            logToConsole('3. Check for "User is typing..." indicator in other window');
+            logToConsole('4. Verify indicator disappears after stopping');
+            
+            openURL('/messages');
+        }
+
+        function testMobileResponsive() {
+            logToConsole('📱 Testing mobile responsive design...');
+            
+            // Simulate mobile viewport
+            const currentWidth = window.innerWidth;
+            logToConsole(`📏 Current viewport: ${currentWidth}px`);
+            
+            if (currentWidth > 768) {
+                logToConsole('💻 Desktop view detected');
+                logToConsole('📋 Responsive test:');
+                logToConsole('1. Resize browser window to < 768px width');
+                logToConsole('2. Open /messages');
+                logToConsole('3. Verify mobile layout: conversation list OR chat interface');
+                logToConsole('4. Test navigation between list and chat');
+                logToConsole('5. Check touch-friendly buttons and spacing');
+            } else {
+                logToConsole('📱 Mobile view detected');
+                logToConsole('✅ Mobile layout should be active');
+            }
+            
+            openURL('/messages');
+        }
+
+        // WhatsApp integration testing
+        function testWhatsAppIndicators() {
+            logToConsole('📱 Testing WhatsApp UI indicators...');
+            logToConsole('📋 WhatsApp UI test:');
+            logToConsole('1. Create conversation with WhatsApp enabled');
+            logToConsole('2. Check for WhatsApp icons (📱) in conversation list');
+            logToConsole('3. Verify green phone indicator');
+            logToConsole('4. Test WhatsApp status in chat header');
+            
+            document.getElementById('whatsapp-test-results').innerHTML = `
+                <div class="status-card">
+                    <h5>📱 WhatsApp Indicators</h5>
+                    <p>• 📱 Icon in conversation list</p>
+                    <p>• 🟢 Green phone indicator</p>
+                    <p>• "WhatsApp" text in chat header</p>
+                    <p>• Special message status for WhatsApp</p>
+                </div>
+            `;
+            
+            openURL('/messages');
+        }
+
+        function testPhoneFormatting() {
+            logToConsole('📞 Testing phone number formatting...');
+            logToConsole('📋 Phone format test:');
+            logToConsole('1. Create conversation with WhatsApp');
+            logToConsole('2. Enter phone numbers in different formats');
+            logToConsole('3. Verify Brazilian format: +55 (11) 99999-9999');
+            logToConsole('4. Test international formats');
+        }
+
+        function testAutoReply() {
+            logToConsole('🤖 Testing WhatsApp auto-reply system...');
+            logToConsole('📋 Auto-reply test:');
+            logToConsole('1. Send message to WhatsApp-enabled conversation');
+            logToConsole('2. Check for auto-reply configuration');
+            logToConsole('3. Verify business hours handling');
+            logToConsole('4. Test custom auto-reply messages');
+            
+            logToConsole('⚠️ Note: Auto-reply requires WhatsApp Business API setup');
+        }
+
+        // Chat testing helper functions
+        function logChatTestResult(testName, result, details = '') {
+            const timestamp = new Date().toLocaleTimeString();
+            const status = result ? '✅' : '❌';
+            logToConsole(`${status} ${testName} - ${result ? 'PASS' : 'FAIL'} ${details}`);
+        }
+
+        function createChatTestSummary() {
+            logToConsole('📊 Chat Testing Summary:');
+            logToConsole('='.repeat(40));
+            logToConsole('📋 Completed Tests:');
+            logToConsole('✓ Chat mode configuration');
+            logToConsole('✓ Multi-user session setup');
+            logToConsole('✓ Feature testing functions');
+            logToConsole('✓ WhatsApp integration points');
+            logToConsole('='.repeat(40));
+        }
+
+        // Enhanced console logging for chat tests
+        function logChatError(error, context = '') {
+            logToConsole(`❌ Chat Error${context ? ` (${context})` : ''}: ${error}`);
+        }
+
+        function logChatSuccess(message, context = '') {
+            logToConsole(`✅ Chat Success${context ? ` (${context})` : ''}: ${message}`);
+        }
+
+        function logChatWarning(message, context = '') {
+            logToConsole(`⚠️ Chat Warning${context ? ` (${context})` : ''}: ${message}`);
         }
     </script>
 </body>

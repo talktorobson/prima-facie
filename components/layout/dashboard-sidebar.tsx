@@ -80,7 +80,7 @@ const navigation: NavItem[] = [
   },
   {
     name: 'Chat',
-    href: '/chat',
+    href: '/messages',
     icon: MessageSquareIcon,
   },
   {

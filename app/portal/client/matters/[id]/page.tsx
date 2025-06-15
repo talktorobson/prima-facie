@@ -14,7 +14,7 @@ import {
   ChatBubbleLeftRightIcon,
   PaperClipIcon,
   EyeIcon,
-  DownloadIcon
+  ArrowDownTrayIcon as DownloadIcon
 } from '@heroicons/react/24/outline'
 
 // Mock data for matter details

@@ -13,12 +13,52 @@ import {
   CheckCircleIcon
 } from '@heroicons/react/24/outline'
 
-// Mock data for development
+// Mock clients data (from Phase 6 client management)
 const mockClients = [
-  { id: '1', name: 'João Silva Santos', email: 'joao@email.com' },
-  { id: '2', name: 'Ana Costa Pereira', email: 'ana@email.com' },
-  { id: '3', name: 'Pedro Rodrigues', email: 'pedro@email.com' },
-  { id: '4', name: 'Empresa ABC Ltda', email: 'contato@abc.com.br' }
+  {
+    id: '1',
+    client_number: 'CLI-2024-001',
+    name: 'João Silva Santos',
+    type: 'pessoa_fisica',
+    cpf: '123.456.789-00',
+    cnpj: null,
+    email: 'joao.silva@email.com',
+    phone: '(11) 9 8765-4321',
+    status: 'ativo'
+  },
+  {
+    id: '2',
+    client_number: 'CLI-2024-002',
+    name: 'Ana Costa Pereira',
+    type: 'pessoa_fisica',
+    cpf: '987.654.321-00',
+    cnpj: null,
+    email: 'ana.costa@email.com',
+    phone: '(11) 9 1234-5678',
+    status: 'ativo'
+  },
+  {
+    id: '3',
+    client_number: 'CLI-2024-003',
+    name: 'Empresa ABC Ltda',
+    type: 'pessoa_juridica',
+    cpf: null,
+    cnpj: '12.345.678/0001-90',
+    email: 'contato@empresaabc.com.br',
+    phone: '(11) 3456-7890',
+    status: 'ativo'
+  },
+  {
+    id: '4',
+    client_number: 'CLI-2024-004',
+    name: 'Pedro Rodrigues Oliveira',
+    type: 'pessoa_fisica',
+    cpf: '456.789.123-00',
+    cnpj: null,
+    email: 'pedro.rodrigues@email.com',
+    phone: '(11) 9 5555-4444',
+    status: 'potencial'
+  }
 ]
 
 const mockLawyers = [
@@ -118,6 +158,7 @@ export default function NewMatterPage() {
   })
 
   const [errors, setErrors] = useState({})
+  const [selectedClient, setSelectedClient] = useState(null)
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -147,6 +188,29 @@ export default function NewMatterPage() {
     }))
   }
 
+  const handleClientChange = (e) => {
+    const clientId = e.target.value
+    const client = mockClients.find(c => c.id === clientId)
+    
+    if (client) {
+      setSelectedClient(client)
+      setFormData(prev => ({
+        ...prev,
+        client_id: clientId,
+        client_name: client.name,
+        client_cpf_cnpj: client.type === 'pessoa_fisica' ? client.cpf : client.cnpj
+      }))
+    } else {
+      setSelectedClient(null)
+      setFormData(prev => ({
+        ...prev,
+        client_id: '',
+        client_name: '',
+        client_cpf_cnpj: ''
+      }))
+    }
+  }
+
   const validateForm = () => {
     const newErrors = {}
 
@@ -154,7 +218,7 @@ export default function NewMatterPage() {
     if (!formData.title.trim()) newErrors.title = 'Título é obrigatório'
     if (!formData.area_juridica) newErrors.area_juridica = 'Área jurídica é obrigatória'
     if (!formData.client_id && !formData.client_name.trim()) {
-      newErrors.client_name = 'Cliente é obrigatório'
+      newErrors.client_id = 'Cliente é obrigatório'
     }
     if (!formData.responsible_lawyer_id) {
       newErrors.responsible_lawyer_id = 'Advogado responsável é obrigatório'
@@ -485,64 +549,152 @@ export default function NewMatterPage() {
 
         {/* Client Information Section */}
         <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex items-center mb-6">
-            <UserIcon className="h-6 w-6 text-green-600 mr-3" />
-            <h2 className="text-lg font-medium text-gray-900">Informações do Cliente</h2>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <UserIcon className="h-6 w-6 text-green-600 mr-3" />
+              <h2 className="text-lg font-medium text-gray-900">Informações do Cliente</h2>
+            </div>
+            <Link
+              href="/clients/new"
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-primary bg-primary/10 hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            >
+              + Novo Cliente
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            {/* Client Selection */}
             <div>
-              <label htmlFor="client_id" className="block text-sm font-medium text-gray-700">
-                Cliente Cadastrado
+              <label htmlFor="client_id" className="block text-sm font-medium text-gray-700 mb-2">
+                Cliente *
               </label>
               <select
                 id="client_id"
                 name="client_id"
                 value={formData.client_id}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              >
-                <option value="">Selecione um cliente existente</option>
-                {mockClients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name} - {client.email}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="client_name" className="block text-sm font-medium text-gray-700">
-                Nome do Cliente *
-              </label>
-              <input
-                type="text"
-                id="client_name"
-                name="client_name"
-                value={formData.client_name}
-                onChange={handleInputChange}
-                className={`mt-1 block w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary ${
-                  errors.client_name ? 'border-red-300' : 'border-gray-300'
+                onChange={handleClientChange}
+                className={`block w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary ${
+                  errors.client_id ? 'border-red-300' : 'border-gray-300'
                 }`}
-                placeholder="Nome completo do cliente"
-              />
-              {errors.client_name && <p className="mt-1 text-sm text-red-600">{errors.client_name}</p>}
+              >
+                <option value="">Selecione um cliente</option>
+                {mockClients
+                  .filter(client => client.status === 'ativo' || client.status === 'potencial')
+                  .map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name} - {client.client_number} ({client.type === 'pessoa_fisica' ? client.cpf : client.cnpj})
+                    </option>
+                  ))}
+              </select>
+              {errors.client_id && <p className="mt-1 text-sm text-red-600">{errors.client_id}</p>}
             </div>
 
-            <div>
-              <label htmlFor="client_cpf_cnpj" className="block text-sm font-medium text-gray-700">
-                CPF/CNPJ do Cliente
-              </label>
-              <input
-                type="text"
-                id="client_cpf_cnpj"
-                name="client_cpf_cnpj"
-                value={formData.client_cpf_cnpj}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                placeholder="000.000.000-00 ou 00.000.000/0000-00"
-              />
-            </div>
+            {/* Selected Client Details */}
+            {selectedClient && (
+              <div className="bg-gray-50 rounded-lg p-4 border">
+                <h3 className="text-sm font-medium text-gray-900 mb-3">Detalhes do Cliente Selecionado</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500">Tipo:</span>
+                    <p className="font-medium">
+                      {selectedClient.type === 'pessoa_fisica' ? 'Pessoa Física' : 'Pessoa Jurídica'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">
+                      {selectedClient.type === 'pessoa_fisica' ? 'CPF:' : 'CNPJ:'}
+                    </span>
+                    <p className="font-medium">
+                      {selectedClient.type === 'pessoa_fisica' ? selectedClient.cpf : selectedClient.cnpj}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">E-mail:</span>
+                    <p className="font-medium">{selectedClient.email}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Telefone:</span>
+                    <p className="font-medium">{selectedClient.phone}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Status:</span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      selectedClient.status === 'ativo' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {selectedClient.status === 'ativo' ? 'Ativo' : 'Potencial'}
+                    </span>
+                  </div>
+                  <div className="md:col-span-1">
+                    <Link
+                      href={`/clients/${selectedClient.id}`}
+                      className="text-primary hover:text-primary/80 text-xs font-medium"
+                    >
+                      Ver perfil completo →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Manual Client Input (fallback) */}
+            {!formData.client_id && (
+              <div className="border-t pt-4">
+                <p className="text-sm text-gray-600 mb-4">
+                  Se o cliente não estiver cadastrado, preencha as informações abaixo:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label htmlFor="client_name" className="block text-sm font-medium text-gray-700">
+                      Nome do Cliente *
+                    </label>
+                    <input
+                      type="text"
+                      id="client_name"
+                      name="client_name"
+                      value={formData.client_name}
+                      onChange={handleInputChange}
+                      className={`mt-1 block w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary ${
+                        errors.client_name ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="Nome completo do cliente"
+                    />
+                    {errors.client_name && <p className="mt-1 text-sm text-red-600">{errors.client_name}</p>}
+                  </div>
+
+                  <div>
+                    <label htmlFor="client_cpf_cnpj" className="block text-sm font-medium text-gray-700">
+                      CPF/CNPJ
+                    </label>
+                    <input
+                      type="text"
+                      id="client_cpf_cnpj"
+                      name="client_cpf_cnpj"
+                      value={formData.client_cpf_cnpj}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                      placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="client_email" className="block text-sm font-medium text-gray-700">
+                      E-mail
+                    </label>
+                    <input
+                      type="email"
+                      id="client_email"
+                      name="client_email"
+                      value={formData.client_email}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                      placeholder="cliente@email.com"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

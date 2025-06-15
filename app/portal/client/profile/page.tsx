@@ -7,9 +7,6 @@ import {
   CheckIcon,
   XMarkIcon,
   PhoneIcon,
-  EnvelopeIcon,
-  MapPinIcon,
-  DocumentTextIcon,
   CogIcon
 } from '@heroicons/react/24/outline'
 

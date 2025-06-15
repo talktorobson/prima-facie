@@ -4,7 +4,6 @@ import { AdminOnly } from '@/components/auth/role-guard'
 import { useState } from 'react'
 import { 
   UsersIcon,
-  PlusIcon,
   ArrowLeftIcon,
   MagnifyingGlassIcon,
   EllipsisVerticalIcon,

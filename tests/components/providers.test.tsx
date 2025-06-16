@@ -63,4 +63,4 @@ describe('Providers Component', () => {
     expect(screen.getByTestId('query-provider')).toBeInTheDocument()
     expect(screen.getByTestId('session-provider')).toBeInTheDocument()
   })
-}
+})

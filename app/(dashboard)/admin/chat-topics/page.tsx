@@ -3,11 +3,9 @@
 import { useState } from 'react'
 import { AdminOnly } from '@/components/auth/role-guard'
 import { 
-  ChatBubbleLeftRightIcon,
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  SwatchIcon,
   TagIcon
 } from '@heroicons/react/24/outline'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { 
   PlusIcon,
@@ -205,7 +205,7 @@ export default function SubscriptionPlansPage() {
   const [formData, setFormData] = useState<PlanFormData>(initialFormData)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterType, setFilterType] = useState<string>('all')
-  const [sortBy, setSortBy] = useState<'name' | 'price' | 'created'>('sort_order')
+  const [sortBy, setSortBy] = useState<'name' | 'price' | 'created' | 'sort_order'>('sort_order')
 
   // Filter and sort plans
   const filteredPlans = plans
@@ -296,7 +296,7 @@ export default function SubscriptionPlansPage() {
         // Create new plan
         const newPlan: SubscriptionPlan = {
           id: `plan-${Date.now()}`,
-          law_firm_id: user?.law_firm_id || 'firm-1',
+          law_firm_id: (user as any)?.law_firm_id || 'firm-1',
           ...formData,
           sort_order: plans.length + 1,
           created_at: new Date().toISOString(),

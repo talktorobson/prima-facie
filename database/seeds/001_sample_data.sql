@@ -887,7 +887,7 @@ INSERT INTO pipeline_cards (
     NULL,
     '323e4567-e89b-12d3-a456-426614174000', -- Direito Civil
     'Empresário - Cobrança Judicial',
-    'Empresário achOU o preço alto para cobrança de R$ 5.000',
+    'Empresário achou o preço alto para cobrança de R$ 5.000',
     2500.00,
     0.00,
     NULL,

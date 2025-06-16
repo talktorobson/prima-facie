@@ -16,24 +16,35 @@ prima-facie/
 │   │   ├── matters/       # Legal matters/cases management
 │   │   ├── clients/       # Client management
 │   │   ├── billing/       # Financial/billing management
+│   │   │   ├── accounts-payable/   # AP: Vendors, bills, expenses
+│   │   │   ├── accounts-receivable/ # AR: Collections, aging reports
+│   │   │   ├── case-billing/       # Case billing configuration
+│   │   │   ├── subscriptions/      # Subscription management
+│   │   │   └── financial-dashboard/ # Financial overview & analytics
 │   │   ├── calendar/      # Calendar and scheduling
 │   │   ├── tasks/         # Task management
 │   │   ├── documents/     # Document management
 │   │   ├── reports/       # Reports and analytics
 │   │   └── settings/      # System settings
 │   └── portal/            # Portal access
-│       ├── client/        # Client portal
+│       ├── client/        # Client portal (includes payment access)
 │       └── staff/         # Staff portal
 ├── components/            # Reusable components
-│   ├── ui/               # UI components
+│   ├── ui/               # UI components (Button, Input, Card, etc.)
 │   ├── layout/           # Layout components
 │   └── features/         # Feature-specific components
+│       ├── billing/      # Case billing forms (CaseTypeForm, etc.)
+│       ├── financial/    # AP/AR components (NEW)
+│       └── exports/      # Excel/PDF export components (NEW)
 ├── lib/                  # Libraries and utilities
 │   ├── supabase/         # Supabase client configuration
+│   ├── billing/          # Billing services and types
+│   ├── financial/        # AP/AR services (NEW)
+│   ├── exports/          # Export utilities (Excel/PDF) (NEW)
 │   ├── utils/            # Utility functions
 │   └── hooks/            # Custom React hooks
 ├── styles/               # Global styles
-├── public/               # Static assets
+├── public/               # Static assets (includes logo.png for PDF branding)
 ├── types/                # TypeScript type definitions
 ├── src/                  # Legacy source directory (to be migrated)
 ├── tests/                # Test files
@@ -96,6 +107,12 @@ prima-facie/
   - Split case payments into N installments
   - Automated payment scheduling and collections
   - Late fee calculation and dunning management
+  
+- **Financial Management (NEW)**
+  - Complete Accounts Payable system (vendors, expenses, approvals)
+  - Enhanced Accounts Receivable (collections, aging, payment tracking)
+  - Real-time financial dashboard with cash flow monitoring
+  - Excel/PDF export capabilities with firm branding
   
 - **Revenue Analytics**
   - Monthly Recurring Revenue (MRR) tracking
@@ -194,6 +211,19 @@ Copy `.env.local.example` to `.env.local` and configure:
   - **TESTING**: Advanced multi-user testing capabilities with guided workflows
   - **STATUS**: Production-ready chat system with mock/live mode flexibility
 
+- **v8.5.4-phase8.5.4 (2025-01-16): ✅ PHASE 8.5.4 COMPLETE - Case Billing UI Components & Forms**
+  - CaseTypeForm: Brazilian legal market case type management with minimum fees
+  - CaseBillingForm: Multi-modal billing configuration with real-time calculation preview
+  - CaseOutcomeForm: Case results registration with automatic success fee calculation
+  - Complete shadcn/ui component library (Button, Input, Select, Card, Badge, Separator, etc.)
+  - Brazilian Portuguese UI labels with proper BRL currency formatting
+  - Comprehensive form validation with business logic integration
+  - Success percentage auto-calculation based on recovered vs claimed amounts
+  - Integration with existing discount engine and case billing calculations
+  - Mobile-responsive forms with consistent design patterns
+  - **TESTING**: Comprehensive case billing system validation completed
+  - **STATUS**: Production-ready case billing interface with full feature set
+
 - v2.0.0 (2025-01-15): Complete Next.js 14 App Router migration
   - Created full app directory structure
   - Set up authentication flow with Supabase
@@ -209,32 +239,50 @@ Copy `.env.local.example` to `.env.local` and configure:
 - v1.0.0 (2025-01-15): Initial project setup with TypeScript, ESLint, Prettier, and Jest
 
 ## Current Status
-🎯 **Phase 7 Complete**: Real-time Chat & WhatsApp Integration with comprehensive testing
-🚧 **Next**: Phase 8 - Hybrid Legal Billing & Subscription System (Legal-as-a-Service Platform)
+🎯 **Phase 8.5 Complete**: Case Billing UI Components & Forms - Complete case billing interface
+🚧 **Next**: Phase 8.10 - Financial Management Module (Accounts Payable/Receivable System)
 
-### Recent Achievements (Phase 7):
-- ✅ Real-time messaging system with Supabase integration
-- ✅ Topic-based conversation organization with admin management
-- ✅ Cross-user synchronization with 3-second polling mechanism
-- ✅ Message status indicators (sent/delivered/read) with visual feedback
-- ✅ WhatsApp Business API integration foundation with UI indicators
-- ✅ Comprehensive notification system with unread count tracking
-- ✅ Mobile-responsive chat interface with dynamic layout switching
-- ✅ Enhanced test-frontend.html with Phase 7 testing capabilities
-- ✅ Multi-user session management for live testing scenarios
-- ✅ Production-ready chat system with mock/live mode flexibility
+### Recent Achievements (Phase 8.5.4):
+- ✅ CaseTypeForm: Brazilian legal market case type management with minimum fees
+- ✅ CaseBillingForm: Multi-modal billing configuration with real-time preview
+- ✅ CaseOutcomeForm: Case results registration with success fee calculation
+- ✅ Complete UI component library (Button, Input, Select, Card, Badge, etc.)
+- ✅ Brazilian Portuguese UI labels and currency formatting (BRL)
+- ✅ Form validation and business logic integration
+- ✅ Discount engine integration with case billing calculations
+- ✅ shadcn/ui design patterns for consistent UX
 
-### Upcoming Phase 8: Legal-as-a-Service (LaaS) Platform
-**Revolutionary Hybrid Billing System:**
-- 🔄 **Subscription Plans**: Recurring legal consulting services (Labor Law, Corporate, etc.)
-- 💰 **Multi-Modal Case Billing**: Hourly/Percentage/Fixed + Success Fees
-- 📅 **Payment Plans**: Split case payments into N installments
-- 🎯 **Cross-Selling Discounts**: Subscribers get X% off litigation services
-- 📊 **Revenue Analytics**: MRR tracking + Case profitability + Client lifetime value
+### Phase 8 Progress Summary:
+- ✅ **8.1**: Billing database schema with case types and minimum fees
+- ✅ **8.2**: Subscription plan system with service inclusions
+- ✅ **8.3**: Payment plan system with installment scheduling
+- ✅ **8.4**: Discount engine with cross-selling incentives
+- ✅ **8.5**: Complete case billing system with UI components
+- 🚧 **8.6**: Time tracking integration (pending)
+- 🚧 **8.7**: Dual invoice system (pending)
+- 🚧 **8.8**: Stripe integration (pending)
+- 🚧 **8.9**: Revenue analytics dashboard (pending)
 
-**Business Model Innovation:**
-- Triple revenue streams: Subscriptions + Case billing + Success fees
-- Client retention through recurring services
-- Cross-selling automation with discount incentives
-- Flexible payment terms reducing engagement barriers
-- Performance-aligned success fee system
+### 🔥 NEW BUSINESS REQUIREMENT: Phase 8.10 - Financial Management Module
+
+**ACCOUNTS PAYABLE & RECEIVABLE SYSTEM**
+- **Accounts Payable**: Vendor management, expense tracking, approval workflows, payment processing
+- **Accounts Receivable**: Enhanced payment tracking, collection management, aging reports
+- **Financial Dashboard**: Real-time cash flow, alerts, profitability analysis
+- **Export Capabilities**: Excel listings + PDF documents with firm branding
+- **Integration Strategy**: Leverage existing billing infrastructure (60% code reuse)
+
+**Phase 8.10 Sub-phases:**
+- **8.10.1**: Database schema extension (AP/AR tables, vendor management)
+- **8.10.2**: Accounts Payable system (bills, vendors, approvals, payments)
+- **8.10.3**: Accounts Receivable enhancement (collections, aging, client portal)
+- **8.10.4**: Export & reporting engine (Excel/PDF generation, dashboard widgets)
+
+**Technical Strategy:**
+- Reuse existing UI components from billing system
+- Extend current database schema with AP/AR entities  
+- Leverage existing client management patterns for vendor management
+- Build on established authentication and role-based access
+- Create unified financial dashboard with existing layout patterns
+
+**Estimated Effort**: 5 weeks | **Risk Level**: LOW (proven infrastructure) | **Business Impact**: HIGH

@@ -486,8 +486,8 @@ export function TimeTrackingDashboard({
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {recentEntries
-                    .reduce((acc, entry) => {
+                  {Object.entries(
+                    recentEntries.reduce((acc, entry) => {
                       const category = entry.task_category || 'Outros'
                       if (!acc[category]) {
                         acc[category] = { minutes: 0, count: 0 }
@@ -496,10 +496,10 @@ export function TimeTrackingDashboard({
                       acc[category].count += 1
                       return acc
                     }, {} as Record<string, { minutes: number, count: number }>)
-                    |> Object.entries(#)
-                    |> #.sort(([,a], [,b]) => b.minutes - a.minutes)
-                    |> #.slice(0, 5)
-                    |> #.map(([category, data], index) => (
+                  )
+                    .sort(([,a], [,b]) => b.minutes - a.minutes)
+                    .slice(0, 5)
+                    .map(([category, data], index) => (
                       <div key={index} className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <div className="w-3 h-3 rounded-full bg-blue-500" />

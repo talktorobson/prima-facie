@@ -1,6 +1,6 @@
 # Prima Facie - Sistema de Gestão para Escritórios de Advocacia
 
-Prima Facie é uma plataforma SaaS moderna e intuitiva para gestão completa de escritórios de advocacia, oferecendo desde captação de clientes até faturamento e gestão documental.
+Prima Facie é uma plataforma Legal-as-a-Service (LaaS) moderna e completa para gestão de escritórios de advocacia brasileiros, combinando gestão tradicional com serviços de consultoria baseados em assinatura, criando um modelo híbrido de receita que inclui assinaturas recorrentes, cobrança por casos e taxas de sucesso baseadas em performance.
 
 ## 🚀 Início Rápido
 
@@ -30,6 +30,9 @@ Abra [http://localhost:3000](http://localhost:3000) no seu navegador.
 - **Deploy**: Vercel
 - **Gerenciamento de Estado**: Zustand
 - **Requisições**: TanStack Query
+- **Pagamentos**: Stripe (integração planejada)
+- **Documentos**: Sistema de geração PDF/Excel
+- **Comunicação**: WhatsApp Business API
 
 ## 📁 Estrutura do Projeto
 
@@ -38,15 +41,29 @@ prima-facie/
 ├── app/                    # App directory (Next.js 14)
 │   ├── (auth)/            # Páginas de autenticação
 │   ├── (dashboard)/       # Dashboard principal
+│   │   ├── billing/       # Sistema de faturamento
+│   │   │   ├── invoices/  # Sistema dual de faturas
+│   │   │   ├── time-tracking/ # Controle de tempo
+│   │   │   └── financial-dashboard/ # Dashboard financeiro
+│   │   ├── matters/       # Gestão de casos
+│   │   └── clients/       # Gestão de clientes
 │   └── portal/            # Portais cliente/staff
 ├── components/            # Componentes React
 │   ├── ui/               # Componentes de UI
 │   ├── layout/           # Componentes de layout
 │   └── features/         # Componentes de features
+│       ├── billing/      # Componentes de faturamento
+│       ├── financial/    # Componentes financeiros
+│       └── exports/      # Componentes de exportação
 ├── lib/                   # Utilitários e configurações
 │   ├── supabase/         # Cliente Supabase
+│   ├── billing/          # Serviços de faturamento
+│   ├── financial/        # Serviços financeiros
+│   ├── exports/          # Utilitários de exportação
 │   ├── utils/            # Funções utilitárias
 │   └── hooks/            # Custom hooks
+├── database/             # Migrations e schemas
+├── tests/                # Testes automatizados
 ├── public/               # Assets estáticos
 ├── styles/               # Estilos globais
 └── types/                # TypeScript types
@@ -68,9 +85,45 @@ prima-facie/
 3. Copie as credenciais do projeto
 4. Adicione as credenciais ao arquivo `.env.local`
 
-## 📝 Roadmap
+## ⚡ Principais Funcionalidades
 
-Veja o [roadmap completo](prima-facie-roadmap.md) para detalhes sobre as fases de desenvolvimento.
+### 🏢 Gestão de Escritório
+- **Gestão de Casos**: Sistema completo para acompanhamento de processos e demandas jurídicas
+- **Gestão de Clientes**: CRM especializado com suporte a CPF/CNPJ e validação brasileira
+- **Controle de Tempo**: Sistema avançado de time tracking com timer em tempo real e cálculo automático de faturamento
+- **Chat em Tempo Real**: Comunicação interna com integração WhatsApp Business
+
+### 💰 Sistema Híbrido de Faturamento (85% Completo)
+- **Faturas de Assinatura**: Cobrança recorrente para serviços de consultoria com controle de uso e sobretaxa ✅
+- **Faturas de Casos**: Múltiplas modalidades (por hora, valor fixo, percentual, híbrido) com integração ao controle de tempo ✅
+- **Planos de Pagamento**: Parcelamento automático com controle de vencimentos e taxas de atraso ✅
+- **Dashboard Unificado**: Visão centralizada de todas as faturas com filtros avançados e analytics ✅
+- **Sistema de Descontos**: Engine inteligente para cross-selling com automação de descontos ✅
+- **Analytics de Receita**: MRR, CLV e análise de profitabilidade por cliente ✅
+
+### 📊 Gestão Financeira Completa
+- **Contas a Pagar**: Sistema completo de gestão de fornecedores, aprovação de despesas e fluxo de pagamentos ✅
+- **Contas a Receber**: Controle de cobranças, relatórios de aging e automação de lembretes ✅
+- **Exportação Profissional**: Geração de relatórios em Excel e PDF com identidade visual do escritório ✅
+- **Analytics Financeiros**: Dashboards em tempo real com KPIs e métricas de performance ✅
+- **Cobrança Automatizada**: Sistema inteligente de lembretes e controle de inadimplência ✅
+
+### 🇧🇷 Conformidade Brasileira
+- **Validação CPF/CNPJ**: Integração com APIs de validação e formatação automática ✅
+- **PIX Integration**: Suporte completo ao sistema de pagamentos instantâneos brasileiro ✅
+- **Interface em Português**: UI/UX completamente localizada para o mercado brasileiro ✅
+- **Formatação BRL**: Formatação adequada de moeda e documentos fiscais ✅
+
+### 🚧 Integração de Pagamentos (Pendente - 15%)
+- **Stripe Integration**: Processamento de pagamentos recorrentes e únicos ⏳
+- **Webhooks**: Tratamento automático de eventos de pagamento ⏳
+- **Conexão Database**: Substituição dos dados mock por integração real com Supabase ⏳
+
+## 📝 Documentação
+
+- **[Documentação Completa](CLAUDE.md)** - Documentação técnica detalhada do projeto
+- **[Sistema Dual de Faturas](DUAL-INVOICE-SYSTEM.md)** - Documentação específica do sistema de faturamento
+- **[Roadmap](prima-facie-roadmap.md)** - Plano de desenvolvimento e fases do projeto
 
 ## 🤝 Contribuindo
 

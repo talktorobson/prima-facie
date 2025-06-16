@@ -9,11 +9,8 @@ Prima Facie é uma plataforma SaaS moderna e intuitiva para gestão completa de 
 git clone https://github.com/talktorobson/prima-facie.git
 cd prima-facie
 
-# Instale as dependências
-npm install
-
-# Configure as variáveis de ambiente
-cp .env.local.example .env.local
+# Execute o script de setup
+./setup.sh
 # Edite .env.local com suas credenciais do Supabase
 
 # Execute o servidor de desenvolvimento

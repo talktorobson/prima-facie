@@ -107,4 +107,4 @@ describe('useAuth hook', () => {
 
     expect(mockUnsubscribe).toHaveBeenCalled()
   })
-}
+})

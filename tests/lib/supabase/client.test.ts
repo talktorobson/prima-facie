@@ -50,4 +50,4 @@ describe('Supabase Client', () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalKey
   })
-}
+})

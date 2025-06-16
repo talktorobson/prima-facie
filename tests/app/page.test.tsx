@@ -22,4 +22,4 @@ describe('HomePage', () => {
     
     expect(redirect).toHaveBeenCalledTimes(1)
   })
-}
+})

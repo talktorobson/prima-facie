@@ -1,5 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import RootLayout, { metadata } from '@/app/layout'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'] })
 
 // Mock the Providers component
 jest.mock('@/components/providers', () => ({
@@ -42,7 +45,7 @@ describe('RootLayout', () => {
     )
 
     const bodyElement = container.querySelector('body')
-    expect(bodyElement).toHaveClass()
+    expect(bodyElement).toHaveClass(inter.className)
   })
 })
 

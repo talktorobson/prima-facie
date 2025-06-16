@@ -163,4 +163,4 @@ describe('LoginPage', () => {
       expect(screen.getByText('Ocorreu um erro ao fazer login')).toBeInTheDocument()
     })
   })
-}
+})

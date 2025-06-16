@@ -44,4 +44,4 @@ describe('cn utility function', () => {
     })
     expect(result).toBe('bg-red-500 p-4')
   })
-}
+})

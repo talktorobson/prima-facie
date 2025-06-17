@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/hooks/use-auth'
+import { productionSubscriptionService } from '@/lib/billing/subscription-service-production'
+import { SubscriptionPlan, PlanFormData } from '@/lib/billing/subscription-types'
 import { 
   PlusIcon,
   PencilIcon,
@@ -19,116 +21,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid'
 
-// Types for our subscription system
-interface SubscriptionPlan {
-  id: string
-  law_firm_id: string
-  plan_name: string
-  plan_type: string // 'labor', 'corporate', 'criminal', 'family', 'general'
-  description: string
-  monthly_fee: number
-  yearly_fee: number
-  setup_fee: number
-  services_included: string[]
-  max_monthly_hours: number
-  max_document_reviews: number
-  support_level: string // 'email', 'phone', 'priority', '24_7'
-  billing_interval: string // 'monthly', 'yearly'
-  trial_period_days: number
-  is_active: boolean
-  is_featured: boolean
-  sort_order: number
-  created_at: string
-  updated_at: string
-}
-
-// Mock data for development
-const mockSubscriptionPlans: SubscriptionPlan[] = [
-  {
-    id: '1',
-    law_firm_id: 'firm-1',
-    plan_name: 'Trabalhista Básico',
-    plan_type: 'labor',
-    description: 'Consultoria mensal básica em direito trabalhista para pequenas empresas',
-    monthly_fee: 299.00,
-    yearly_fee: 2990.00,
-    setup_fee: 0,
-    services_included: ['compliance_review', 'email_support', 'document_review'],
-    max_monthly_hours: 2,
-    max_document_reviews: 5,
-    support_level: 'email',
-    billing_interval: 'monthly',
-    trial_period_days: 14,
-    is_active: true,
-    is_featured: false,
-    sort_order: 1,
-    created_at: '2024-01-15T10:00:00Z',
-    updated_at: '2024-01-15T10:00:00Z'
-  },
-  {
-    id: '2',
-    law_firm_id: 'firm-1',
-    plan_name: 'Trabalhista Premium',
-    plan_type: 'labor',
-    description: 'Consultoria completa em direito trabalhista com suporte prioritário',
-    monthly_fee: 599.00,
-    yearly_fee: 5990.00,
-    setup_fee: 100.00,
-    services_included: ['compliance_review', 'phone_support', 'document_review', 'regulatory_alerts', 'priority_support'],
-    max_monthly_hours: 8,
-    max_document_reviews: 20,
-    support_level: 'priority',
-    billing_interval: 'monthly',
-    trial_period_days: 30,
-    is_active: true,
-    is_featured: true,
-    sort_order: 2,
-    created_at: '2024-01-15T10:00:00Z',
-    updated_at: '2024-01-15T10:00:00Z'
-  },
-  {
-    id: '3',
-    law_firm_id: 'firm-1',
-    plan_name: 'Empresarial Enterprise',
-    plan_type: 'corporate',
-    description: 'Consultoria jurídica completa para grandes empresas com advogado dedicado',
-    monthly_fee: 1299.00,
-    yearly_fee: 12990.00,
-    setup_fee: 500.00,
-    services_included: ['dedicated_lawyer', 'unlimited_hours', 'contract_review', '24_7_support', 'board_support'],
-    max_monthly_hours: 0, // unlimited
-    max_document_reviews: 0, // unlimited
-    support_level: '24_7',
-    billing_interval: 'monthly',
-    trial_period_days: 30,
-    is_active: true,
-    is_featured: true,
-    sort_order: 3,
-    created_at: '2024-01-15T10:00:00Z',
-    updated_at: '2024-01-15T10:00:00Z'
-  },
-  {
-    id: '4',
-    law_firm_id: 'firm-1',
-    plan_name: 'Criminal Defense Básico',
-    plan_type: 'criminal',
-    description: 'Suporte básico em direito criminal e penal',
-    monthly_fee: 399.00,
-    yearly_fee: 3990.00,
-    setup_fee: 0,
-    services_included: ['consultation', 'email_support', 'case_review'],
-    max_monthly_hours: 3,
-    max_document_reviews: 10,
-    support_level: 'email',
-    billing_interval: 'monthly',
-    trial_period_days: 7,
-    is_active: false,
-    is_featured: false,
-    sort_order: 4,
-    created_at: '2024-01-15T10:00:00Z',
-    updated_at: '2024-01-15T10:00:00Z'
-  }
-]
+// Note: SubscriptionPlan type is now imported from types
 
 // Service inclusion options
 const serviceOptions = [
@@ -162,22 +55,7 @@ const supportLevelOptions = [
   { value: '24_7', label: '24/7 (Imediato)', icon: ClockIcon }
 ]
 
-interface PlanFormData {
-  plan_name: string
-  plan_type: string
-  description: string
-  monthly_fee: number
-  yearly_fee: number
-  setup_fee: number
-  services_included: string[]
-  max_monthly_hours: number
-  max_document_reviews: number
-  support_level: string
-  billing_interval: string
-  trial_period_days: number
-  is_active: boolean
-  is_featured: boolean
-}
+// Note: PlanFormData type is now imported from types
 
 const initialFormData: PlanFormData = {
   plan_name: '',
@@ -198,14 +76,37 @@ const initialFormData: PlanFormData = {
 
 export default function SubscriptionPlansPage() {
   const { user } = useAuth()
-  const [plans, setPlans] = useState<SubscriptionPlan[]>(mockSubscriptionPlans)
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingData, setIsLoadingData] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null)
   const [formData, setFormData] = useState<PlanFormData>(initialFormData)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterType, setFilterType] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'created' | 'sort_order'>('sort_order')
+  const [error, setError] = useState<string | null>(null)
+
+  // Load subscription plans from database
+  useEffect(() => {
+    const loadPlans = async () => {
+      if (!user?.law_firm_id) return
+      
+      try {
+        setIsLoadingData(true)
+        setError(null)
+        const loadedPlans = await productionSubscriptionService.getSubscriptionPlans(user.law_firm_id)
+        setPlans(loadedPlans)
+      } catch (error) {
+        console.error('Error loading subscription plans:', error)
+        setError('Falha ao carregar planos de assinatura')
+      } finally {
+        setIsLoadingData(false)
+      }
+    }
+
+    loadPlans()
+  }, [user?.law_firm_id])
 
   // Filter and sort plans
   const filteredPlans = plans
@@ -281,27 +182,27 @@ export default function SubscriptionPlansPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
 
     try {
+      if (!user?.law_firm_id) {
+        throw new Error('Law firm ID not found')
+      }
+
       if (editingPlan) {
         // Update existing plan
-        const updatedPlan: SubscriptionPlan = {
-          ...editingPlan,
-          ...formData,
-          updated_at: new Date().toISOString()
-        }
+        const updatedPlan = await productionSubscriptionService.updateSubscriptionPlan(
+          editingPlan.id, 
+          formData
+        )
         setPlans(plans.map(p => p.id === editingPlan.id ? updatedPlan : p))
         console.log('Plan updated:', updatedPlan)
       } else {
         // Create new plan
-        const newPlan: SubscriptionPlan = {
-          id: `plan-${Date.now()}`,
-          law_firm_id: (user as any)?.law_firm_id || 'firm-1',
-          ...formData,
-          sort_order: plans.length + 1,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
+        const newPlan = await productionSubscriptionService.createSubscriptionPlan(
+          user.law_firm_id,
+          formData
+        )
         setPlans([...plans, newPlan])
         console.log('Plan created:', newPlan)
       }
@@ -311,6 +212,7 @@ export default function SubscriptionPlansPage() {
       setEditingPlan(null)
     } catch (error) {
       console.error('Error saving plan:', error)
+      setError('Falha ao salvar plano. Tente novamente.')
     } finally {
       setIsLoading(false)
     }
@@ -318,25 +220,47 @@ export default function SubscriptionPlansPage() {
 
   const handleDeletePlan = async (planId: string) => {
     if (confirm('Tem certeza que deseja excluir este plano? Esta ação não pode ser desfeita.')) {
-      setPlans(plans.filter(p => p.id !== planId))
-      console.log('Plan deleted:', planId)
+      try {
+        await productionSubscriptionService.deleteSubscriptionPlan(planId)
+        setPlans(plans.filter(p => p.id !== planId))
+        console.log('Plan deleted:', planId)
+      } catch (error) {
+        console.error('Error deleting plan:', error)
+        setError('Falha ao excluir plano. Verifique se não há assinaturas ativas.')
+      }
     }
   }
 
   const handleToggleActive = async (planId: string) => {
-    setPlans(plans.map(p => 
-      p.id === planId 
-        ? { ...p, is_active: !p.is_active, updated_at: new Date().toISOString() }
-        : p
-    ))
+    try {
+      const plan = plans.find(p => p.id === planId)
+      if (!plan) return
+
+      const updatedPlan = await productionSubscriptionService.updateSubscriptionPlan(
+        planId, 
+        { is_active: !plan.is_active }
+      )
+      setPlans(plans.map(p => p.id === planId ? updatedPlan : p))
+    } catch (error) {
+      console.error('Error toggling plan active status:', error)
+      setError('Falha ao atualizar status do plano.')
+    }
   }
 
   const handleToggleFeatured = async (planId: string) => {
-    setPlans(plans.map(p => 
-      p.id === planId 
-        ? { ...p, is_featured: !p.is_featured, updated_at: new Date().toISOString() }
-        : p
-    ))
+    try {
+      const plan = plans.find(p => p.id === planId)
+      if (!plan) return
+
+      const updatedPlan = await productionSubscriptionService.updateSubscriptionPlan(
+        planId,
+        { is_featured: !plan.is_featured }
+      )
+      setPlans(plans.map(p => p.id === planId ? updatedPlan : p))
+    } catch (error) {
+      console.error('Error toggling plan featured status:', error)
+      setError('Falha ao atualizar destaque do plano.')
+    }
   }
 
   const handleServiceToggle = (service: string) => {
@@ -503,9 +427,36 @@ export default function SubscriptionPlansPage() {
         </div>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="px-6 py-4">
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Erro</h3>
+                <div className="mt-2 text-sm text-red-700">{error}</div>
+                <div className="mt-4">
+                  <button
+                    onClick={() => setError(null)}
+                    className="text-sm bg-red-100 text-red-800 rounded-md px-2 py-1 hover:bg-red-200"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Plans Grid */}
       <div className="px-6 py-8">
-        {filteredPlans.length === 0 ? (
+        {isLoadingData ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-gray-500">Carregando planos...</p>
+          </div>
+        ) : filteredPlans.length === 0 ? (
           <div className="text-center py-12">
             <CurrencyDollarIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum plano encontrado</h3>

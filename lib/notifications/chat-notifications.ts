@@ -1,8 +1,10 @@
 // Chat Notifications Service
 // Handles message notifications, status indicators, and real-time alerts
 
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { Message, Conversation } from '@/lib/supabase/realtime'
+
+const supabase = createClient()
 
 export interface NotificationPreference {
   id: string

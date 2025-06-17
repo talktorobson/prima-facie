@@ -6,11 +6,6 @@ import {
   PlusIcon,
   CalendarDaysIcon,
   CreditCardIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  EyeIcon,
   PencilIcon,
   TrashIcon,
   BanknotesIcon,
@@ -19,7 +14,6 @@ import {
 import { 
   PaymentPlan,
   PaymentPlanFormData,
-  PaymentPlanSummary,
   PaymentFrequency,
   PaymentPlanStatus,
   PAYMENT_FREQUENCY_OPTIONS,
@@ -41,8 +35,8 @@ const initialFormData: PaymentPlanFormData = {
   notes: ''
 }
 
-export default function PaymentPlansPage() {
-  const { user } = useAuth()
+export default function PaymentPlansPage(): JSX.Element {
+  const { user: _user } = useAuth()
   const [plans, setPlans] = useState<PaymentPlan[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useAuth } from '@/lib/hooks/use-auth'
+import { clientService, Client, ClientStats } from '@/lib/clients/client-service'
 import { 
   PlusIcon, 
   MagnifyingGlassIcon,
@@ -18,104 +20,7 @@ import {
   ChevronRightIcon
 } from '@heroicons/react/24/outline'
 
-// Mock data for development
-const mockClients = [
-  {
-    id: '1',
-    client_number: 'CLI-2024-001',
-    name: 'João Silva Santos',
-    type: 'pessoa_fisica',
-    cpf: '123.456.789-00',
-    cnpj: null,
-    email: 'joao.silva@email.com',
-    phone: '(11) 9 8765-4321',
-    status: 'ativo',
-    client_since: '2024-01-15',
-    relationship_manager: 'Maria Silva Santos',
-    total_matters: 2,
-    active_matters: 1,
-    address_city: 'São Paulo',
-    address_state: 'SP',
-    last_contact_date: '2024-01-20',
-    portal_enabled: true
-  },
-  {
-    id: '2',
-    client_number: 'CLI-2024-002',
-    name: 'Ana Costa Pereira',
-    type: 'pessoa_fisica',
-    cpf: '987.654.321-00',
-    cnpj: null,
-    email: 'ana.costa@email.com',
-    phone: '(11) 9 1234-5678',
-    status: 'ativo',
-    client_since: '2024-01-20',
-    relationship_manager: 'João Santos Oliveira',
-    total_matters: 1,
-    active_matters: 1,
-    address_city: 'São Paulo',
-    address_state: 'SP',
-    last_contact_date: '2024-01-22',
-    portal_enabled: false
-  },
-  {
-    id: '3',
-    client_number: 'CLI-2024-003',
-    name: 'Empresa ABC Ltda',
-    type: 'pessoa_juridica',
-    cpf: null,
-    cnpj: '12.345.678/0001-90',
-    email: 'contato@empresaabc.com.br',
-    phone: '(11) 3456-7890',
-    status: 'ativo',
-    client_since: '2023-12-10',
-    relationship_manager: 'Maria Silva Santos',
-    total_matters: 3,
-    active_matters: 2,
-    address_city: 'São Paulo',
-    address_state: 'SP',
-    last_contact_date: '2024-01-18',
-    portal_enabled: true
-  },
-  {
-    id: '4',
-    client_number: 'CLI-2024-004',
-    name: 'Pedro Rodrigues Oliveira',
-    type: 'pessoa_fisica',
-    cpf: '456.789.123-00',
-    cnpj: null,
-    email: 'pedro.rodrigues@email.com',
-    phone: '(11) 9 5555-4444',
-    status: 'potencial',
-    client_since: '2024-01-25',
-    relationship_manager: 'Carlos Mendes Lima',
-    total_matters: 1,
-    active_matters: 0,
-    address_city: 'Santos',
-    address_state: 'SP',
-    last_contact_date: '2024-01-25',
-    portal_enabled: false
-  },
-  {
-    id: '5',
-    client_number: 'CLI-2023-045',
-    name: 'Tech Solutions S.A.',
-    type: 'pessoa_juridica',
-    cpf: null,
-    cnpj: '98.765.432/0001-10',
-    email: 'juridico@techsolutions.com.br',
-    phone: '(11) 2222-3333',
-    status: 'inativo',
-    client_since: '2023-08-15',
-    relationship_manager: 'João Santos Oliveira',
-    total_matters: 5,
-    active_matters: 0,
-    address_city: 'São Paulo',
-    address_state: 'SP',
-    last_contact_date: '2023-12-20',
-    portal_enabled: false
-  }
-]
+// Note: Client data now loaded from database
 
 const statusOptions = [
   { value: '', label: 'Todos os Status' },
@@ -140,8 +45,10 @@ const relationshipManagerOptions = [
 ]
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState(mockClients)
-  const [filteredClients, setFilteredClients] = useState(mockClients)
+  const { user } = useAuth()
+  const [clients, setClients] = useState<Client[]>([])
+  const [filteredClients, setFilteredClients] = useState<Client[]>([])
+  const [stats, setStats] = useState<ClientStats | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
@@ -149,6 +56,35 @@ export default function ClientsPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load clients from database
+  useEffect(() => {
+    const loadClients = async () => {
+      if (!user?.law_firm_id) return
+      
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const [loadedClients, clientStats] = await Promise.all([
+          clientService.getClients(user.law_firm_id),
+          clientService.getClientStats(user.law_firm_id)
+        ])
+        
+        setClients(loadedClients)
+        setStats(clientStats)
+      } catch (error) {
+        console.error('Error loading clients:', error)
+        setError('Falha ao carregar clientes')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadClients()
+  }, [user?.law_firm_id])
 
   // Filter and search logic
   useEffect(() => {

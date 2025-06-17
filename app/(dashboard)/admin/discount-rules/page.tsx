@@ -6,13 +6,8 @@ import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  EyeIcon,
-  CheckCircleIcon,
-  XCircleIcon,
   PercentBadgeIcon,
-  BanknotesIcon,
   UserGroupIcon,
-  ClockIcon,
   StarIcon,
   TrophyIcon,
   MegaphoneIcon,
@@ -27,12 +22,10 @@ import {
   DiscountType,
   ConditionType,
   ConditionOperator,
-  AppliesTo,
   DISCOUNT_RULE_TYPE_OPTIONS,
   DISCOUNT_TYPE_OPTIONS,
   CONDITION_TYPE_OPTIONS,
-  CONDITION_OPERATOR_OPTIONS,
-  APPLIES_TO_OPTIONS
+  CONDITION_OPERATOR_OPTIONS
 } from '@/lib/billing/discount-types'
 import { discountService } from '@/lib/billing/discount-service'
 
@@ -55,8 +48,8 @@ const initialFormData: DiscountRuleFormData = {
   is_active: true
 }
 
-export default function DiscountRulesPage() {
-  const { user } = useAuth()
+export default function DiscountRulesPage(): JSX.Element {
+  const { user: _user } = useAuth()
   const [rules, setRules] = useState<DiscountRule[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)

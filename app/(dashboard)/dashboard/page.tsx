@@ -5,8 +5,12 @@
 
 'use client'
 
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useAuthContext } from '@/lib/providers/auth-provider'
 import { StaffOnly, ClientOnly } from '@/components/auth/role-guard'
+import { clientService, type ClientStats } from '@/lib/clients/client-service'
+import { matterService, type MatterStats } from '@/lib/matters/matter-service'
 import { 
   FolderIcon, 
   UsersIcon, 
@@ -97,11 +101,113 @@ function RecentItem({ title, subtitle, time, type }: RecentItemProps) {
   )
 }
 
+interface DashboardStats {
+  clientStats: ClientStats | null
+  matterStats: MatterStats | null
+  recentActivity: any[]
+  upcomingTasks: any[]
+}
+
 export default function DashboardPage() {
   const { profile } = useAuthContext()
+  const [showTaskModal, setShowTaskModal] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<DashboardStats>({
+    clientStats: null,
+    matterStats: null,
+    recentActivity: [],
+    upcomingTasks: []
+  })
+
+  useEffect(() => {
+    if (profile?.law_firm_id) {
+      fetchDashboardData()
+    }
+  }, [profile?.law_firm_id])
+
+  const fetchDashboardData = async () => {
+    if (!profile?.law_firm_id) return
+
+    try {
+      setLoading(true)
+      
+      // Fetch real statistics from database
+      const [clientStats, matterStats] = await Promise.all([
+        clientService.getClientStats(profile.law_firm_id),
+        matterService.getMatterStats(profile.law_firm_id)
+      ])
+
+      // TODO: Fetch recent activity and upcoming tasks
+      // For now, using sample data until those services are implemented
+      const sampleRecentActivity = [
+        {
+          title: "Novo caso: Revisão Contratual",
+          subtitle: "Cliente: Empresa ABC Ltda",
+          time: "2h atrás",
+          type: "matter" as const
+        },
+        {
+          title: "Documento enviado",
+          subtitle: "Contrato revisado.pdf",
+          time: "4h atrás",
+          type: "document" as const
+        },
+        {
+          title: "Cliente cadastrado",
+          subtitle: "João Silva Santos",
+          time: "1 dia atrás",
+          type: "client" as const
+        }
+      ]
+
+      const sampleUpcomingTasks = [
+        {
+          title: "Audiência de Conciliação",
+          subtitle: "Caso: Indenização por Danos Morais",
+          time: "Amanhã 14:00",
+          color: "yellow"
+        },
+        {
+          title: "Entrega de Petição",
+          subtitle: "Caso: Reclamatória Trabalhista",
+          time: "15 Nov",
+          color: "blue"
+        }
+      ]
+
+      setStats({
+        clientStats,
+        matterStats,
+        recentActivity: sampleRecentActivity,
+        upcomingTasks: sampleUpcomingTasks
+      })
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+      // Keep default empty state on error
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
 
   if (!profile) {
     return <div>Carregando...</div>
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   return (
@@ -121,31 +227,31 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Casos Ativos"
-            value={23}
+            value={stats.matterStats?.active_matters || 0}
             icon={FolderIcon}
             change="+12%"
             changeType="positive"
           />
           <StatCard
             title="Clientes"
-            value={156}
+            value={stats.clientStats?.total_clients || 0}
             icon={UsersIcon}
             change="+3%"
             changeType="positive"
           />
           <StatCard
             title="Receita do Mês"
-            value="R$ 85.2k"
+            value={stats.matterStats?.total_billed ? formatCurrency(stats.matterStats.total_billed) : "R$ 0"}
             icon={DollarSignIcon}
             change="+8%"
             changeType="positive"
           />
           <StatCard
-            title="Horas Trabalhadas"
-            value={164}
+            title="Casos Totais"
+            value={stats.matterStats?.total_matters || 0}
             icon={ClockIcon}
-            change="-2%"
-            changeType="negative"
+            change={stats.matterStats?.closed_matters ? `${Math.round((stats.matterStats.closed_matters / stats.matterStats.total_matters) * 100)}% concluídos` : ""}
+            changeType="neutral"
           />
         </div>
       </StaffOnly>
@@ -155,17 +261,17 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard
             title="Meus Casos"
-            value={3}
+            value={stats.matterStats?.active_matters || 0}
             icon={FolderIcon}
           />
           <StatCard
-            title="Tarefas Pendentes"
-            value={7}
+            title="Casos Encerrados"
+            value={stats.matterStats?.closed_matters || 0}
             icon={ClockIcon}
           />
           <StatCard
-            title="Próxima Audiência"
-            value="15 Nov"
+            title="Total de Casos"
+            value={stats.matterStats?.total_matters || 0}
             icon={AlertTriangleIcon}
           />
         </div>
@@ -274,29 +380,104 @@ export default function DashboardPage() {
         <div className="px-6 py-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StaffOnly>
-              <button className="flex flex-col items-center p-4 text-center bg-primary/5 rounded-lg hover:bg-primary/10 transition-colors">
-                <FolderIcon className="w-8 h-8 text-primary mb-2" />
+              <Link
+                href="/matters/new"
+                className="flex flex-col items-center p-4 text-center bg-primary/5 rounded-lg hover:bg-primary/10 transition-colors group"
+              >
+                <FolderIcon className="w-8 h-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
                 <span className="text-sm font-medium text-gray-900">Novo Caso</span>
-              </button>
+              </Link>
               
-              <button className="flex flex-col items-center p-4 text-center bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
-                <UsersIcon className="w-8 h-8 text-green-600 mb-2" />
+              <Link
+                href="/clients/new"
+                className="flex flex-col items-center p-4 text-center bg-green-50 rounded-lg hover:bg-green-100 transition-colors group"
+              >
+                <UsersIcon className="w-8 h-8 text-green-600 mb-2 group-hover:scale-110 transition-transform" />
                 <span className="text-sm font-medium text-gray-900">Novo Cliente</span>
-              </button>
+              </Link>
             </StaffOnly>
             
-            <button className="flex flex-col items-center p-4 text-center bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-              <ClockIcon className="w-8 h-8 text-blue-600 mb-2" />
+            <Link
+              href="/billing/time-tracking"
+              className="flex flex-col items-center p-4 text-center bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors group"
+            >
+              <ClockIcon className="w-8 h-8 text-blue-600 mb-2 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-medium text-gray-900">Registrar Horas</span>
-            </button>
+            </Link>
             
-            <button className="flex flex-col items-center p-4 text-center bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-              <AlertTriangleIcon className="w-8 h-8 text-purple-600 mb-2" />
+            <button
+              onClick={() => setShowTaskModal(true)}
+              className="flex flex-col items-center p-4 text-center bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors group"
+            >
+              <AlertTriangleIcon className="w-8 h-8 text-purple-600 mb-2 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-medium text-gray-900">Nova Tarefa</span>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Quick Task Modal */}
+      {showTaskModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Nova Tarefa</h3>
+              <form onSubmit={(e) => {
+                e.preventDefault()
+                const formData = new FormData(e.target as HTMLFormElement)
+                const title = formData.get('title') as string
+                const description = formData.get('description') as string
+                
+                // TODO: Implement actual task creation
+                console.log('Creating task:', { title, description })
+                alert('Tarefa criada com sucesso!')
+                setShowTaskModal(false)
+              }}>
+                <div className="mb-4">
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                    Título da Tarefa
+                  </label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="Ex: Revisar contrato..."
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                    Descrição
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="Detalhes da tarefa..."
+                  />
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowTaskModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    Criar Tarefa
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

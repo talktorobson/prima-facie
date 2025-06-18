@@ -8,7 +8,8 @@ import {
   PhotoIcon,
   ArrowLeftIcon,
   CheckIcon,
-  EyeIcon
+  EyeIcon,
+  CloudArrowUpIcon
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 
@@ -23,6 +24,7 @@ export default function BrandingPage() {
   const { profile } = useAuthContext()
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
   const [formData, setFormData] = useState<BrandingData>({
     primary_color: '#0066CC',
     secondary_color: '#64748B',
@@ -83,6 +85,47 @@ export default function BrandingPage() {
     }))
   }
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/png', 'image/svg+xml', 'image/jpeg', 'image/jpg']
+    if (!validTypes.includes(file.type)) {
+      alert('Por favor, selecione um arquivo PNG, SVG ou JPG')
+      return
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('O arquivo deve ter no máximo 2MB')
+      return
+    }
+
+    setUploadingLogo(true)
+    
+    try {
+      // In real implementation, upload to storage service
+      // For now, create a local preview URL
+      const url = URL.createObjectURL(file)
+      
+      // Simulate upload delay
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      setFormData(prev => ({
+        ...prev,
+        logo_url: url
+      }))
+      
+      alert('Logo carregada com sucesso! Salve as alterações para confirmar.')
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Erro ao carregar logo. Tente novamente.')
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
   return (
     <AdminOnly>
       <div className="space-y-6">
@@ -122,6 +165,47 @@ export default function BrandingPage() {
                 </div>
                 
                 <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Upload de Logo
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                      <CloudArrowUpIcon className="mx-auto h-8 w-8 text-gray-400" />
+                      <div className="mt-2">
+                        <label htmlFor="logo-upload" className="cursor-pointer">
+                          <span className="text-blue-600 font-medium">Clique para enviar</span>
+                          <span className="text-gray-500"> ou arraste e solte</span>
+                          <input
+                            id="logo-upload"
+                            type="file"
+                            className="sr-only"
+                            accept="image/png,image/svg+xml,image/jpeg,image/jpg"
+                            onChange={handleLogoUpload}
+                            disabled={uploadingLogo}
+                          />
+                        </label>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        PNG, SVG ou JPG até 2MB
+                      </p>
+                      {uploadingLogo && (
+                        <div className="mt-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mx-auto"></div>
+                          <p className="text-xs text-gray-600 mt-1">Carregando...</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white text-gray-500">ou</span>
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       URL da Logo

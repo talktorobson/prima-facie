@@ -14,7 +14,9 @@ import {
   ChatBubbleLeftRightIcon,
   PaperClipIcon,
   EyeIcon,
-  ArrowDownTrayIcon as DownloadIcon
+  ArrowDownTrayIcon as DownloadIcon,
+  XMarkIcon,
+  CloudArrowUpIcon
 } from '@heroicons/react/24/outline'
 
 // Mock data for matter details
@@ -303,6 +305,9 @@ export default function ClientMatterDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [matter, setMatter] = useState<any>(null)
   const [activeTab, setActiveTab] = useState('overview')
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
 
   useEffect(() => {
     // Load matter data
@@ -322,6 +327,44 @@ export default function ClientMatterDetailPage() {
       style: 'currency',
       currency: 'BRL'
     }).format(amount)
+  }
+
+  const handleFileUpload = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const formData = new FormData(e.target as HTMLFormElement)
+    
+    setIsUploading(true)
+    setUploadProgress(0)
+    
+    try {
+      // Simulate upload progress
+      const uploadInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(uploadInterval)
+            return 90
+          }
+          return prev + 10
+        })
+      }, 200)
+      
+      // Simulate upload completion
+      setTimeout(() => {
+        setUploadProgress(100)
+        setTimeout(() => {
+          setIsUploading(false)
+          setUploadProgress(0)
+          setShowUploadModal(false)
+          alert('Documento enviado com sucesso! Aguarde análise da equipe jurídica.')
+          // TODO: Refresh documents list or add to matter.documents
+        }, 500)
+      }, 2000)
+    } catch (error) {
+      console.error('Upload error:', error)
+      setIsUploading(false)
+      setUploadProgress(0)
+      alert('Erro ao enviar documento. Tente novamente.')
+    }
   }
 
   if (isLoading) {
@@ -567,7 +610,16 @@ export default function ClientMatterDetailPage() {
           {/* Documents Tab */}
           {activeTab === 'documents' && (
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-6">Documentos do Processo</h3>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-medium text-gray-900">Documentos do Processo</h3>
+                <button
+                  onClick={() => setShowUploadModal(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  <PaperClipIcon className="-ml-1 mr-2 h-5 w-5" />
+                  Enviar Documento
+                </button>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {matter.documents
                   .filter((doc: any) => doc.visible_to_client)
@@ -663,6 +715,100 @@ export default function ClientMatterDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Document Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-[500px] shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Enviar Documento</h3>
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleFileUpload}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Arquivo *
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                    <CloudArrowUpIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <div className="mt-2">
+                      <label htmlFor="client-file-upload" className="cursor-pointer">
+                        <span className="text-primary font-medium">Clique para enviar</span>
+                        <span className="text-gray-500"> ou arraste e solte</span>
+                        <input
+                          id="client-file-upload"
+                          name="file-upload"
+                          type="file"
+                          className="sr-only"
+                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                          required
+                        />
+                      </label>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      PDF, DOC, DOCX, JPG, PNG, TXT até 10MB
+                    </p>
+                  </div>
+                </div>
+
+                {isUploading && (
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all duration-300" 
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Descrição do Documento
+                  </label>
+                  <textarea
+                    name="description"
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Descreva brevemente o conteúdo ou relevância do documento..."
+                    required
+                  />
+                </div>
+                
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Importante:</strong> Todos os documentos enviados serão analisados pela equipe jurídica. 
+                    Você receberá uma notificação quando o documento for processado e disponibilizado no processo.
+                  </p>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={() => setShowUploadModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    disabled={isUploading}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50"
+                    disabled={isUploading}
+                  >
+                    {isUploading ? 'Enviando...' : 'Enviar Documento'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

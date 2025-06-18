@@ -7,7 +7,9 @@ import {
   CheckIcon,
   XMarkIcon,
   PhoneIcon,
-  CogIcon
+  CogIcon,
+  CameraIcon,
+  CloudArrowUpIcon
 } from '@heroicons/react/24/outline'
 
 // Mock client data
@@ -16,6 +18,7 @@ const mockClientProfile = {
   client_number: 'CLI-2024-001',
   name: 'João Silva Santos',
   email: 'joao.silva@email.com',
+  avatar_url: '',
   cpf: '123.456.789-00',
   rg: '12.345.678-9',
   phone: '(11) 3456-7890',
@@ -69,6 +72,7 @@ export default function ClientProfilePage() {
   const [editedProfile, setEditedProfile] = useState(mockClientProfile)
   const [isSaving, setIsSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('personal')
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   const handleEdit = () => {
     setEditedProfile(profile)
@@ -144,6 +148,54 @@ export default function ClientProfilePage() {
     return value.replace(/\D/g, '').replace(/(\d{5})(\d{3})/, '$1-$2')
   }
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg']
+    if (!validTypes.includes(file.type)) {
+      alert('Por favor, selecione um arquivo PNG ou JPG')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('O arquivo deve ter no máximo 5MB')
+      return
+    }
+
+    setUploadingAvatar(true)
+    
+    try {
+      // In real implementation, upload to storage service
+      // For now, create a local preview URL
+      const url = URL.createObjectURL(file)
+      
+      // Simulate upload delay
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      if (isEditing) {
+        setEditedProfile(prev => ({
+          ...prev,
+          avatar_url: url
+        }))
+      } else {
+        setProfile(prev => ({
+          ...prev,
+          avatar_url: url
+        }))
+      }
+      
+      alert('Foto de perfil atualizada com sucesso!')
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Erro ao carregar foto. Tente novamente.')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
   const currentData = isEditing ? editedProfile : profile
 
   return (
@@ -152,11 +204,45 @@ export default function ClientProfilePage() {
       <div className="bg-white shadow rounded-lg">
         <div className="px-6 py-4">
           <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Meu Perfil</h1>
-              <p className="mt-1 text-gray-600">
-                Cliente desde {formatDate(profile.client_since)} • {profile.client_number}
-              </p>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="h-20 w-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                  {currentData.avatar_url ? (
+                    <img
+                      src={currentData.avatar_url}
+                      alt="Foto de perfil"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <UserIcon className="h-10 w-10 text-gray-400" />
+                  )}
+                </div>
+                <button
+                  onClick={() => document.getElementById('avatar-upload')?.click()}
+                  disabled={uploadingAvatar}
+                  className="absolute -bottom-1 -right-1 bg-primary text-white rounded-full p-2 shadow-sm hover:bg-primary/90 disabled:opacity-50"
+                  title="Alterar foto de perfil"
+                >
+                  {uploadingAvatar ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <CameraIcon className="h-4 w-4" />
+                  )}
+                </button>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/png,image/jpeg,image/jpg"
+                  onChange={handleAvatarUpload}
+                />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Meu Perfil</h1>
+                <p className="mt-1 text-gray-600">
+                  Cliente desde {formatDate(profile.client_since)} • {profile.client_number}
+                </p>
+              </div>
             </div>
             <div className="flex space-x-3">
               {!isEditing ? (

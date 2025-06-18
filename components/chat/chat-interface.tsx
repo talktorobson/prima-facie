@@ -360,13 +360,74 @@ export default function ChatInterface({
   }
 
   // Handle file upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // In real implementation, upload file to storage and send message with file data
-    console.log('File selected:', file)
-    // TODO: Implement file upload
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('O arquivo deve ter no máximo 10MB')
+      return
+    }
+
+    // Validate file type
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
+    if (!validTypes.includes(file.type)) {
+      alert('Tipo de arquivo não suportado. Use PNG, JPG, PDF, DOC, DOCX ou TXT.')
+      return
+    }
+
+    setIsSending(true)
+    
+    try {
+      // In real implementation, upload file to storage service
+      // For now, create a local preview URL for images
+      const fileUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null
+      
+      // Simulate file upload delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Determine message type based on file type
+      let messageType: 'file' | 'document' | 'image' = 'file'
+      if (file.type.startsWith('image/')) {
+        messageType = 'image'
+      } else if (file.type === 'application/pdf' || file.type.includes('document') || file.type.includes('word')) {
+        messageType = 'document'
+      }
+
+      // Send file message
+      const fileMessage = await chatService.sendMessage({
+        conversation_id: conversation.id,
+        content: `Arquivo enviado: ${file.name}`,
+        message_type: messageType,
+        file_name: file.name,
+        file_size: file.size,
+        file_url: fileUrl,
+        sender_user_id: isClient ? null : currentUserId,
+        sender_client_id: isClient ? currentUserId : null,
+        sender_name: currentUserName
+      })
+
+      // Add to local messages
+      setMessages(prev => [...prev, fileMessage])
+      
+      // Show notification
+      chatNotificationService.showNotification({
+        title: 'Arquivo enviado',
+        message: `${file.name} foi enviado com sucesso`,
+        type: 'success'
+      })
+      
+    } catch (error) {
+      console.error('File upload error:', error)
+      alert('Erro ao enviar arquivo. Tente novamente.')
+    } finally {
+      setIsSending(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
   }
 
   return (
@@ -451,9 +512,15 @@ export default function ChatInterface({
         <div className="flex items-end space-x-2">
           <button 
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            disabled={isSending}
+            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+            title="Enviar arquivo"
           >
-            <PaperClipIcon className="h-5 w-5" />
+            {isSending ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
+            ) : (
+              <PaperClipIcon className="h-5 w-5" />
+            )}
           </button>
           
           <div className="flex-1 relative">

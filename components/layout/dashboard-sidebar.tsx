@@ -67,16 +67,19 @@ const navigation: NavItem[] = [
     name: 'Calendário',
     href: '/calendar',
     icon: CalendarIcon,
+    roles: ['admin', 'lawyer', 'staff']
   },
   {
     name: 'Tarefas',
     href: '/tasks',
     icon: CheckSquareIcon,
+    roles: ['admin', 'lawyer', 'staff']
   },
   {
     name: 'Documentos',
     href: '/documents',
     icon: FileTextIcon,
+    roles: ['admin', 'lawyer', 'staff']
   },
   {
     name: 'Chat',

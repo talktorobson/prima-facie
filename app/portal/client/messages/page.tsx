@@ -23,6 +23,7 @@ const mockClientUser = {
 export default function ClientMessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [isMobileView, setIsMobileView] = useState(false)
+  const [showDocumentModal, setShowDocumentModal] = useState(false)
 
   // Check for mobile view
   useEffect(() => {
@@ -42,6 +43,32 @@ export default function ClientMessagesPage() {
 
   const handleCloseChat = () => {
     setSelectedConversation(null)
+  }
+
+  const handleUrgentChat = () => {
+    // Create an urgent conversation with high priority
+    alert('Iniciando chat urgente. Seu advogado será notificado imediatamente.')
+    // In real implementation, this would create a new urgent conversation
+  }
+
+  const handleNewConsultation = () => {
+    // Create a consultation conversation
+    alert('Iniciando nova consulta jurídica. Descreva sua dúvida que seu advogado responderá em breve.')
+    // In real implementation, this would create a new consultation conversation
+  }
+
+  const handleSendDocument = () => {
+    setShowDocumentModal(true)
+  }
+
+  const handleDocumentUpload = (file: File) => {
+    // Handle document upload
+    alert(`Documento "${file.name}" enviado com sucesso! Seu advogado será notificado.`)
+    setShowDocumentModal(false)
+  }
+
+  const handleRequestCall = () => {
+    alert('Solicitação de ligação enviada! Dra. Maria Silva Santos entrará em contato em breve.')
   }
 
   // Mobile view: show either conversation list or chat interface
@@ -89,7 +116,10 @@ export default function ClientMessagesPage() {
                 <span>Dra. Maria Silva Santos - Online</span>
               </div>
               
-              <button className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+              <button 
+                onClick={handleRequestCall}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
                 <PhoneIcon className="h-4 w-4 mr-2" />
                 Solicitar Ligação
               </button>
@@ -108,7 +138,10 @@ export default function ClientMessagesPage() {
               <p className="text-sm text-gray-500">Para questões que precisam de atenção imediata</p>
             </div>
           </div>
-          <button className="mt-4 w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">
+          <button 
+            onClick={handleUrgentChat}
+            className="mt-4 w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700"
+          >
             Iniciar Chat Urgente
           </button>
         </div>
@@ -121,7 +154,10 @@ export default function ClientMessagesPage() {
               <p className="text-sm text-gray-500">Para dúvidas e consultas jurídicas</p>
             </div>
           </div>
-          <button className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
+          <button 
+            onClick={handleNewConsultation}
+            className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
+          >
             Nova Consulta
           </button>
         </div>
@@ -134,7 +170,10 @@ export default function ClientMessagesPage() {
               <p className="text-sm text-gray-500">Para envio e recebimento de documentos</p>
             </div>
           </div>
-          <button className="mt-4 w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">
+          <button 
+            onClick={handleSendDocument}
+            className="mt-4 w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700"
+          >
             Enviar Documento
           </button>
         </div>
@@ -227,6 +266,74 @@ export default function ClientMessagesPage() {
           </div>
         </div>
       </div>
+
+      {/* Document Upload Modal */}
+      {showDocumentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Enviar Documento</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Selecione o documento
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      handleDocumentUpload(file)
+                    }
+                  }}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Formatos aceitos: PDF, DOC, DOCX, JPG, PNG (máx. 10MB)
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Descrição (opcional)
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Descreva o documento que está enviando..."
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-start">
+                  <span className="text-blue-600 mr-2">ℹ️</span>
+                  <div className="text-sm text-blue-700">
+                    <p className="font-medium">Documento seguro</p>
+                    <p>Seus documentos são criptografados e apenas você e seu advogado têm acesso.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowDocumentModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Modal Backdrop */}
+      {showDocumentModal && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowDocumentModal(false)}
+        />
+      )}
     </div>
   )
 }

@@ -351,10 +351,43 @@ export default function DocumentsPage() {
     setShowPreviewModal(true)
   }
 
-  const handleDownload = (document: Document) => {
-    // TODO: Implement actual download
-    console.log('Downloading document:', document.name)
-    alert(`Download iniciado: ${document.name}`)
+  const handleDownload = async (document: Document) => {
+    try {
+      // Show downloading indicator
+      const downloadingAlert = `Preparando download de ${document.name}...`
+      console.log(downloadingAlert)
+      
+      // In real implementation, this would fetch from storage service
+      // For now, create a mock file download
+      if (document.download_url) {
+        // If document has a URL, try to download it
+        const link = document.createElement('a')
+        link.href = document.download_url
+        link.download = document.name
+        link.target = '_blank'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } else {
+        // Create a mock PDF file for demonstration
+        const mockContent = `Documento: ${document.name}\nDescrição: ${document.description || 'Sem descrição'}\nData de upload: ${document.uploaded_at}\nTipo: ${document.file_type.toUpperCase()}`
+        const blob = new Blob([mockContent], { type: 'text/plain;charset=utf-8' })
+        
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${document.name}.txt`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      }
+      
+      alert(`Download de "${document.name}" iniciado com sucesso!`)
+    } catch (error) {
+      console.error('Download error:', error)
+      alert('Erro ao fazer download do documento. Tente novamente.')
+    }
   }
 
   const handleEdit = (document: Document) => {

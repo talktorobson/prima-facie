@@ -401,6 +401,7 @@ export default function ReportsPage() {
     }).format(value)
   }
 
+
   const getFrequencyLabel = (frequency: string) => {
     const labels = {
       daily: 'Diário',
@@ -428,13 +429,197 @@ export default function ReportsPage() {
     setShowPreviewModal(true)
   }
 
-  const handleGenerate = async (report: Report) => {
+  // Helper function to generate report content from sample data
+  const generateReportContent = (report: Report) => {
+    const { sample_data } = report
+    return {
+      title: report.name,
+      period: `${dateRange.start} - ${dateRange.end}`,
+      summary: sample_data.summary,
+      charts: sample_data.charts,
+      tables: sample_data.tables
+    }
+  }
+
+  // Helper function to convert data to CSV format
+  const convertToCSV = (reportContent: any) => {
+    const lines = []
+    
+    // Header
+    lines.push(`"${reportContent.title}"`)
+    lines.push(`"Período: ${reportContent.period}"`)
+    lines.push('')
+    
+    // Summary section
+    lines.push('"RESUMO EXECUTIVO"')
+    lines.push(`"Total de Casos","${reportContent.summary.total_cases}"`)
+    lines.push(`"Total de Clientes","${reportContent.summary.total_clients}"`)
+    lines.push(`"Receita Total","R$ ${reportContent.summary.total_revenue.toLocaleString('pt-BR')}"`)
+    lines.push(`"Horas Faturáveis","${reportContent.summary.billable_hours}"`)
+    lines.push(`"Documentos Criados","${reportContent.summary.documents_created}"`)
+    lines.push(`"Taxa de Sucesso","${reportContent.summary.success_rate}%"`)
+    lines.push('')
+    
+    // Charts data
+    if (reportContent.charts) {
+      lines.push('"DADOS DOS GRÁFICOS"')
+      lines.push('"Tendência de Receita (últimos 4 meses)"')
+      reportContent.charts.revenue_trend.forEach((value: number, index: number) => {
+        const months = ['Outubro', 'Novembro', 'Dezembro', 'Janeiro']
+        lines.push(`"${months[index]}","R$ ${value.toLocaleString('pt-BR')}"`)
+      })
+      lines.push('')
+      
+      lines.push('"Distribuição de Casos por Área"')
+      reportContent.charts.case_distribution.forEach((item: any) => {
+        lines.push(`"${item.label}","${item.value}%"`)
+      })
+      lines.push('')
+    }
+    
+    // Tables data
+    if (reportContent.tables) {
+      lines.push('"TOP CLIENTES"')
+      lines.push('"Cliente","Receita","Casos"')
+      reportContent.tables.top_clients.forEach((client: any) => {
+        lines.push(`"${client.name}","R$ ${client.revenue.toLocaleString('pt-BR')}","${client.cases}"`)
+      })
+      lines.push('')
+      
+      if (reportContent.tables.case_outcomes) {
+        lines.push('"RESULTADOS DOS CASOS"')
+        lines.push('"Tipo","Total","Ganhos","Perdas","Pendentes"')
+        reportContent.tables.case_outcomes.forEach((outcome: any) => {
+          lines.push(`"${outcome.type}","${outcome.total}","${outcome.won}","${outcome.lost}","${outcome.pending}"`)
+        })
+        lines.push('')
+      }
+      
+      if (reportContent.tables.lawyer_performance) {
+        lines.push('"PERFORMANCE DOS ADVOGADOS"')
+        lines.push('"Advogado","Casos","Horas","Receita"')
+        reportContent.tables.lawyer_performance.forEach((lawyer: any) => {
+          lines.push(`"${lawyer.name}","${lawyer.cases}","${lawyer.hours}","R$ ${lawyer.revenue.toLocaleString('pt-BR')}"`)
+        })
+      }
+    }
+    
+    return lines.join('\n')
+  }
+
+  // Helper function to format data as PDF content (text format)
+  const formatAsPDF = (report: Report, reportContent: any) => {
+    const lines = []
+    
+    lines.push('='.repeat(60))
+    lines.push(`RELATÓRIO: ${reportContent.title.toUpperCase()}`)
+    lines.push(`Período: ${reportContent.period}`)
+    lines.push(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`)
+    lines.push('='.repeat(60))
+    lines.push('')
+    
+    // Summary
+    lines.push('RESUMO EXECUTIVO')
+    lines.push('-'.repeat(20))
+    lines.push(`Total de Casos: ${reportContent.summary.total_cases}`)
+    lines.push(`Total de Clientes: ${reportContent.summary.total_clients}`)
+    lines.push(`Receita Total: R$ ${reportContent.summary.total_revenue.toLocaleString('pt-BR')}`)
+    lines.push(`Horas Faturáveis: ${reportContent.summary.billable_hours}`)
+    lines.push(`Documentos Criados: ${reportContent.summary.documents_created}`)
+    lines.push(`Taxa de Sucesso: ${reportContent.summary.success_rate}%`)
+    lines.push('')
+    
+    // Charts
+    if (reportContent.charts) {
+      lines.push('TENDÊNCIA DE RECEITA (Últimos 4 meses)')
+      lines.push('-'.repeat(35))
+      const months = ['Outubro', 'Novembro', 'Dezembro', 'Janeiro']
+      reportContent.charts.revenue_trend.forEach((value: number, index: number) => {
+        lines.push(`${months[index]}: R$ ${value.toLocaleString('pt-BR')}`)
+      })
+      lines.push('')
+      
+      lines.push('DISTRIBUIÇÃO DE CASOS POR ÁREA')
+      lines.push('-'.repeat(30))
+      reportContent.charts.case_distribution.forEach((item: any) => {
+        lines.push(`${item.label}: ${item.value}%`)
+      })
+      lines.push('')
+    }
+    
+    // Tables
+    if (reportContent.tables) {
+      lines.push('TOP CLIENTES')
+      lines.push('-'.repeat(15))
+      reportContent.tables.top_clients.forEach((client: any, index: number) => {
+        lines.push(`${index + 1}. ${client.name} - R$ ${client.revenue.toLocaleString('pt-BR')} (${client.cases} casos)`)
+      })
+      lines.push('')
+      
+      if (reportContent.tables.case_outcomes) {
+        lines.push('RESULTADOS DOS CASOS')
+        lines.push('-'.repeat(20))
+        reportContent.tables.case_outcomes.forEach((outcome: any) => {
+          lines.push(`${outcome.type}: ${outcome.total} total (${outcome.won} ganhos, ${outcome.lost} perdas, ${outcome.pending} pendentes)`)
+        })
+        lines.push('')
+      }
+      
+      if (reportContent.tables.lawyer_performance) {
+        lines.push('PERFORMANCE DOS ADVOGADOS')
+        lines.push('-'.repeat(25))
+        reportContent.tables.lawyer_performance.forEach((lawyer: any, index: number) => {
+          lines.push(`${index + 1}. ${lawyer.name} - ${lawyer.cases} casos, ${lawyer.hours}h, R$ ${lawyer.revenue.toLocaleString('pt-BR')}`)
+        })
+        lines.push('')
+      }
+    }
+    
+    lines.push('='.repeat(60))
+    lines.push('Relatório gerado pelo Sistema Prima Facie')
+    lines.push('Dávila Reis Advocacia - São Paulo, SP')
+    lines.push('='.repeat(60))
+    
+    return lines.join('\n')
+  }
+
+  const handleGenerate = async (report: Report, format: 'pdf' | 'excel' = 'pdf') => {
     setIsGenerating(true)
     
-    // Simulate report generation
-    setTimeout(() => {
-      setIsGenerating(false)
-      alert(`Relatório "${report.name}" gerado com sucesso!`)
+    try {
+      // Generate actual report content based on sample data
+      const reportContent = generateReportContent(report)
+      
+      let blob: Blob
+      let fileExtension: string
+      
+      if (format === 'excel') {
+        // Create Excel format (CSV for compatibility)
+        const csvContent = convertToCSV(reportContent)
+        blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        fileExtension = 'csv'
+      } else {
+        // Create PDF-like content (text format for demonstration)
+        const pdfContent = formatAsPDF(report, reportContent)
+        blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' })
+        fileExtension = 'txt'
+      }
+      
+      // Generate filename
+      const timestamp = new Date().toISOString().split('T')[0]
+      const filename = `${report.name.toLowerCase().replace(/\s+/g, '_')}_${timestamp}.${fileExtension}`
+      
+      // Trigger download
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      alert(`Relatório "${report.name}" gerado e baixado com sucesso!`)
       
       // Update last generated time
       setReportCategories(prev => 
@@ -447,12 +632,16 @@ export default function ReportsPage() {
           )
         }))
       )
-    }, 2000)
+    } catch (error) {
+      console.error('Report generation error:', error)
+      alert('Erro ao gerar relatório. Tente novamente.')
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const handleDownload = (report: Report, format: 'pdf' | 'excel') => {
-    console.log(`Downloading report ${report.name} as ${format}`)
-    alert(`Download iniciado: ${report.name}.${format}`)
+    handleGenerate(report, format)
   }
 
   if (loading) {

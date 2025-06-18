@@ -367,6 +367,50 @@ export default function ClientMatterDetailPage() {
     }
   }
 
+  const handleDocumentView = (document: any) => {
+    // Create a preview/view functionality
+    if (document.url) {
+      window.open(document.url, '_blank')
+    } else {
+      alert(`Visualizando: ${document.title}\n\nEste documento está sendo processado pela equipe jurídica.`)
+    }
+  }
+
+  const handleDocumentDownload = async (document: any) => {
+    try {
+      console.log(`Iniciando download de: ${document.title}`)
+      
+      if (document.url) {
+        // If document has a URL, download it
+        const link = document.createElement('a')
+        link.href = document.url
+        link.download = document.file_name || document.title
+        link.target = '_blank'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } else {
+        // Create a mock document file for demonstration
+        const mockContent = `DOCUMENTO DO PROCESSO: ${matter.title}\n\nTítulo: ${document.title}\nDescrição: ${document.description}\nData: ${document.upload_date}\nCategoria: ${document.category}\n\nEste é um documento de demonstração do sistema Prima Facie.\n\n--- DÁVILA REIS ADVOCACIA ---`
+        const blob = new Blob([mockContent], { type: 'text/plain;charset=utf-8' })
+        
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${document.file_name || document.title}.txt`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      }
+      
+      alert(`Download de "${document.title}" iniciado com sucesso!`)
+    } catch (error) {
+      console.error('Download error:', error)
+      alert('Erro ao fazer download do documento. Tente novamente.')
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -632,13 +676,15 @@ export default function ClientMatterDetailPage() {
                         </div>
                         <div className="flex space-x-1">
                           <button
-                            className="text-gray-400 hover:text-gray-600"
+                            onClick={() => handleDocumentView(document)}
+                            className="text-gray-400 hover:text-gray-600 transition-colors"
                             title="Visualizar"
                           >
                             <EyeIcon className="h-4 w-4" />
                           </button>
                           <button
-                            className="text-gray-400 hover:text-gray-600"
+                            onClick={() => handleDocumentDownload(document)}
+                            className="text-gray-400 hover:text-blue-600 transition-colors"
                             title="Download"
                           >
                             <DownloadIcon className="h-4 w-4" />

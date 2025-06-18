@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/hooks/use-auth'
 import ConversationList from '@/components/chat/conversation-list'
 import ChatInterface from '@/components/chat/chat-interface'
 import NotificationPanel from '@/components/notifications/notification-panel'
+import NewConversationModal from '@/components/chat/new-conversation-modal'
 import { Conversation } from '@/lib/supabase/realtime'
 import { 
   ChatBubbleLeftRightIcon,
@@ -17,6 +18,8 @@ export default function MessagesPage() {
   const { user } = useAuth()
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [isMobileView, setIsMobileView] = useState(false)
+  const [showNewConversationModal, setShowNewConversationModal] = useState(false)
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
 
   // Check for mobile view
   useEffect(() => {
@@ -36,6 +39,54 @@ export default function MessagesPage() {
 
   const handleCloseChat = () => {
     setSelectedConversation(null)
+  }
+
+  const handleNewConversation = () => {
+    setShowNewConversationModal(true)
+  }
+
+  const handleCreateConversation = (data: {
+    clientId: string
+    topicId: string
+    title: string
+    conversationType: 'internal' | 'client' | 'whatsapp'
+    priority: 'low' | 'normal' | 'high' | 'urgent'
+  }) => {
+    // The conversation list component will handle the actual creation
+    setShowNewConversationModal(false)
+  }
+
+  const handlePhoneCall = () => {
+    if (selectedConversation) {
+      alert('Funcionalidade de ligação em desenvolvimento. Em breve você poderá ligar diretamente pelo sistema.')
+    } else {
+      alert('Selecione uma conversa para iniciar uma ligação.')
+    }
+  }
+
+  const handleVideoCall = () => {
+    if (selectedConversation) {
+      alert('Funcionalidade de videochamada em desenvolvimento. Em breve você poderá fazer videochamadas pelo sistema.')
+    } else {
+      alert('Selecione uma conversa para iniciar uma videochamada.')
+    }
+  }
+
+  const handleSettings = () => {
+    setShowSettingsModal(true)
+  }
+
+  const handleWhatsAppIntegration = () => {
+    alert('Redirecionando para configuração do WhatsApp Business...')
+    // In real implementation, this would open WhatsApp integration settings
+  }
+
+  const handlePhoneIntegration = () => {
+    alert('Funcionalidade de integração telefônica em desenvolvimento.')
+  }
+
+  const handleVideoIntegration = () => {
+    alert('Funcionalidade de integração de vídeo em desenvolvimento.')
   }
 
   if (!user) {
@@ -101,14 +152,26 @@ export default function MessagesPage() {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                  <button 
+                    onClick={handlePhoneCall}
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                    title="Fazer ligação"
+                  >
                     <PhoneIcon className="h-5 w-5" />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                  <button 
+                    onClick={handleVideoCall}
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                    title="Videochamada"
+                  >
                     <VideoCameraIcon className="h-5 w-5" />
                   </button>
                   <NotificationPanel userId={user.id} isClient={user.role === 'client'} />
-                  <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                  <button 
+                    onClick={handleSettings}
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                    title="Configurações"
+                  >
                     <CogIcon className="h-5 w-5" />
                   </button>
                 </div>
@@ -152,7 +215,10 @@ export default function MessagesPage() {
                 
                 {user.role !== 'client' && (
                   <div className="space-y-3">
-                    <button className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
+                    <button 
+                      onClick={handleNewConversation}
+                      className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+                    >
                       <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
                       Nova Conversa
                     </button>
@@ -160,15 +226,24 @@ export default function MessagesPage() {
                     <div className="text-sm text-gray-500">
                       <p>Ou use as integrações disponíveis:</p>
                       <div className="flex items-center justify-center space-x-4 mt-2">
-                        <button className="flex items-center space-x-1 text-green-600 hover:text-green-700">
+                        <button 
+                          onClick={handleWhatsAppIntegration}
+                          className="flex items-center space-x-1 text-green-600 hover:text-green-700"
+                        >
                           <span>📱</span>
                           <span>WhatsApp</span>
                         </button>
-                        <button className="flex items-center space-x-1 text-blue-600 hover:text-blue-700">
+                        <button 
+                          onClick={handlePhoneIntegration}
+                          className="flex items-center space-x-1 text-blue-600 hover:text-blue-700"
+                        >
                           <PhoneIcon className="h-4 w-4" />
                           <span>Telefone</span>
                         </button>
-                        <button className="flex items-center space-x-1 text-purple-600 hover:text-purple-700">
+                        <button 
+                          onClick={handleVideoIntegration}
+                          className="flex items-center space-x-1 text-purple-600 hover:text-purple-700"
+                        >
                           <VideoCameraIcon className="h-4 w-4" />
                           <span>Vídeo</span>
                         </button>
@@ -181,6 +256,84 @@ export default function MessagesPage() {
           )}
         </div>
       </div>
+
+      {/* New Conversation Modal */}
+      <NewConversationModal
+        isOpen={showNewConversationModal}
+        onClose={() => setShowNewConversationModal(false)}
+        onCreateConversation={handleCreateConversation}
+      />
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Configurações de Mensagens</h3>
+            <div className="space-y-4">
+              <div className="border-b border-gray-200 pb-3">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Notificações</h4>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Notificações por email</span>
+                  <input type="checkbox" defaultChecked className="rounded" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Sons de notificação</span>
+                  <input type="checkbox" defaultChecked className="rounded" />
+                </div>
+              </div>
+              
+              <div className="border-b border-gray-200 pb-3">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">WhatsApp Business</h4>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Integração ativa</span>
+                  <span className="text-sm text-green-600">✓ Conectado</span>
+                </div>
+                <button className="text-sm text-blue-600 hover:text-blue-700">
+                  Gerenciar integração
+                </button>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Privacidade</h4>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Status de leitura</span>
+                  <input type="checkbox" defaultChecked className="rounded" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Status online</span>
+                  <input type="checkbox" defaultChecked className="rounded" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  alert('Configurações salvas com sucesso!')
+                  setShowSettingsModal(false)
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal Backdrop */}
+      {showSettingsModal && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowSettingsModal(false)}
+        />
+      )}
     </div>
   )
 }

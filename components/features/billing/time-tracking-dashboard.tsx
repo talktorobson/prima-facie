@@ -23,7 +23,9 @@ import {
   BarChart3,
   PieChart,
   Activity,
-  CheckCircle
+  CheckCircle,
+  Search,
+  Filter
 } from 'lucide-react'
 import { timeTrackingService } from '@/lib/billing/time-tracking-service'
 import { TimeEntryForm } from './time-entry-form'
@@ -59,6 +61,11 @@ export function TimeTrackingDashboard({
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month'>('week')
   const [metrics, setMetrics] = useState<TimeTrackingMetrics | null>(null)
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([])
+  const [filteredEntries, setFilteredEntries] = useState<TimeEntry[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [billableFilter, setBillableFilter] = useState<string>('all')
 
   useEffect(() => {
     loadDashboardData()
@@ -83,6 +90,39 @@ export function TimeTrackingDashboard({
       if (timerInterval) clearInterval(timerInterval)
     }
   }, [activeSession])
+
+  // Filter entries based on search term and filters
+  useEffect(() => {
+    let filtered = recentEntries
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(entry =>
+        entry.activity_description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.matter?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.client_subscription?.plan_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.task_category?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(entry => entry.entry_status === statusFilter)
+    }
+
+    // Type filter
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(entry => entry.entry_type === typeFilter)
+    }
+
+    // Billable filter
+    if (billableFilter !== 'all') {
+      const isBillable = billableFilter === 'billable'
+      filtered = filtered.filter(entry => entry.is_billable === isBillable)
+    }
+
+    setFilteredEntries(filtered)
+  }, [recentEntries, searchTerm, statusFilter, typeFilter, billableFilter])
 
   const loadDashboardData = async () => {
     setIsLoading(true)
@@ -124,7 +164,8 @@ export function TimeTrackingDashboard({
 
       setDashboardData({ ...dashboard, law_firm_id: lawFirmId })
       setMetrics(metricsData)
-      setRecentEntries(entries.slice(0, 10))
+      setRecentEntries(entries.slice(0, 50)) // Show more entries for better filtering
+      setFilteredEntries(entries.slice(0, 50))
     } catch (error) {
       console.error('Error loading dashboard data:', error)
     } finally {
@@ -578,16 +619,74 @@ export function TimeTrackingDashboard({
         </TabsContent>
 
         <TabsContent value="entries" className="space-y-6">
+          {/* Search and Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por atividade, caso, assinatura ou categoria..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <select
+                    className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="all">Todos Status</option>
+                    {TIME_ENTRY_STATUS_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  <select
+                    className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                  >
+                    <option value="all">Todos Tipos</option>
+                    {TIME_ENTRY_TYPE_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  <select
+                    className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    value={billableFilter}
+                    onChange={(e) => setBillableFilter(e.target.value)}
+                  >
+                    <option value="all">Faturável/Não</option>
+                    <option value="billable">Faturável</option>
+                    <option value="non-billable">Não Faturável</option>
+                  </select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
-              <CardTitle>Entradas de Tempo Recentes</CardTitle>
+              <CardTitle>Entradas de Tempo ({filteredEntries.length})</CardTitle>
               <CardDescription>
-                Suas últimas {recentEntries.length} entradas de tempo
+                {filteredEntries.length} de {recentEntries.length} entradas {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' || billableFilter !== 'all' ? 'encontradas' : 'exibidas'}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentEntries.map((entry) => (
+                {filteredEntries.map((entry) => (
                   <div key={entry.id} className="p-4 border rounded-lg hover:bg-gray-50">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -636,6 +735,14 @@ export function TimeTrackingDashboard({
                     </div>
                   </div>
                 ))}
+                
+                {filteredEntries.length === 0 && recentEntries.length > 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Nenhuma entrada encontrada com os filtros aplicados</p>
+                    <p className="text-sm">Tente ajustar os filtros ou limpar a busca</p>
+                  </div>
+                )}
                 
                 {recentEntries.length === 0 && (
                   <div className="text-center py-8 text-gray-500">

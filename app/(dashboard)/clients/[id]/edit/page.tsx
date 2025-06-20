@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { useAuth } from '@/lib/hooks/use-auth'
+import { clientService, Client, ClientFormData } from '@/lib/clients/client-service'
 import { 
   ArrowLeftIcon,
   UserIcon,
@@ -181,26 +183,45 @@ export default function EditClientPage() {
   const router = useRouter()
   const params = useParams()
   const clientId = params.id as string
+  const { profile } = useAuth()
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isLoading, setIsLoading] = useState(true)
   
-  const [formData, setFormData] = useState<any>(null)
+  const [formData, setFormData] = useState<Client | null>(null)
 
   useEffect(() => {
-    // Load client data
-    const clientData = getMockClient(clientId)
-    if (clientData) {
-      setFormData(clientData)
-    } else {
-      // Client not found, redirect to list
-      router.push('/clients')
+    const loadClient = async () => {
+      if (!clientId) {
+        router.push('/clients')
+        return
+      }
+      
+      try {
+        setIsLoading(true)
+        const client = await clientService.getClient(clientId)
+        
+        if (client) {
+          setFormData(client)
+        } else {
+          router.push('/clients')
+        }
+      } catch (error) {
+        console.error('Error loading client:', error)
+        setErrors({ load: 'Erro ao carregar dados do cliente' })
+        router.push('/clients')
+      } finally {
+        setIsLoading(false)
+      }
     }
+
+    loadClient()
   }, [clientId, router])
 
-  if (!formData) {
+  if (isLoading || !formData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -289,14 +310,37 @@ export default function EditClientPage() {
     setIsSubmitting(true)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Prepare client data for database
+      const updateData: Partial<ClientFormData> = {
+        name: formData.name.trim(),
+        type: formData.type,
+        email: formData.email.trim(),
+        phone: formData.phone || undefined,
+        mobile: formData.mobile || undefined,
+        status: formData.status,
+        address_street: formData.address_street || undefined,
+        address_number: formData.address_number || undefined,
+        address_city: formData.address_city || undefined,
+        address_state: formData.address_state || undefined,
+        address_zipcode: formData.address_zipcode || undefined,
+        notes: formData.notes || undefined,
+        portal_enabled: formData.portal_enabled
+      }
+
+      // Add type-specific fields
+      if (formData.type === 'pessoa_fisica') {
+        updateData.cpf = formData.cpf?.trim()
+      } else {
+        updateData.cnpj = formData.cnpj?.trim()
+      }
+
+      // Update client in database
+      await clientService.updateClient(clientId, updateData)
       
-      console.log('Client updated:', formData)
       router.push(`/clients/${clientId}`)
     } catch (error) {
       console.error('Error updating client:', error)
-      alert('Erro ao atualizar cliente. Tente novamente.')
+      setErrors({ submit: 'Erro ao atualizar cliente. Tente novamente.' })
     } finally {
       setIsSubmitting(false)
     }
@@ -306,14 +350,13 @@ export default function EditClientPage() {
     setIsDeleting(true)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Delete client from database (soft delete)
+      await clientService.deleteClient(clientId)
       
-      console.log('Client deleted:', clientId)
       router.push('/clients')
     } catch (error) {
       console.error('Error deleting client:', error)
-      alert('Erro ao excluir cliente. Tente novamente.')
+      setErrors({ delete: 'Erro ao excluir cliente. Tente novamente.' })
     } finally {
       setIsDeleting(false)
       setShowDeleteModal(false)
@@ -1222,6 +1265,15 @@ export default function EditClientPage() {
             </div>
           </div>
         </div>
+
+        {/* Error Display */}
+        {(errors.submit || errors.delete) && (
+          <div className="bg-red-50 border border-red-300 rounded-md p-4">
+            <p className="text-sm text-red-600">
+              {errors.submit || errors.delete}
+            </p>
+          </div>
+        )}
 
         {/* Form Actions */}
         <div className="flex justify-end space-x-3">

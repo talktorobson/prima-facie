@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useAuth } from '@/lib/hooks/use-auth'
+import { clientService, ClientFormData } from '@/lib/clients/client-service'
 import { 
   ArrowLeftIcon,
   UserIcon,
@@ -60,6 +62,7 @@ const paymentMethodOptions = [
 
 export default function NewClientPage() {
   const router = useRouter()
+  const { profile } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   const [formData, setFormData] = useState({
@@ -279,13 +282,40 @@ export default function NewClientPage() {
       return
     }
 
+    if (!profile?.law_firm_id) {
+      setErrors({ submit: 'Erro: Escritório não identificado' })
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      // Mock submission - in real app, this would call the API
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      console.log('Creating client with data:', formData)
+      // Prepare client data for database
+      const clientData: ClientFormData = {
+        name: formData.name.trim(),
+        type: formData.type,
+        email: formData.email.trim(),
+        phone: formData.phone || undefined,
+        mobile: formData.mobile || undefined,
+        status: formData.status,
+        address_street: formData.address_street || undefined,
+        address_number: formData.address_number || undefined,
+        address_city: formData.address_city || undefined,
+        address_state: formData.address_state || undefined,
+        address_zipcode: formData.address_zipcode || undefined,
+        notes: formData.notes || undefined,
+        portal_enabled: formData.portal_enabled
+      }
+
+      // Add type-specific fields
+      if (formData.type === 'pessoa_fisica') {
+        clientData.cpf = formData.cpf.trim()
+      } else {
+        clientData.cnpj = formData.cnpj.trim()
+      }
+
+      // Create client in database
+      const newClient = await clientService.createClient(profile.law_firm_id, clientData)
       
       // Redirect to clients list with success message
       router.push('/clients?created=true')

@@ -13,78 +13,38 @@ import {
   UserIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
+import { matterService } from '@/lib/matters/matter-service'
+import { useAuthContext } from '@/lib/providers/auth-provider'
+import { Matter, MatterWithRelations } from '@/types/database'
 
-// Mock data for development
-const mockMatters = [
-  {
-    id: '1',
-    matter_number: '2024/001',
-    title: 'Ação Trabalhista - Rescisão Indevida',
-    client_name: 'João Silva Santos',
-    area_juridica: 'Trabalhista',
-    status: 'ativo',
-    priority: 'alta',
-    responsible_lawyer: 'Maria Silva Santos',
-    opened_date: '2024-01-15',
-    next_hearing_date: '2024-02-20T14:00:00',
-    case_value: 25000.00,
-    processo_numero: '5001234-20.2024.5.02.0001'
-  },
-  {
-    id: '2',
-    matter_number: '2024/002',
-    title: 'Divórcio Consensual',
-    client_name: 'Ana Costa Pereira',
-    area_juridica: 'Família',
-    status: 'analise',
-    priority: 'media',
-    responsible_lawyer: 'João Santos Oliveira',
-    opened_date: '2024-01-20',
-    case_value: 0,
-    processo_numero: null
-  },
-  {
-    id: '3',
-    matter_number: '2024/003',
-    title: 'Consultoria Empresarial - Contrato de Sociedade',
-    client_name: 'Empresa ABC Ltda',
-    area_juridica: 'Empresarial',
-    status: 'finalizado',
-    priority: 'baixa',
-    responsible_lawyer: 'Maria Silva Santos',
-    opened_date: '2023-12-10',
-    closed_date: '2024-01-10',
-    case_value: 50000.00
-  },
-  {
-    id: '4',
-    matter_number: '2024/004',
-    title: 'Ação de Cobrança',
-    client_name: 'Pedro Rodrigues',
-    area_juridica: 'Civil',
-    status: 'aguardando_cliente',
-    priority: 'urgente',
-    responsible_lawyer: 'João Santos Oliveira',
-    opened_date: '2024-01-25',
-    next_hearing_date: '2024-02-15T10:30:00',
-    case_value: 15000.00,
-    processo_numero: '1001234-20.2024.8.26.0001'
-  }
-]
+// Database-powered matter interface
+interface MatterDisplay {
+  id: string
+  matter_number: string
+  title: string
+  client_name: string
+  area_juridica: string
+  status: string
+  priority: string
+  responsible_lawyer: string
+  opened_date: string
+  closed_date?: string
+  next_hearing_date?: string
+  case_value: number
+  processo_numero?: string
+}
 
 const statusOptions = [
   { value: '', label: 'Todos os Status' },
-  { value: 'novo', label: 'Novo' },
-  { value: 'analise', label: 'Em Análise' },
-  { value: 'ativo', label: 'Ativo' },
-  { value: 'suspenso', label: 'Suspenso' },
-  { value: 'aguardando_cliente', label: 'Aguardando Cliente' },
-  { value: 'aguardando_documentos', label: 'Aguardando Documentos' },
-  { value: 'finalizado', label: 'Finalizado' },
-  { value: 'arquivado', label: 'Arquivado' },
-  { value: 'cancelado', label: 'Cancelado' }
+  { value: 'active', label: 'Ativo' },
+  { value: 'on_hold', label: 'Suspenso' },
+  { value: 'closed', label: 'Finalizado' },
+  { value: 'settled', label: 'Acordo' },
+  { value: 'dismissed', label: 'Arquivado' },
+  { value: 'cancelled', label: 'Cancelado' }
 ]
 
 const areaOptions = [
@@ -103,15 +63,18 @@ const areaOptions = [
 
 const priorityOptions = [
   { value: '', label: 'Todas as Prioridades' },
-  { value: 'baixa', label: 'Baixa' },
-  { value: 'media', label: 'Média' },
-  { value: 'alta', label: 'Alta' },
-  { value: 'urgente', label: 'Urgente' }
+  { value: 'low', label: 'Baixa' },
+  { value: 'medium', label: 'Média' },
+  { value: 'high', label: 'Alta' },
+  { value: 'urgent', label: 'Urgente' }
 ]
 
 export default function MattersPage() {
-  const [matters, setMatters] = useState(mockMatters)
-  const [filteredMatters, setFilteredMatters] = useState(mockMatters)
+  const { profile } = useAuthContext()
+  const [matters, setMatters] = useState<MatterDisplay[]>([])
+  const [filteredMatters, setFilteredMatters] = useState<MatterDisplay[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [areaFilter, setAreaFilter] = useState('')
@@ -119,6 +82,60 @@ export default function MattersPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
+
+  // Load matters from database
+  useEffect(() => {
+    async function loadMatters() {
+      if (!profile?.law_firm_id) return
+      
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const dbMatters = await matterService.getMatters(profile.law_firm_id)
+        
+        // Transform database data to display format
+        const displayMatters: MatterDisplay[] = dbMatters.map((matter: any) => {
+          // Get client name from matter contacts
+          const contact = matter.matter_contacts?.[0]?.contacts
+          let clientName = 'Cliente não informado'
+          
+          if (contact) {
+            if (contact.contact_type === 'company') {
+              clientName = contact.company_name || contact.full_name
+            } else {
+              clientName = contact.full_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim()
+            }
+          }
+          
+          return {
+            id: matter.id,
+            matter_number: matter.matter_number,
+            title: matter.title,
+            client_name: clientName,
+            area_juridica: matter.matter_types?.name || 'Geral',
+            status: matter.status || 'active',
+            priority: matter.priority || 'medium',
+            responsible_lawyer: 'Não atribuído', // TODO: Add lawyer lookup
+            opened_date: matter.opened_date || matter.created_at,
+            closed_date: matter.closed_date,
+            next_hearing_date: matter.next_court_date,
+            case_value: matter.flat_fee || matter.total_billed || 0,
+            processo_numero: matter.process_number
+          }
+        })
+        
+        setMatters(displayMatters)
+      } catch (err) {
+        console.error('Error loading matters:', err)
+        setError('Erro ao carregar processos. Tente novamente.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadMatters()
+  }, [profile?.law_firm_id])
 
   // Filter and search logic
   useEffect(() => {
@@ -161,27 +178,21 @@ export default function MattersPage() {
 
   const getStatusBadge = (status: string) => {
     const statusStyles = {
-      novo: 'bg-blue-100 text-blue-800',
-      analise: 'bg-yellow-100 text-yellow-800',
-      ativo: 'bg-green-100 text-green-800',
-      suspenso: 'bg-gray-100 text-gray-800',
-      aguardando_cliente: 'bg-orange-100 text-orange-800',
-      aguardando_documentos: 'bg-purple-100 text-purple-800',
-      finalizado: 'bg-emerald-100 text-emerald-800',
-      arquivado: 'bg-slate-100 text-slate-800',
-      cancelado: 'bg-red-100 text-red-800'
+      active: 'bg-green-100 text-green-800',
+      on_hold: 'bg-yellow-100 text-yellow-800',
+      closed: 'bg-emerald-100 text-emerald-800',
+      settled: 'bg-blue-100 text-blue-800',
+      dismissed: 'bg-slate-100 text-slate-800',
+      cancelled: 'bg-red-100 text-red-800'
     }
 
     const statusLabels = {
-      novo: 'Novo',
-      analise: 'Em Análise',
-      ativo: 'Ativo',
-      suspenso: 'Suspenso',
-      aguardando_cliente: 'Aguardando Cliente',
-      aguardando_documentos: 'Aguardando Docs',
-      finalizado: 'Finalizado',
-      arquivado: 'Arquivado',
-      cancelado: 'Cancelado'
+      active: 'Ativo',
+      on_hold: 'Suspenso',
+      closed: 'Finalizado',
+      settled: 'Acordo',
+      dismissed: 'Arquivado',
+      cancelled: 'Cancelado'
     }
 
     return (
@@ -193,17 +204,17 @@ export default function MattersPage() {
 
   const getPriorityBadge = (priority: string) => {
     const priorityStyles = {
-      baixa: 'bg-gray-100 text-gray-600',
-      media: 'bg-blue-100 text-blue-600',
-      alta: 'bg-orange-100 text-orange-600',
-      urgente: 'bg-red-100 text-red-600'
+      low: 'bg-gray-100 text-gray-600',
+      medium: 'bg-blue-100 text-blue-600',
+      high: 'bg-orange-100 text-orange-600',
+      urgent: 'bg-red-100 text-red-600'
     }
 
     const priorityLabels = {
-      baixa: 'Baixa',
-      media: 'Média',
-      alta: 'Alta',
-      urgente: 'Urgente'
+      low: 'Baixa',
+      medium: 'Média',
+      high: 'Alta',
+      urgent: 'Urgente'
     }
 
     return (
@@ -226,6 +237,65 @@ export default function MattersPage() {
 
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString('pt-BR')
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Processos</h1>
+            <p className="mt-2 text-gray-600">
+              Gerencie todos os processos jurídicos do escritório
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-gray-500">Carregando processos...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Processos</h1>
+            <p className="mt-2 text-gray-600">
+              Gerencie todos os processos jurídicos do escritório
+            </p>
+          </div>
+        </div>
+        <div className="rounded-md bg-red-50 p-4">
+          <div className="flex">
+            <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">
+                Erro ao carregar processos
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
+              </div>
+              <div className="mt-4">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-red-100 px-2 py-1.5 rounded-md text-sm font-medium text-red-800 hover:bg-red-200"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -281,7 +351,7 @@ export default function MattersPage() {
                     Processos Ativos
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {matters.filter(m => m.status === 'ativo').length}
+                    {matters.filter(m => m.status === 'active').length}
                   </dd>
                 </dl>
               </div>
@@ -301,7 +371,7 @@ export default function MattersPage() {
                     Aguardando Ação
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {matters.filter(m => m.status === 'aguardando_cliente' || m.status === 'aguardando_documentos').length}
+                    {matters.filter(m => m.status === 'on_hold').length}
                   </dd>
                 </dl>
               </div>
@@ -321,7 +391,7 @@ export default function MattersPage() {
                     Finalizados (Este Mês)
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {matters.filter(m => m.status === 'finalizado').length}
+                    {matters.filter(m => m.status === 'closed' || m.status === 'settled').length}
                   </dd>
                 </dl>
               </div>

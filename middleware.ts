@@ -3,6 +3,63 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { Database } from '@/types/database'
 
+// SECURITY: Path normalization utilities to prevent directory traversal
+function normalizePath(path: string): string {
+  // Remove multiple consecutive slashes
+  path = path.replace(/\/+/g, '/')
+  
+  // Split path into segments
+  const segments = path.split('/').filter(segment => segment !== '')
+  const normalizedSegments: string[] = []
+  
+  for (const segment of segments) {
+    if (segment === '..') {
+      // Remove parent directory reference
+      normalizedSegments.pop()
+    } else if (segment !== '.') {
+      // Keep valid segments (exclude current directory references)
+      normalizedSegments.push(segment)
+    }
+  }
+  
+  // Reconstruct path
+  const normalizedPath = '/' + normalizedSegments.join('/')
+  return normalizedPath === '/' ? '/' : normalizedPath
+}
+
+function containsTraversalAttempt(path: string): boolean {
+  // Check for common directory traversal patterns
+  const traversalPatterns = [
+    '../',
+    '..\\',
+    '%2e%2e%2f',  // URL encoded ../
+    '%2e%2e%5c',  // URL encoded ..\
+    '%2e%2e/',    // Partially encoded
+    '..%2f',      // Partially encoded
+    '%252e%252e%252f', // Double URL encoded
+  ]
+  
+  const lowerPath = path.toLowerCase()
+  return traversalPatterns.some(pattern => lowerPath.includes(pattern))
+}
+
+function validatePortalAccess(normalizedPath: string, userType: string | null): boolean {
+  // SECURITY: Strict portal route validation
+  if (!userType) return false
+  
+  // Client access validation - MUST be exactly within /portal/client/* routes
+  if (userType === 'client') {
+    return normalizedPath === '/portal/client' || normalizedPath.startsWith('/portal/client/')
+  }
+  
+  // Staff access validation - can access /portal/staff/* routes
+  if (['admin', 'lawyer', 'staff'].includes(userType)) {
+    return normalizedPath === '/portal/staff' || normalizedPath.startsWith('/portal/staff/')
+  }
+  
+  return false
+}
+
 export async function middleware(req: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -94,7 +151,17 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  const path = req.nextUrl.pathname
+  const rawPath = req.nextUrl.pathname
+  
+  // SECURITY: Normalize path to prevent directory traversal attacks
+  // Remove consecutive slashes and resolve relative path segments
+  const path = normalizePath(rawPath)
+  
+  // SECURITY: Detect and block path traversal attempts
+  if (containsTraversalAttempt(rawPath)) {
+    console.warn(`[SECURITY] Path traversal attempt blocked: ${rawPath} from ${req.ip}`)
+    return NextResponse.redirect(new URL('/login', req.url))
+  }
 
   // Route definitions
   const publicPaths = ['/', '/pricing', '/about', '/contact']
@@ -133,13 +200,27 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
-  // Portal route protection
+  // SECURITY: Enhanced portal route protection with strict validation
   if (isPortalPath) {
-    if (path.startsWith('/portal/client') && userProfile?.user_type !== 'client') {
-      return NextResponse.redirect(new URL('/dashboard', req.url))
+    const userType = userProfile?.user_type || null
+    
+    // Validate portal access using normalized path
+    if (!validatePortalAccess(path, userType)) {
+      console.warn(`[SECURITY] Unauthorized portal access attempt: ${rawPath} by user type: ${userType}`)
+      
+      // Redirect based on user type
+      if (userType === 'client') {
+        return NextResponse.redirect(new URL('/portal/client', req.url))
+      } else if (['admin', 'lawyer', 'staff'].includes(userType || '')) {
+        return NextResponse.redirect(new URL('/dashboard', req.url))
+      } else {
+        return NextResponse.redirect(new URL('/login', req.url))
+      }
     }
     
-    if (path.startsWith('/portal/staff') && !['admin', 'lawyer', 'staff'].includes(userProfile?.user_type || '')) {
+    // Additional security: Ensure clients cannot access any other portal sections
+    if (userType === 'client' && !path.startsWith('/portal/client')) {
+      console.warn(`[SECURITY] Client attempted to access non-client portal: ${rawPath}`)
       return NextResponse.redirect(new URL('/portal/client', req.url))
     }
   }

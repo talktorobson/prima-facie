@@ -1,0 +1,68 @@
+{
+  "timestamp": "2025-06-20T11:39:20.860Z",
+  "summary": {
+    "total_tests": 7,
+    "passed": 0,
+    "failed": 0,
+    "errors": 7
+  },
+  "portal_tests": {
+    "client_portal": [],
+    "staff_portal": [],
+    "rbac_validation": [],
+    "security_tests": [],
+    "integration_tests": [],
+    "mobile_tests": []
+  },
+  "detailed_results": [
+    {
+      "category": "CLIENT_PORTAL",
+      "test": "Client Portal Access",
+      "status": "ERROR",
+      "details": "SecurityError: Failed to set the 'cookie' property on 'Document': Access is denied for this document.",
+      "timestamp": "2025-06-20T11:39:23.553Z"
+    },
+    {
+      "category": "STAFF_PORTAL",
+      "test": "Staff Portal Access",
+      "status": "ERROR",
+      "details": "SecurityError: Failed to set the 'cookie' property on 'Document': Access is denied for this document.",
+      "timestamp": "2025-06-20T11:39:23.554Z"
+    },
+    {
+      "category": "RBAC_VALIDATION",
+      "test": "RBAC Validation",
+      "status": "ERROR",
+      "details": "SecurityError: Failed to set the 'cookie' property on 'Document': Access is denied for this document.",
+      "timestamp": "2025-06-20T11:39:23.555Z"
+    },
+    {
+      "category": "SECURITY_TESTS",
+      "test": "Security Boundaries",
+      "status": "ERROR",
+      "details": "SecurityError: Failed to set the 'cookie' property on 'Document': Access is denied for this document.",
+      "timestamp": "2025-06-20T11:39:23.556Z"
+    },
+    {
+      "category": "INTEGRATION_TESTS",
+      "test": "Portal Integration",
+      "status": "ERROR",
+      "details": "SecurityError: Failed to set the 'cookie' property on 'Document': Access is denied for this document.",
+      "timestamp": "2025-06-20T11:39:23.556Z"
+    },
+    {
+      "category": "MOBILE_TESTS",
+      "test": "Mobile Portal Experience",
+      "status": "ERROR",
+      "details": "page.setViewportSize is not a function",
+      "timestamp": "2025-06-20T11:39:23.556Z"
+    },
+    {
+      "category": "BUSINESS_LOGIC",
+      "test": "Portal Business Logic",
+      "status": "ERROR",
+      "details": "SecurityError: Failed to set the 'cookie' property on 'Document': Access is denied for this document.",
+      "timestamp": "2025-06-20T11:39:23.557Z"
+    }
+  ]
+}

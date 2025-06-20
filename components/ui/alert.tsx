@@ -9,6 +9,11 @@ interface AlertProps {
   className?: string
 }
 
+interface AlertTitleProps {
+  children: React.ReactNode
+  className?: string
+}
+
 interface AlertDescriptionProps {
   children: React.ReactNode
   className?: string
@@ -26,6 +31,14 @@ export function Alert({ variant = 'default', children, className }: AlertProps) 
     >
       {children}
     </div>
+  )
+}
+
+export function AlertTitle({ children, className }: AlertTitleProps) {
+  return (
+    <h5 className={cn('mb-1 font-medium leading-none tracking-tight', className)}>
+      {children}
+    </h5>
   )
 }
 

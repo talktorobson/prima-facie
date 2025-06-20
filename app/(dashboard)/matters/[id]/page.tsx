@@ -16,8 +16,13 @@ import {
   XMarkIcon,
   PlusIcon,
   EyeIcon,
-  TrashIcon
+  TrashIcon,
+  CircleStackIcon
 } from '@heroicons/react/24/outline'
+
+// Import DataJud components
+import { DataJudEnrichmentPanel } from '@/components/features/datajud/enrichment-panel'
+import { DataJudTimelineEvents } from '@/components/features/datajud/timeline-events'
 
 // Mock data - in real app this would come from API
 const mockMatter = {
@@ -277,6 +282,13 @@ export default function MatterDetailPage() {
           </Link>
         </div>
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setActiveTab('datajud')}
+            className="inline-flex items-center px-3 py-2 border border-indigo-300 shadow-sm text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <CircleStackIcon className="h-4 w-4 mr-2" />
+            DataJud CNJ
+          </button>
           <Link
             href={`/matters/${matter.id}/workflow`}
             className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
@@ -339,6 +351,7 @@ export default function MatterDetailPage() {
             {[
               { id: 'overview', name: 'Visão Geral', icon: DocumentTextIcon },
               { id: 'timeline', name: 'Cronologia', icon: ClockIcon },
+              { id: 'datajud', name: 'DataJud CNJ', icon: CircleStackIcon },
               { id: 'documents', name: 'Documentos', icon: DocumentTextIcon },
               { id: 'financial', name: 'Financeiro', icon: CurrencyDollarIcon }
             ].map((tab) => {
@@ -463,8 +476,8 @@ export default function MatterDetailPage() {
 
           {/* Timeline Tab */}
           {activeTab === 'timeline' && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium text-gray-900">Cronologia do Processo</h3>
                 <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
                   <PlusIcon className="h-4 w-4 mr-2" />
@@ -472,44 +485,82 @@ export default function MatterDetailPage() {
                 </button>
               </div>
 
-              <div className="flow-root">
-                <ul className="-mb-8">
-                  {events.map((event, eventIdx) => (
-                    <li key={event.id}>
-                      <div className="relative pb-8">
-                        {eventIdx !== events.length - 1 ? (
-                          <span
-                            className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
-                            aria-hidden="true"
-                          />
-                        ) : null}
-                        <div className="relative flex space-x-3">
-                          <div>
-                            <span className={`bg-white h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${getEventStatusColor(event.status)}`}>
-                              {getEventIcon(event.event_type)}
-                            </span>
-                          </div>
-                          <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+              {/* DataJud Timeline Integration */}
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-indigo-900 mb-2">Timeline Integrada DataJud</h4>
+                <p className="text-sm text-indigo-700">
+                  Esta timeline combina eventos manuais do sistema com movimentações oficiais do DataJud CNJ.
+                  Eventos com baixa relevância podem ser filtrados.
+                </p>
+              </div>
+
+              {/* DataJud Timeline Component */}
+              <DataJudTimelineEvents
+                caseId={matter.id}
+                showClientView={false}
+                maxHeight="500px"
+                onEventToggle={(eventId, field, value) => {
+                  console.log('Event toggled:', { eventId, field, value })
+                }}
+              />
+
+              {/* Manual Events Section */}
+              <div className="border-t pt-6">
+                <h4 className="text-md font-medium text-gray-900 mb-4">Eventos Manuais</h4>
+                <div className="flow-root">
+                  <ul className="-mb-8">
+                    {events.map((event, eventIdx) => (
+                      <li key={event.id}>
+                        <div className="relative pb-8">
+                          {eventIdx !== events.length - 1 ? (
+                            <span
+                              className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
+                              aria-hidden="true"
+                            />
+                          ) : null}
+                          <div className="relative flex space-x-3">
                             <div>
-                              <p className="text-sm text-gray-900 font-medium">{event.title}</p>
-                              <p className="text-sm text-gray-500">{event.description}</p>
-                              {event.court_location && (
-                                <p className="text-xs text-gray-400 mt-1">Local: {event.court_location}</p>
-                              )}
+                              <span className={`bg-white h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${getEventStatusColor(event.status)}`}>
+                                {getEventIcon(event.event_type)}
+                              </span>
                             </div>
-                            <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                              <time dateTime={event.event_date}>{formatDateTime(event.event_date)}</time>
-                              <div className={`text-xs ${getEventStatusColor(event.status)}`}>
-                                {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                            <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                              <div>
+                                <p className="text-sm text-gray-900 font-medium">{event.title}</p>
+                                <p className="text-sm text-gray-500">{event.description}</p>
+                                {event.court_location && (
+                                  <p className="text-xs text-gray-400 mt-1">Local: {event.court_location}</p>
+                                )}
+                              </div>
+                              <div className="text-right text-sm whitespace-nowrap text-gray-500">
+                                <time dateTime={event.event_date}>{formatDateTime(event.event_date)}</time>
+                                <div className={`text-xs ${getEventStatusColor(event.status)}`}>
+                                  {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
+            </div>
+          )}
+
+          {/* DataJud Tab */}
+          {activeTab === 'datajud' && (
+            <div className="space-y-6">
+              <DataJudEnrichmentPanel
+                caseId={matter.id}
+                caseTitle={matter.title}
+                processNumber={matter.processo_numero}
+                onEnrichmentComplete={(result) => {
+                  console.log('Enrichment completed:', result)
+                  // In real app, refresh matter data and update timeline
+                }}
+              />
             </div>
           )}
 

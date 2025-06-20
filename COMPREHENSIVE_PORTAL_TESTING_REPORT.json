@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-06-20T11:45:11.500Z",
+  "summary": {
+    "total_tests": 23,
+    "passed": 22,
+    "failed": 1,
+    "warnings": 0
+  },
+  "portal_analysis": {
+    "client_portal": {
+      "accessibility": "PROTECTED",
+      "structure_score": 0,
+      "navigation_elements": 0,
+      "features_detected": [
+        "Subpage: /portal/client/dashboard",
+        "Subpage: /portal/client/matters",
+        "Subpage: /portal/client/profile",
+        "Subpage: /portal/client/messages"
+      ],
+      "issues": []
+    },
+    "staff_portal": {
+      "accessibility": "PROTECTED",
+      "structure_score": 0,
+      "navigation_elements": 0,
+      "features_detected": [],
+      "issues": []
+    },
+    "rbac_validation": {
+      "protected_routes": 9,
+      "total_routes_tested": 9,
+      "security_score": 100,
+      "vulnerabilities": [
+        "URL manipulation vulnerability: /portal/client/../admin"
+      ]
+    },
+    "integration_status": {
+      "mobile_responsive": true,
+      "messaging_integration": true,
+      "brazilian_compliance": false
+    }
+  }
+}

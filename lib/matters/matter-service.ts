@@ -78,8 +78,8 @@ export class MatterService {
         .select(`
           *,
           matter_types(name),
-          matter_contacts(
-            contacts(name, cpf_cnpj)
+          matter_contacts!inner(
+            contacts(full_name, first_name, last_name, company_name, contact_type)
           )
         `)
         .eq('law_firm_id', lawFirmId)

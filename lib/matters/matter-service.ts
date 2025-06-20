@@ -5,6 +5,51 @@
 
 import { createClient } from '@/lib/supabase/client'
 
+// Field mapping utilities for Portuguese frontend forms
+function mapMatterStatus(frontendStatus: string): string {
+  const statusMap: Record<string, string> = {
+    'novo': 'active',
+    'analise': 'on_hold',
+    'ativo': 'active',
+    'suspenso': 'on_hold',
+    'aguardando_cliente': 'on_hold',
+    'aguardando_documentos': 'on_hold',
+    'finalizado': 'closed',
+    'cancelado': 'cancelled'
+  }
+  return statusMap[frontendStatus] || 'active'
+}
+
+function mapMatterPriority(frontendPriority: string): string {
+  const priorityMap: Record<string, string> = {
+    'baixa': 'low',
+    'media': 'medium',
+    'alta': 'high',
+    'urgente': 'urgent'
+  }
+  return priorityMap[frontendPriority] || 'medium'
+}
+
+function mapStatusToPortuguese(dbStatus: string): string {
+  const statusMap: Record<string, string> = {
+    'active': 'Ativo',
+    'closed': 'Finalizado',
+    'on_hold': 'Suspenso',
+    'cancelled': 'Cancelado'
+  }
+  return statusMap[dbStatus] || dbStatus
+}
+
+function mapPriorityToPortuguese(dbPriority: string): string {
+  const priorityMap: Record<string, string> = {
+    'low': 'Baixa',
+    'medium': 'Média',
+    'high': 'Alta',
+    'urgent': 'Urgente'
+  }
+  return priorityMap[dbPriority] || dbPriority
+}
+
 export interface Matter {
   id: string
   law_firm_id: string
@@ -35,7 +80,7 @@ export interface Matter {
 }
 
 export interface MatterFormData {
-  matter_type_id: string
+  matter_type_id?: string
   title: string
   description?: string
   court_name?: string
@@ -43,15 +88,20 @@ export interface MatterFormData {
   court_state?: string
   process_number?: string
   opposing_party?: string
-  status: 'active' | 'on_hold' | 'closed' | 'cancelled'
-  priority: 'low' | 'medium' | 'high' | 'urgent'
-  opened_date: string
-  billing_method: 'hourly' | 'flat_fee' | 'contingency' | 'hybrid'
+  status: 'novo' | 'analise' | 'ativo' | 'suspenso' | 'aguardando_cliente' | 'aguardando_documentos' | 'finalizado' | 'cancelado'
+  priority: 'baixa' | 'media' | 'alta' | 'urgente'
+  opened_date?: string
+  billing_method?: 'hourly' | 'flat_fee' | 'contingency' | 'hybrid'
   hourly_rate?: number
   flat_fee?: number
   contingency_percentage?: number
   minimum_fee?: number
   notes?: string
+  client_id?: string
+  area_juridica?: string
+  case_value?: number
+  probability_success?: number
+  next_action?: string
 }
 
 export interface MatterStats {
@@ -108,7 +158,7 @@ export class MatterService {
           *,
           matter_types(name),
           matter_contacts(
-            contacts(name, cpf_cnpj, email, phone)
+            contacts(full_name, cpf, cnpj, email, phone)
           ),
           time_entries(
             id,
@@ -157,7 +207,26 @@ export class MatterService {
         .insert({
           law_firm_id: lawFirmId,
           matter_number: matterNumber,
-          ...matterData,
+          title: matterData.title,
+          description: matterData.description,
+          court_name: matterData.court_name,
+          court_city: matterData.court_city,
+          court_state: matterData.court_state,
+          process_number: matterData.process_number,
+          opposing_party: matterData.opposing_party,
+          status: mapMatterStatus(matterData.status),
+          priority: mapMatterPriority(matterData.priority),
+          opened_date: matterData.opened_date || new Date().toISOString(),
+          billing_method: matterData.billing_method || 'hourly',
+          hourly_rate: matterData.hourly_rate,
+          flat_fee: matterData.flat_fee,
+          contingency_percentage: matterData.contingency_percentage,
+          minimum_fee: matterData.minimum_fee,
+          notes: matterData.notes,
+          area_juridica: matterData.area_juridica,
+          case_value: matterData.case_value,
+          probability_success: matterData.probability_success,
+          next_action: matterData.next_action,
           total_billed: 0,
           total_paid: 0,
           outstanding_balance: 0,
@@ -170,6 +239,11 @@ export class MatterService {
       if (error || !newMatter) {
         console.error('Error creating matter:', error)
         throw new Error('Failed to create matter')
+      }
+
+      // Link client to matter if client_id is provided
+      if (matterData.client_id) {
+        await this.linkClientToMatter(newMatter.id, matterData.client_id, 'client')
       }
 
       return newMatter

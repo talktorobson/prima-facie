@@ -5,6 +5,42 @@
 
 import { createClient } from '@/lib/supabase/client'
 
+// Field mapping utilities
+function mapClientStatus(frontendStatus: string): string {
+  const statusMap: Record<string, string> = {
+    'ativo': 'active',
+    'inativo': 'inactive', 
+    'prospecto': 'prospect'
+  }
+  return statusMap[frontendStatus] || 'prospect'
+}
+
+function mapContactType(frontendType: string): string {
+  const typeMap: Record<string, string> = {
+    'pessoa_fisica': 'individual',
+    'pessoa_juridica': 'company'
+  }
+  return typeMap[frontendType] || 'individual'
+}
+
+function mapStatusToPortuguese(dbStatus: string): string {
+  const statusMap: Record<string, string> = {
+    'active': 'ativo',
+    'inactive': 'inativo',
+    'prospect': 'prospecto',
+    'former': 'inativo'
+  }
+  return statusMap[dbStatus] || dbStatus
+}
+
+function mapTypeToPortuguese(dbType: string): string {
+  const typeMap: Record<string, string> = {
+    'individual': 'pessoa_fisica',
+    'company': 'pessoa_juridica'
+  }
+  return typeMap[dbType] || dbType
+}
+
 export interface Client {
   id: string
   law_firm_id: string
@@ -73,7 +109,7 @@ export class ClientService {
           )
         `)
         .eq('law_firm_id', lawFirmId)
-        .eq('contact_type', 'client')
+        .in('contact_type', ['individual', 'company'])
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -111,7 +147,7 @@ export class ClientService {
           )
         `)
         .eq('id', clientId)
-        .eq('contact_type', 'client')
+        .in('contact_type', ['individual', 'company'])
         .single()
 
       if (error && error.code !== 'PGRST116') { // Not found is OK
@@ -138,10 +174,22 @@ export class ClientService {
         .from('contacts')
         .insert({
           law_firm_id: lawFirmId,
-          contact_type: 'client',
+          contact_type: mapContactType(clientData.type),
+          client_status: mapClientStatus(clientData.status),
           client_number: clientNumber,
-          cpf_cnpj: clientData.type === 'pessoa_fisica' ? clientData.cpf : clientData.cnpj,
-          ...clientData,
+          full_name: clientData.name,
+          cpf: clientData.type === 'pessoa_fisica' ? clientData.cpf || null : null,
+          cnpj: clientData.type === 'pessoa_juridica' ? clientData.cnpj || null : null,
+          email: clientData.email,
+          phone: clientData.phone,
+          mobile: clientData.mobile,
+          address_street: clientData.address_street,
+          address_number: clientData.address_number,
+          address_city: clientData.address_city,
+          address_state: clientData.address_state,
+          address_zipcode: clientData.address_zipcode,
+          notes: clientData.notes,
+          portal_enabled: clientData.portal_enabled || false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -170,11 +218,22 @@ export class ClientService {
         updated_at: new Date().toISOString()
       }
 
-      // Handle CPF/CNPJ field
+      // Handle field mapping
+      if (clientData.type) {
+        updateData.contact_type = mapContactType(clientData.type)
+      }
+      if (clientData.status) {
+        updateData.client_status = mapClientStatus(clientData.status)
+      }
+      if (clientData.name) {
+        updateData.full_name = clientData.name
+      }
       if (clientData.type === 'pessoa_fisica' && clientData.cpf) {
-        updateData.cpf_cnpj = clientData.cpf
+        updateData.cpf = clientData.cpf
+        updateData.cnpj = null
       } else if (clientData.type === 'pessoa_juridica' && clientData.cnpj) {
-        updateData.cpf_cnpj = clientData.cnpj
+        updateData.cnpj = clientData.cnpj
+        updateData.cpf = null
       }
 
       const { data: updatedClient, error } = await this.supabase
@@ -216,7 +275,7 @@ export class ClientService {
       const { error } = await this.supabase
         .from('contacts')
         .update({ 
-          status: 'inativo',
+          client_status: 'inactive',
           updated_at: new Date().toISOString()
         })
         .eq('id', clientId)
@@ -263,8 +322,8 @@ export class ClientService {
         .from('contacts')
         .select('*')
         .eq('law_firm_id', lawFirmId)
-        .eq('contact_type', 'client')
-        .or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,cpf_cnpj.ilike.%${searchTerm}%`)
+        .in('contact_type', ['individual', 'company'])
+        .or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,cpf.ilike.%${searchTerm}%,cnpj.ilike.%${searchTerm}%`)
         .order('name')
 
       if (error) {
@@ -288,7 +347,7 @@ export class ClientService {
         .from('contacts')
         .select('client_number')
         .eq('law_firm_id', lawFirmId)
-        .eq('contact_type', 'client')
+        .in('contact_type', ['individual', 'company'])
         .order('created_at', { ascending: false })
         .limit(1)
 

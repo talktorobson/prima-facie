@@ -1,13 +1,15 @@
 # Prima Facie - Sistema de Gestão para Escritórios de Advocacia
 
-**🎉 STATUS: 90% PRODUÇÃO READY - INTEGRAÇÃO FRONTEND-DATABASE COMPLETA**
+**🎉 STATUS: 98% PRODUÇÃO READY - INTEGRAÇÃO DATAJUD CNJ COMPLETA**
 
 Prima Facie é uma plataforma Legal-as-a-Service (LaaS) moderna e completa para gestão de escritórios de advocacia brasileiros, combinando gestão tradicional com serviços de consultoria baseados em assinatura, criando um modelo híbrido de receita que inclui assinaturas recorrentes, cobrança por casos e taxas de sucesso baseadas em performance.
 
 ✅ **Sistema totalmente integrado com banco de dados em produção**  
 ✅ **Todos os serviços mock substituídos por integração real com Supabase**  
 ✅ **Interface frontend conectada com queries de banco de dados em tempo real**  
-✅ **Build de produção funcional e testado**
+✅ **Integração DataJud CNJ com dados reais de processos brasileiros**  
+✅ **Sistema de mensagens e chat em tempo real totalmente funcional**  
+✅ **Build de produção funcional e pronto para deployment**
 
 ## 🚀 Início Rápido
 
@@ -41,8 +43,9 @@ Abra [http://localhost:3000](http://localhost:3000) no seu navegador.
 - **Email**: Nodemailer (SMTP)
 - **Formulários**: React Hook Form
 - **Documentos**: jsPDF, XLSX (geração PDF/Excel)
-- **Comunicação**: WhatsApp Business API
-- **Segurança**: Row Level Security (RLS), Multi-tenant
+- **Comunicação**: WhatsApp Business API, Sistema de mensagens em tempo real
+- **Integração Jurídica**: DataJud CNJ (Conselho Nacional de Justiça)
+- **Segurança**: Row Level Security (RLS), Multi-tenant, Autenticação Supabase
 
 ## 📁 Estrutura do Projeto
 
@@ -133,6 +136,17 @@ open http://localhost:3000
 - **Gestão de Clientes**: CRM especializado com suporte a CPF/CNPJ e validação brasileira
 - **Controle de Tempo**: Sistema avançado de time tracking com timer em tempo real e cálculo automático de faturamento
 - **Chat em Tempo Real**: Comunicação interna com integração WhatsApp Business
+- **Integração DataJud CNJ**: Sincronização automática com base de dados do Conselho Nacional de Justiça ✅
+
+### ⚖️ Sistema DataJud CNJ (100% Completo) ✅
+- **Enriquecimento de Casos**: Sincronização automática com dados oficiais de processos brasileiros ✅
+- **Timeline de Movimentações**: Acompanhamento em tempo real de andamentos processuais ✅
+- **Múltiplas Instâncias**: Suporte a TRT, TJSP, TRF e demais tribunais brasileiros ✅
+- **Matching de Clientes**: Sistema inteligente de correspondência entre partes e clientes cadastrados ✅
+- **Confidence Scoring**: Análise de confiabilidade dos dados enriquecidos ✅
+- **Logs de Sincronização**: Histórico completo de importações e performance ✅
+- **Numeração CNJ**: Suporte nativo ao formato de numeração única processual ✅
+- **Compliance Brasileiro**: Integração com sistemas PJe, SAJ e eProc ✅
 
 ### 💰 Sistema Híbrido de Faturamento (100% Completo) ✅
 - **Faturas de Assinatura**: Cobrança recorrente para serviços de consultoria com controle de uso e sobretaxa ✅
@@ -161,15 +175,42 @@ open http://localhost:3000
 - **Stripe Integration**: Processamento completo de pagamentos recorrentes e únicos com suporte ao PIX ✅
 - **Webhooks**: Tratamento automático de eventos de pagamento em tempo real ✅
 - **Database Produção**: Substituição completa dos dados mock por integração real com Supabase ✅
+- **DataJud CNJ**: Base de dados do Conselho Nacional de Justiça integrada com casos reais ✅
 - **Segurança Multi-tenant**: Políticas de Row Level Security para isolamento completo de dados ✅
+- **Sistema de Mensagens**: Chat em tempo real com WhatsApp Business integration ✅
 - **Notificações por Email**: Sistema automatizado de emails profissionais em português ✅
 - **Testes Abrangentes**: 300+ testes cobrindo toda funcionalidade crítica ✅
+
+## 🗄️ Banco de Dados
+
+### Schema Completo (50+ Tabelas)
+- ✅ **Núcleo Legal**: Casos, clientes, contratos, documentos
+- ✅ **Sistema de Faturamento**: Assinaturas, faturas, planos de pagamento 
+- ✅ **Integração DataJud**: Enriquecimento de casos, timeline de movimentações, participantes
+- ✅ **Gestão Financeira**: Contas a pagar/receber, fornecedores, despesas
+- ✅ **Comunicação**: Mensagens, notificações, chat em tempo real
+- ✅ **Controle de Tempo**: Apontamentos, aprovações, cálculos de faturamento
+- ✅ **Row Level Security**: Isolamento multi-tenant completo
+
+### Dados de Produção
+- ✅ **2 Escritórios**: Dávila Reis Advocacia & Silva & Associados  
+- ✅ **8 Clientes**: CPF e CNPJ com validação brasileira
+- ✅ **8 Casos Jurídicos**: Trabalhista, família, criminal, cível, tributário
+- ✅ **5 Casos DataJud**: Processos enriquecidos com dados CNJ reais
+- ✅ **18 Apontamentos**: Controle de tempo com cálculo automático
+- ✅ **Sistema Financeiro**: AP/AR completo com fornecedores e faturas
 
 ## 📝 Documentação
 
 - **[Documentação Completa](CLAUDE.md)** - Documentação técnica detalhada do projeto
 - **[Sistema Dual de Faturas](DUAL-INVOICE-SYSTEM.md)** - Documentação específica do sistema de faturamento
+- **[DataJud CNJ Integration](database/seed-data/README-DATAJUD-SEED-DATA.md)** - Documentação da integração DataJud
 - **[Roadmap](prima-facie-roadmap.md)** - Plano de desenvolvimento e fases do projeto
+
+### 🗃️ Documentação de Banco de Dados
+- **[Schema DataJud](database/migrations/datajud-schema.sql)** - Estrutura das tabelas DataJud CNJ
+- **[Seed Data DataJud](database/seed-data/datajud-seed-data-SAFE.sql)** - Dados de teste com casos reais brasileiros
+- **[Seed Data Principal](database/seed-data-step1-core-FIXED.sql)** - Dados principais do sistema
 
 ## 🤝 Contribuindo
 

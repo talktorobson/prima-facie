@@ -1,6 +1,6 @@
 {
   "name": "prima-facie",
-  "version": "8.13.0",
+  "version": "11.0.0",
   "description": "Legal-as-a-Service Platform - Sistema Completo de Gestão para Escritórios de Advocacia Brasileiros",
   "private": true,
   "scripts": {

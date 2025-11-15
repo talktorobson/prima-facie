@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useMatters } from '@/lib/queries/useMatters'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,9 +8,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Briefcase, AlertCircle } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { CreateMatterDialog } from '@/components/matters/create-matter-dialog'
 
 export default function MattersPage() {
   const { data: matters, isLoading, error } = useMatters()
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   if (isLoading) {
     return (
@@ -48,7 +51,7 @@ export default function MattersPage() {
             Gerencie todos os processos do escritório
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Processo
         </Button>
@@ -160,7 +163,7 @@ export default function MattersPage() {
               <p className="text-gray-600 mb-4">
                 Comece criando seu primeiro processo
               </p>
-              <Button>
+              <Button onClick={() => setCreateDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Processo
               </Button>
@@ -168,6 +171,11 @@ export default function MattersPage() {
           )}
         </CardContent>
       </Card>
+
+      <CreateMatterDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+      />
     </div>
   )
 }

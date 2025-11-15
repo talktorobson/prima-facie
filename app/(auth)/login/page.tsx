@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createBrowserClient } from '@supabase/ssr'
 import { Scale } from 'lucide-react'
 
 export default function LoginPage() {
@@ -12,7 +12,11 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const searchParams = useSearchParams()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   const handle_login = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,7 +32,8 @@ export default function LoginPage() {
       if (error) {
         setError('Email ou senha inválidos')
       } else {
-        router.push('/dashboard')
+        const redirectTo = searchParams.get('redirectedFrom') || '/matters'
+        router.push(redirectTo)
         router.refresh()
       }
     } catch (err) {

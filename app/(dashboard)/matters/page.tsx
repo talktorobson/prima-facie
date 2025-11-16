@@ -5,14 +5,30 @@ import { useMatters } from '@/lib/queries/useMatters'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Plus, Briefcase, AlertCircle } from 'lucide-react'
+import { Plus, Briefcase, AlertCircle, Pencil, Trash2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CreateMatterDialog } from '@/components/matters/create-matter-dialog'
+import { EditMatterDialog } from '@/components/matters/edit-matter-dialog'
+import { DeleteMatterDialog } from '@/components/matters/delete-matter-dialog'
+import type { Matter } from '@/types/database'
 
 export default function MattersPage() {
   const { data: matters, isLoading, error } = useMatters()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [selectedMatter, setSelectedMatter] = useState<Matter | null>(null)
+
+  const handleEdit = (matter: Matter) => {
+    setSelectedMatter(matter)
+    setEditDialogOpen(true)
+  }
+
+  const handleDelete = (matter: Matter) => {
+    setSelectedMatter(matter)
+    setDeleteDialogOpen(true)
+  }
 
   if (isLoading) {
     return (
@@ -118,6 +134,7 @@ export default function MattersPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Advogado</TableHead>
                   <TableHead>Criado</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -150,6 +167,27 @@ export default function MattersPage() {
                         locale: ptBR,
                       })}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(matter)}
+                          title="Editar processo"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(matter)}
+                          title="Excluir processo"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -175,6 +213,18 @@ export default function MattersPage() {
       <CreateMatterDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
+      />
+
+      <EditMatterDialog
+        matter={selectedMatter}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+      />
+
+      <DeleteMatterDialog
+        matter={selectedMatter}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
       />
     </div>
   )

@@ -119,11 +119,15 @@ export default function DashboardPage() {
     upcomingTasks: []
   })
 
+  const isSuperAdmin = profile?.user_type === 'super_admin'
+
   useEffect(() => {
-    if (profile?.law_firm_id) {
+    if (profile?.law_firm_id && !isSuperAdmin) {
       fetchDashboardData()
+    } else if (isSuperAdmin) {
+      setLoading(false)
     }
-  }, [profile?.law_firm_id])
+  }, [profile?.law_firm_id, isSuperAdmin])
 
   const fetchDashboardData = async () => {
     if (!profile?.law_firm_id) return
@@ -218,7 +222,9 @@ export default function DashboardPage() {
           Bem-vindo, {profile.first_name}!
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Aqui está o resumo das suas atividades no {profile.law_firm?.name}
+          {profile.law_firm?.name
+            ? `Aqui está o resumo das suas atividades no ${profile.law_firm.name}`
+            : 'Painel geral da plataforma'}
         </p>
       </div>
 

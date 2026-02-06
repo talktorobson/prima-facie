@@ -14,19 +14,21 @@ import {
   CheckSquare,
   BarChart3,
   Settings,
-  LogOut
+  LogOut,
+  Globe
 } from 'lucide-react'
-import { useAuth } from '@/lib/hooks/useAuth'
-import { useSupabase } from '@/components/providers'
+import { useAuthContext } from '@/lib/providers/auth-provider'
 
 interface NavItem {
   name: string
   href: string
   icon: React.ComponentType<{ className?: string }>
   badge?: number
+  roles?: string[]
 }
 
 const navigation: NavItem[] = [
+  { name: 'Plataforma', href: '/platform', icon: Globe, roles: ['super_admin'] },
   { name: 'Visão Geral', href: '/admin', icon: LayoutDashboard },
   { name: 'Processos', href: '/matters', icon: Briefcase },
   { name: 'Clientes', href: '/clients', icon: Users },
@@ -38,17 +40,28 @@ const navigation: NavItem[] = [
   { name: 'Configurações', href: '/settings', icon: Settings },
 ]
 
+const roleLabels: Record<string, string> = {
+  super_admin: 'Super Admin',
+  admin: 'Administrador',
+  lawyer: 'Advogado',
+  staff: 'Equipe',
+  client: 'Cliente',
+}
+
 export function Sidebar() {
   const pathname = usePathname()
-  const { user } = useAuth()
-  const supabase = useSupabase()
+  const { profile, signOut } = useAuthContext()
   const router = useRouter()
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
+    await signOut()
     router.refresh()
   }
+
+  const userType = profile?.user_type || ''
+  const filteredNavigation = navigation.filter(
+    item => !item.roles || item.roles.includes(userType)
+  )
 
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
@@ -61,7 +74,7 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
-          {navigation.map((item) => {
+          {filteredNavigation.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`)
 
@@ -96,15 +109,15 @@ export function Sidebar() {
           <div className="flex items-center gap-3 mb-3">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
               <span className="text-sm font-medium text-primary">
-                {user?.email?.charAt(0).toUpperCase()}
+                {profile?.first_name?.charAt(0).toUpperCase() || profile?.email?.charAt(0).toUpperCase()}
               </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.email}
+                {profile?.full_name || profile?.email}
               </p>
               <p className="text-xs text-gray-500 truncate">
-                Usuário
+                {roleLabels[profile?.user_type || ''] || 'Usuário'}
               </p>
             </div>
           </div>

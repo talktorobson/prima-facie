@@ -33,11 +33,22 @@ export function RoleGuard({ children, allowedRoles, fallback = null, requireAll 
 }
 
 /**
+ * Super admin-only content (platform level)
+ */
+export function SuperAdminOnly({ children, fallback = null }: { children: ReactNode; fallback?: ReactNode }) {
+  return (
+    <RoleGuard allowedRoles={['super_admin']} fallback={fallback}>
+      {children}
+    </RoleGuard>
+  )
+}
+
+/**
  * Admin-only content
  */
 export function AdminOnly({ children, fallback = null }: { children: ReactNode; fallback?: ReactNode }) {
   return (
-    <RoleGuard allowedRoles={['admin']} fallback={fallback}>
+    <RoleGuard allowedRoles={['admin', 'super_admin']} fallback={fallback}>
       {children}
     </RoleGuard>
   )
@@ -48,7 +59,7 @@ export function AdminOnly({ children, fallback = null }: { children: ReactNode; 
  */
 export function StaffOnly({ children, fallback = null }: { children: ReactNode; fallback?: ReactNode }) {
   return (
-    <RoleGuard allowedRoles={['admin', 'lawyer', 'staff']} fallback={fallback}>
+    <RoleGuard allowedRoles={['super_admin', 'admin', 'lawyer', 'staff']} fallback={fallback}>
       {children}
     </RoleGuard>
   )
@@ -59,7 +70,7 @@ export function StaffOnly({ children, fallback = null }: { children: ReactNode; 
  */
 export function LawyerOnly({ children, fallback = null }: { children: ReactNode; fallback?: ReactNode }) {
   return (
-    <RoleGuard allowedRoles={['admin', 'lawyer']} fallback={fallback}>
+    <RoleGuard allowedRoles={['super_admin', 'admin', 'lawyer']} fallback={fallback}>
       {children}
     </RoleGuard>
   )

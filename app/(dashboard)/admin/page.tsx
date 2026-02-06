@@ -83,7 +83,7 @@ export default function AdminPage() {
         <div className="border-b border-gray-200 pb-6">
           <h1 className="text-3xl font-bold text-gray-900">Painel Administrativo</h1>
           <p className="mt-2 text-gray-600">
-            Gerencie todas as configurações do escritório {profile?.law_firm?.name}
+            Gerencie todas as configurações do escritório{profile?.law_firm?.name ? ` ${profile.law_firm.name}` : ''}
           </p>
         </div>
 

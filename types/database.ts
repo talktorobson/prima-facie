@@ -83,13 +83,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      platform_law_firm_stats: {
+        Row: PlatformLawFirmStats
+      }
     }
     Functions: {
       [_ in never]: never
     }
     Enums: {
-      user_type: 'admin' | 'lawyer' | 'staff' | 'client'
+      user_type: 'admin' | 'lawyer' | 'staff' | 'client' | 'super_admin'
       user_status: 'active' | 'inactive' | 'suspended' | 'pending'
       contact_type: 'individual' | 'company'
       client_status: 'prospect' | 'active' | 'inactive' | 'former'
@@ -126,7 +128,7 @@ interface BaseEntity {
 }
 
 interface LawFirmEntity extends BaseEntity {
-  law_firm_id: string
+  law_firm_id: string | null
 }
 
 // =====================================================
@@ -720,6 +722,20 @@ export interface DashboardStats {
   monthly_revenue: number
   pending_tasks: number
   overdue_invoices: number
+}
+
+export interface PlatformLawFirmStats {
+  id: string
+  name: string
+  legal_name: string | null
+  email: string
+  plan_type: string | null
+  subscription_active: boolean | null
+  created_at: string
+  user_count: number
+  matter_count: number
+  active_matter_count: number
+  total_revenue: number
 }
 
 // =====================================================

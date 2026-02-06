@@ -24,13 +24,14 @@ export interface AuthActions {
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ error?: string }>
   refreshProfile: () => Promise<void>
+  isSuperAdmin: () => boolean
 }
 
 export interface SignUpData {
   first_name: string
   last_name: string
-  law_firm_id: string
-  user_type: 'admin' | 'lawyer' | 'staff' | 'client'
+  law_firm_id?: string
+  user_type: 'admin' | 'lawyer' | 'staff' | 'client' | 'super_admin'
   oab_number?: string
   position?: string
 }
@@ -174,6 +175,8 @@ export function useAuth(): AuthState & AuthActions {
     }
   }
 
+  const isSuperAdmin = () => profile?.user_type === 'super_admin'
+
   const resetPassword = async (email: string) => {
     try {
       setError(null)
@@ -263,5 +266,6 @@ export function useAuth(): AuthState & AuthActions {
     signOut,
     resetPassword,
     refreshProfile,
+    isSuperAdmin,
   }
 }

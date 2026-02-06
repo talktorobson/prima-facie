@@ -53,7 +53,7 @@ function validatePortalAccess(normalizedPath: string, userType: string | null): 
   }
 
   // Staff access validation - can access /portal/staff/* routes
-  if (['admin', 'lawyer', 'staff'].includes(userType)) {
+  if (['super_admin', 'admin', 'lawyer', 'staff'].includes(userType)) {
     return normalizedPath === '/portal/staff' || normalizedPath.startsWith('/portal/staff/')
   }
 
@@ -150,12 +150,14 @@ export async function middleware(req: NextRequest) {
   const authPaths = ['/login', '/register', '/forgot-password', '/reset-password']
   const dashboardPaths = ['/dashboard', '/matters', '/clients', '/billing', '/calendar', '/tasks', '/documents', '/reports', '/settings']
   const adminPaths = ['/admin']
+  const platformPaths = ['/platform']
   const portalPaths = ['/portal/client', '/portal/staff']
 
   const isPublicPath = publicPaths.includes(path)
   const isAuthPath = authPaths.some((authPath) => path.startsWith(authPath))
   const isDashboardPath = dashboardPaths.some((dashboardPath) => path.startsWith(dashboardPath))
   const isAdminPath = adminPaths.some((adminPath) => path.startsWith(adminPath))
+  const isPlatformPath = platformPaths.some((platformPath) => path.startsWith(platformPath))
   const isPortalPath = portalPaths.some((portalPath) => path.startsWith(portalPath))
 
   // Allow public paths
@@ -164,7 +166,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Redirect to login if accessing protected routes without session
-  if (!session && (isDashboardPath || isAdminPath || isPortalPath)) {
+  if (!session && (isDashboardPath || isAdminPath || isPlatformPath || isPortalPath)) {
     const redirectUrl = req.nextUrl.clone()
     redirectUrl.pathname = '/login'
     redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname)
@@ -173,12 +175,21 @@ export async function middleware(req: NextRequest) {
 
   // Redirect authenticated users away from auth pages
   if (session && isAuthPath) {
-    const defaultRedirect = userProfile?.user_type === 'client' ? '/portal/client' : '/dashboard'
+    const defaultRedirect = userProfile?.user_type === 'super_admin'
+      ? '/platform'
+      : userProfile?.user_type === 'client'
+        ? '/portal/client'
+        : '/dashboard'
     return NextResponse.redirect(new URL(defaultRedirect, req.url))
   }
 
+  // Platform route protection - super_admin only
+  if (isPlatformPath && userProfile?.user_type !== 'super_admin') {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
+
   // Admin route protection
-  if (isAdminPath && userProfile?.user_type !== 'admin') {
+  if (isAdminPath && !['admin', 'super_admin'].includes(userProfile?.user_type || '')) {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
@@ -193,7 +204,7 @@ export async function middleware(req: NextRequest) {
       // Redirect based on user type
       if (userType === 'client') {
         return NextResponse.redirect(new URL('/portal/client', req.url))
-      } else if (['admin', 'lawyer', 'staff'].includes(userType || '')) {
+      } else if (['super_admin', 'admin', 'lawyer', 'staff'].includes(userType || '')) {
         return NextResponse.redirect(new URL('/dashboard', req.url))
       } else {
         return NextResponse.redirect(new URL('/login', req.url))
@@ -209,7 +220,11 @@ export async function middleware(req: NextRequest) {
 
   // Default dashboard redirect for authenticated users on root
   if (path === '/' && session) {
-    const defaultRedirect = userProfile?.user_type === 'client' ? '/portal/client' : '/dashboard'
+    const defaultRedirect = userProfile?.user_type === 'super_admin'
+      ? '/platform'
+      : userProfile?.user_type === 'client'
+        ? '/portal/client'
+        : '/dashboard'
     return NextResponse.redirect(new URL(defaultRedirect, req.url))
   }
 

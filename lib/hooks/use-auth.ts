@@ -10,10 +10,6 @@ import { UserWithRelations } from '@/types/database'
 import { User } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { mockAuth } from '@/lib/auth-mock'
-
-// Toggle for mock authentication (set to true for testing without Supabase)
-const USE_MOCK_AUTH = typeof window !== 'undefined' && process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_AUTH === 'true'
 
 export interface AuthState {
   user: User | null
@@ -44,7 +40,7 @@ export function useAuth(): AuthState & AuthActions {
   const [profile, setProfile] = useState<UserWithRelations | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   const router = useRouter()
   const supabase = createClient()
 
@@ -77,7 +73,7 @@ export function useAuth(): AuthState & AuthActions {
 
   const refreshProfile = async () => {
     if (!user) return
-    
+
     const userProfile = await fetchUserProfile(user)
     setProfile(userProfile)
   }
@@ -90,19 +86,6 @@ export function useAuth(): AuthState & AuthActions {
     try {
       setLoading(true)
       setError(null)
-
-      if (USE_MOCK_AUTH) {
-        const result = await mockAuth.signIn(email, password)
-        if ('error' in result && result.error) {
-          setError(result.error)
-          return { error: result.error }
-        }
-        if ('user' in result && result.user) {
-          setUser({ id: result.user.id, email: result.user.email } as User)
-          setProfile(result.user as UserWithRelations)
-        }
-        return {}
-      }
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
@@ -129,19 +112,6 @@ export function useAuth(): AuthState & AuthActions {
     try {
       setLoading(true)
       setError(null)
-
-      if (USE_MOCK_AUTH) {
-        const result = await mockAuth.signUp(email, password, userData)
-        if ('error' in result && result.error) {
-          setError(result.error)
-          return { error: result.error }
-        }
-        if ('user' in result && result.user) {
-          setUser({ id: result.user.id, email: result.user.email } as User)
-          setProfile(result.user as UserWithRelations)
-        }
-        return {}
-      }
 
       // Sign up user in auth
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -192,15 +162,7 @@ export function useAuth(): AuthState & AuthActions {
   const signOut = async () => {
     try {
       setLoading(true)
-      
-      if (USE_MOCK_AUTH) {
-        await mockAuth.signOut()
-        setUser(null)
-        setProfile(null)
-        router.push('/login')
-        return
-      }
-      
+
       await supabase.auth.signOut()
       setUser(null)
       setProfile(null)
@@ -242,23 +204,8 @@ export function useAuth(): AuthState & AuthActions {
 
     // Get initial session
     const getInitialSession = async () => {
-      if (USE_MOCK_AUTH) {
-        // Wait for client-side hydration to complete
-        await new Promise(resolve => setTimeout(resolve, 0))
-        
-        const session = mockAuth.getSession()
-        if (mounted) {
-          if (session.user) {
-            setUser({ id: session.user.id, email: session.user.email } as User)
-            setProfile(session.user as UserWithRelations)
-          }
-          setLoading(false)
-        }
-        return
-      }
-      
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       if (mounted) {
         if (session?.user) {
           setUser(session.user)

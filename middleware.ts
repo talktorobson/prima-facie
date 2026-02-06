@@ -67,88 +67,70 @@ export async function middleware(req: NextRequest) {
     },
   })
 
-  // Check if using mock authentication
-  const USE_MOCK_AUTH = process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_AUTH === 'true'
-
   let session = null
   let userProfile = null
 
-  if (USE_MOCK_AUTH) {
-    // For mock auth, check if user is stored in cookie
-    const mockUser = req.cookies.get('mock_auth_user')?.value
-    if (mockUser) {
-      try {
-        const user = JSON.parse(mockUser)
-        session = { user: { id: user.id, email: user.email } }
-        userProfile = user.profile
-      } catch (error) {
-        console.error('Error parsing mock auth cookie:', error)
-      }
-    }
-  } else {
-    // Use Supabase authentication
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return req.cookies.get(name)?.value
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            req.cookies.set({
-              name,
-              value,
-              ...options,
-            })
-            response = NextResponse.next({
-              request: {
-                headers: req.headers,
-              },
-            })
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-            })
-          },
-          remove(name: string, options: CookieOptions) {
-            req.cookies.set({
-              name,
-              value: '',
-              ...options,
-            })
-            response = NextResponse.next({
-              request: {
-                headers: req.headers,
-              },
-            })
-            response.cookies.set({
-              name,
-              value: '',
-              ...options,
-            })
-          },
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value
         },
-      }
-    )
-
-    // Get session and user profile
-    const {
-      data: { session: supabaseSession },
-    } = await supabase.auth.getSession()
-
-    session = supabaseSession
-
-    if (session?.user) {
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('auth_user_id', session.user.id)
-        .single()
-
-      userProfile = data
+        set(name: string, value: string, options: CookieOptions) {
+          req.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+          response = NextResponse.next({
+            request: {
+              headers: req.headers,
+            },
+          })
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+        },
+        remove(name: string, options: CookieOptions) {
+          req.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+          response = NextResponse.next({
+            request: {
+              headers: req.headers,
+            },
+          })
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+        },
+      },
     }
+  )
+
+  // Get session and user profile
+  const {
+    data: { session: supabaseSession },
+  } = await supabase.auth.getSession()
+
+  session = supabaseSession
+
+  if (session?.user) {
+    const { data } = await supabase
+      .from('users')
+      .select('*')
+      .eq('auth_user_id', session.user.id)
+      .single()
+
+    userProfile = data
   }
 
   const rawPath = req.nextUrl.pathname

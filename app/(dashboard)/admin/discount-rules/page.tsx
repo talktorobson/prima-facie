@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/lib/hooks/use-auth'
-import { 
+import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
@@ -12,7 +12,8 @@ import {
   TrophyIcon,
   MegaphoneIcon,
   DocumentCheckIcon,
-  SparklesIcon
+  SparklesIcon,
+  XCircleIcon
 } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckCircleSolidIcon } from '@heroicons/react/24/solid'
 import { 
@@ -730,7 +731,7 @@ export default function DiscountRulesPage(): JSX.Element {
                           </label>
                           <input
                             type="text"
-                            value={condition.value}
+                            value={String(condition.value)}
                             onChange={(e) => updateCondition(index, 'value', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />

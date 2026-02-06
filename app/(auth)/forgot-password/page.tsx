@@ -141,9 +141,9 @@ export default function ForgotPasswordPage() {
                   <Button
                     type="submit"
                     className="w-full"
-                    isLoading={form.formState.isSubmitting}
+                    disabled={form.formState.isSubmitting}
                   >
-                    Enviar link de recuperação
+                    {form.formState.isSubmitting ? 'Enviando...' : 'Enviar link de recuperação'}
                   </Button>
 
                   <Link href="/login" className="block">

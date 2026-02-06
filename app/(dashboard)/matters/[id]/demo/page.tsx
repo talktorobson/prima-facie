@@ -14,7 +14,7 @@ import {
   CurrencyDollarIcon,
   ClockIcon,
   ExclamationTriangleIcon,
-  DatabaseIcon,
+  CircleStackIcon,
   GlobeAltIcon
 } from '@heroicons/react/24/outline'
 
@@ -161,7 +161,7 @@ export default function DataJudIntegrationDemo() {
             disabled={enrichmentLoading}
             className="inline-flex items-center px-4 py-2 border border-indigo-300 shadow-sm text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
           >
-            <DatabaseIcon className="h-4 w-4 mr-2" />
+            <CircleStackIcon className="h-4 w-4 mr-2" />
             {enrichmentLoading ? 'Enriquecendo...' : 'Enriquecer com DataJud'}
           </button>
           
@@ -221,7 +221,7 @@ export default function DataJudIntegrationDemo() {
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6" aria-label="Tabs">
             {[
-              { id: 'datajud', name: 'Painel DataJud', icon: DatabaseIcon },
+              { id: 'datajud', name: 'Painel DataJud', icon: CircleStackIcon },
               { id: 'timeline', name: 'Timeline Integrada', icon: ClockIcon },
               { id: 'api-test', name: 'Teste de APIs', icon: GlobeAltIcon }
             ].map((tab) => {

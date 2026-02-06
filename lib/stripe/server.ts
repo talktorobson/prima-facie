@@ -6,11 +6,17 @@
 import Stripe from 'stripe'
 import { STRIPE_CONFIG, PRICE_CONFIG } from './config'
 
-// Initialize Stripe with secret key
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia',
-  typescript: true,
-})
+// Lazy-initialized Stripe instance (avoids build-time crash when env var is missing)
+let _stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2024-11-20.acacia',
+      typescript: true,
+    })
+  }
+  return _stripe
+}
 
 export class StripeService {
   
@@ -31,7 +37,7 @@ export class StripeService {
   }): Promise<Stripe.Customer> {
     try {
       // Check if customer already exists
-      const existingCustomers = await stripe.customers.list({
+      const existingCustomers = await getStripe().customers.list({
         email: params.email,
         limit: 1
       })
@@ -41,7 +47,7 @@ export class StripeService {
       }
       
       // Create new customer
-      const customer = await stripe.customers.create({
+      const customer = await getStripe().customers.create({
         email: params.email,
         name: params.name,
         phone: params.phone,
@@ -77,7 +83,7 @@ export class StripeService {
   }): Promise<{ product: Stripe.Product; monthly_price: Stripe.Price; yearly_price?: Stripe.Price }> {
     try {
       // Create product
-      const product = await stripe.products.create({
+      const product = await getStripe().products.create({
         name: params.name,
         description: params.description,
         metadata: {
@@ -88,7 +94,7 @@ export class StripeService {
       })
       
       // Create monthly price
-      const monthly_price = await stripe.prices.create({
+      const monthly_price = await getStripe().prices.create({
         product: product.id,
         unit_amount: Math.round(params.monthly_amount * 100), // Convert to centavos
         currency: STRIPE_CONFIG.currency,
@@ -107,7 +113,7 @@ export class StripeService {
       
       // Create yearly price if provided
       if (params.yearly_amount) {
-        yearly_price = await stripe.prices.create({
+        yearly_price = await getStripe().prices.create({
           product: product.id,
           unit_amount: Math.round(params.yearly_amount * 100), // Convert to centavos
           currency: STRIPE_CONFIG.currency,
@@ -142,7 +148,7 @@ export class StripeService {
     subscription_id: string
   }): Promise<Stripe.Subscription> {
     try {
-      const subscription = await stripe.subscriptions.create({
+      const subscription = await getStripe().subscriptions.create({
         customer: params.customer_id,
         items: [{ price: params.price_id }],
         trial_period_days: params.trial_period_days || PRICE_CONFIG.trial_period_days,
@@ -169,7 +175,7 @@ export class StripeService {
    */
   async cancelSubscription(stripe_subscription_id: string): Promise<Stripe.Subscription> {
     try {
-      const subscription = await stripe.subscriptions.update(stripe_subscription_id, {
+      const subscription = await getStripe().subscriptions.update(stripe_subscription_id, {
         cancel_at_period_end: true
       })
       
@@ -196,7 +202,7 @@ export class StripeService {
     law_firm_id: string
   }): Promise<Stripe.PaymentIntent> {
     try {
-      const paymentIntent = await stripe.paymentIntents.create({
+      const paymentIntent = await getStripe().paymentIntents.create({
         amount: Math.round(params.amount * 100), // Convert to centavos
         currency: STRIPE_CONFIG.currency,
         customer: params.customer_id,
@@ -231,7 +237,7 @@ export class StripeService {
     law_firm_id: string
   }): Promise<Stripe.PaymentIntent> {
     try {
-      const paymentIntent = await stripe.paymentIntents.create({
+      const paymentIntent = await getStripe().paymentIntents.create({
         amount: Math.round(params.amount * 100), // Convert to centavos
         currency: STRIPE_CONFIG.currency,
         customer: params.customer_id,
@@ -263,7 +269,7 @@ export class StripeService {
    */
   verifyWebhookSignature(payload: string, signature: string): Stripe.Event {
     try {
-      const event = stripe.webhooks.constructEvent(
+      const event = getStripe().webhooks.constructEvent(
         payload,
         signature,
         process.env.STRIPE_WEBHOOK_SECRET!
@@ -299,12 +305,12 @@ export class StripeService {
    */
   async createPixPaymentMethod(customer_id: string): Promise<Stripe.PaymentMethod> {
     try {
-      const paymentMethod = await stripe.paymentMethods.create({
+      const paymentMethod = await getStripe().paymentMethods.create({
         type: 'pix',
         pix: {}
       })
       
-      await stripe.paymentMethods.attach(paymentMethod.id, {
+      await getStripe().paymentMethods.attach(paymentMethod.id, {
         customer: customer_id
       })
       

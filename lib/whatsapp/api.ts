@@ -1,6 +1,8 @@
 // WhatsApp Business API Integration
 // Meta Business Platform integration for Prima Facie
 
+import crypto from 'crypto'
+
 interface WhatsAppConfig {
   businessAccountId: string
   phoneNumberId: string
@@ -267,7 +269,6 @@ export class WhatsAppService {
   // Verify webhook signature
   verifyWebhook(body: string, signature: string): boolean {
     try {
-      const crypto = require('crypto')
       const expectedSignature = crypto
         .createHmac('sha256', this.config.accessToken)
         .update(body, 'utf8')

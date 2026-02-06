@@ -18,7 +18,7 @@ import {
   FunnelIcon,
   MagnifyingGlassIcon,
   ChartPieIcon,
-  TrendingUpIcon,
+  ArrowArrowTrendingUpIcon,
   PresentationChartLineIcon,
   TableCellsIcon,
   PrinterIcon
@@ -749,7 +749,7 @@ export default function ReportsPage() {
           <div className="p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <TrendingUpIcon className="h-6 w-6 text-purple-600" />
+                <ArrowTrendingUpIcon className="h-6 w-6 text-purple-600" />
               </div>
               <div className="ml-3 w-0 flex-1">
                 <dl>

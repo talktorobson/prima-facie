@@ -1,0 +1,2304 @@
+{
+  "total": 60,
+  "passed": 24,
+  "failed": 28,
+  "warnings": 8,
+  "tests": [
+    {
+      "name": "Node.js Version Check",
+      "status": "passed",
+      "message": "Node.js v22.14.0 meets minimum requirement 18.0.0",
+      "duration": 1,
+      "details": {
+        "nodeVersion": "v22.14.0",
+        "requiredVersion": "18.0.0"
+      }
+    },
+    {
+      "name": "NPM Version Check",
+      "status": "passed",
+      "message": "NPM 11.4.1 meets minimum requirement 8.0.0",
+      "duration": 147,
+      "details": {
+        "npmVersion": "11.4.1",
+        "requiredVersion": "8.0.0"
+      }
+    },
+    {
+      "name": "Package.json Validation",
+      "status": "passed",
+      "message": "package.json is valid and contains required fields",
+      "duration": 0,
+      "details": {
+        "name": "prima-facie",
+        "version": "0.1.0",
+        "dependencyCount": 18,
+        "devDependencyCount": 24
+      }
+    },
+    {
+      "name": "Critical Dependencies Check",
+      "status": "passed",
+      "message": "All critical dependencies are present",
+      "duration": 0,
+      "details": {
+        "criticalDeps": [
+          {
+            "name": "@supabase/supabase-js",
+            "version": "^2.39.3"
+          },
+          {
+            "name": "next",
+            "version": "14.1.0"
+          },
+          {
+            "name": "react",
+            "version": "^18.2.0"
+          },
+          {
+            "name": "react-dom",
+            "version": "^18.2.0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Node Modules Installation Check",
+      "status": "passed",
+      "message": "node_modules directory exists with 584 packages",
+      "duration": 1,
+      "details": {
+        "nodeModulesPath": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/node_modules",
+        "packageCount": 584,
+        "lastModified": "2025-06-16T22:15:04.680Z"
+      }
+    },
+    {
+      "name": "Environment Variables Check",
+      "status": "failed",
+      "message": "Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY",
+      "duration": 0,
+      "details": {
+        "missingVars": [
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+          "SUPABASE_SERVICE_ROLE_KEY"
+        ],
+        "presentVars": []
+      }
+    },
+    {
+      "name": "Environment File Check",
+      "status": "passed",
+      "message": "Environment files are properly configured",
+      "duration": 0,
+      "details": {
+        "foundFiles": [
+          {
+            "name": ".env.local",
+            "size": 1212,
+            "lastModified": "2025-06-15T17:07:47.641Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TypeScript Configuration Check",
+      "status": "passed",
+      "message": "TypeScript configuration is complete",
+      "duration": 0,
+      "details": {
+        "checks": {
+          "hasCompilerOptions": true,
+          "hasStrictMode": true,
+          "hasModuleResolution": true,
+          "hasInclude": true,
+          "hasExclude": true
+        },
+        "tsconfigPath": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/tsconfig.json"
+      }
+    },
+    {
+      "name": "Next.js Configuration Check",
+      "status": "passed",
+      "message": "Next.js configuration loaded successfully",
+      "duration": 1,
+      "details": {
+        "configChecks": {
+          "hasReactStrictMode": true,
+          "hasImages": true,
+          "hasRedirects": true,
+          "hasSwcMinify": true
+        },
+        "nextConfigPath": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/next.config.js"
+      }
+    },
+    {
+      "name": "Build Tool Availability Check",
+      "status": "passed",
+      "message": "All build tools are available",
+      "duration": 178,
+      "details": {
+        "results": [
+          {
+            "tool": "npm",
+            "available": true,
+            "version": "11.4.1"
+          },
+          {
+            "tool": "npx",
+            "available": true,
+            "version": "11.4.1"
+          },
+          {
+            "tool": "node",
+            "available": true,
+            "version": "v22.14.0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Supabase Environment Variables",
+      "status": "failed",
+      "message": "Missing Supabase environment variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY",
+      "duration": 0,
+      "details": {
+        "missingVars": [
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+          "SUPABASE_SERVICE_ROLE_KEY"
+        ]
+      }
+    },
+    {
+      "name": "Supabase API Endpoint Connectivity",
+      "status": "failed",
+      "message": "NEXT_PUBLIC_SUPABASE_URL not set",
+      "duration": 0,
+      "details": {}
+    },
+    {
+      "name": "Supabase Client Initialization",
+      "status": "failed",
+      "message": "Failed to initialize Supabase client: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Database Connection Test",
+      "status": "failed",
+      "message": "Database connection failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Authentication Service Test",
+      "status": "failed",
+      "message": "Auth service test failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Real-time Connection Test",
+      "status": "failed",
+      "message": "Real-time connection test failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Service Role Key Test",
+      "status": "warning",
+      "message": "Service role key not configured - admin functions will not work",
+      "duration": 0,
+      "details": {}
+    },
+    {
+      "name": "Database Schema Validation",
+      "status": "failed",
+      "message": "Schema validation failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Row Level Security Test",
+      "status": "failed",
+      "message": "RLS test failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Connection Pool Performance",
+      "status": "failed",
+      "message": "High connection failure rate: 10/10",
+      "duration": 0,
+      "details": {
+        "connections": [
+          {
+            "index": 0,
+            "time": 0,
+            "success": false,
+            "error": "supabaseUrl is required."
+          },
+          {
+            "index": 1,
+            "time": 0,
+            "success": false,
+            "error": "supabaseUrl is required."
+          },
+          {
+            "index": 2,
+            "time": 0,
+            "success": false,
+            "error": "supabaseUrl is required."
+          },
+          {
+            "index": 3,
+            "time": 0,
+            "success": false,
+            "error": "supabaseUrl is required."
+          },
+          {
+            "index": 4,
+            "time": 0,
+            "success": false,
+            "error": "supabaseUrl is required."
+          },
+          {
+            "index": 5,
+            "time": 0,
+            "success": false,
+            "error": "supabaseUrl is required."
+          },
+          {
+            "index": 6,
+            "time": 0,
+            "success": false,
+            "error": "supabaseUrl is required."
+          },
+          {
+            "index": 7,
+            "time": 0,
+            "success": false,
+            "error": "supabaseUrl is required."
+          },
+          {
+            "index": 8,
+            "time": 0,
+            "success": false,
+            "error": "supabaseUrl is required."
+          },
+          {
+            "index": 9,
+            "time": 0,
+            "success": false,
+            "error": "supabaseUrl is required."
+          }
+        ],
+        "totalTime": 0,
+        "avgConnectionTime": 0,
+        "minConnectionTime": null,
+        "maxConnectionTime": 0,
+        "successfulConnections": 0,
+        "failedConnections": 10
+      }
+    },
+    {
+      "name": "Query Response Time Test",
+      "status": "failed",
+      "message": "Query performance test failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Concurrent Query Load Test",
+      "status": "failed",
+      "message": "Concurrent load test failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Memory Usage Monitoring",
+      "status": "failed",
+      "message": "Memory monitoring test failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Connection Timeout Test",
+      "status": "failed",
+      "message": "All connection timeout tests failed",
+      "duration": 1,
+      "details": {
+        "results": [
+          {
+            "timeout": 1000,
+            "success": false,
+            "actualTime": 0,
+            "timedOut": false,
+            "error": "supabaseUrl is required."
+          },
+          {
+            "timeout": 5000,
+            "success": false,
+            "actualTime": 0,
+            "timedOut": false,
+            "error": "supabaseUrl is required."
+          },
+          {
+            "timeout": 10000,
+            "success": false,
+            "actualTime": 0,
+            "timedOut": false,
+            "error": "supabaseUrl is required."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Database Connection Stability",
+      "status": "failed",
+      "message": "Connection stability test failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Project Directory Structure",
+      "status": "warning",
+      "message": "Missing optional directories: docs",
+      "duration": 1,
+      "details": {
+        "projectRoot": "/Users/20015403/Documents/PROJECTS/personal/prima-facie",
+        "requiredDirs": [
+          {
+            "name": "app",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/app",
+            "exists": true,
+            "isDirectory": true,
+            "permissions": "40755",
+            "size": 288,
+            "lastModified": "2025-06-15T21:08:05.304Z"
+          },
+          {
+            "name": "components",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/components",
+            "exists": true,
+            "isDirectory": true,
+            "permissions": "40755",
+            "size": 320,
+            "lastModified": "2025-06-15T21:23:24.299Z"
+          },
+          {
+            "name": "lib",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/lib",
+            "exists": true,
+            "isDirectory": true,
+            "permissions": "40755",
+            "size": 448,
+            "lastModified": "2025-06-16T12:11:28.050Z"
+          },
+          {
+            "name": "public",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/public",
+            "exists": true,
+            "isDirectory": true,
+            "permissions": "40755",
+            "size": 64,
+            "lastModified": "2025-06-15T13:13:02.252Z"
+          },
+          {
+            "name": "styles",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/styles",
+            "exists": true,
+            "isDirectory": true,
+            "permissions": "40755",
+            "size": 96,
+            "lastModified": "2025-06-15T14:06:32.583Z"
+          },
+          {
+            "name": "types",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/types",
+            "exists": true,
+            "isDirectory": true,
+            "permissions": "40755",
+            "size": 128,
+            "lastModified": "2025-06-15T14:17:56.396Z"
+          }
+        ],
+        "optionalDirs": [
+          {
+            "name": "tests",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/tests",
+            "exists": true,
+            "isDirectory": true,
+            "permissions": "40755"
+          },
+          {
+            "name": "coverage",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/coverage",
+            "exists": true,
+            "isDirectory": true,
+            "permissions": "40755"
+          },
+          {
+            "name": "database",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/database",
+            "exists": true,
+            "isDirectory": true,
+            "permissions": "40755"
+          },
+          {
+            "name": "docs",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/docs",
+            "exists": false,
+            "isDirectory": false,
+            "permissions": null
+          }
+        ],
+        "missingRequired": [],
+        "missingOptional": [
+          "docs"
+        ]
+      }
+    },
+    {
+      "name": "File Read Permissions",
+      "status": "passed",
+      "message": "All critical files are readable (4 files)",
+      "duration": 0,
+      "details": {
+        "testedFiles": [
+          {
+            "name": "package.json",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/package.json",
+            "readable": true,
+            "size": 2119,
+            "permissions": "100644",
+            "contentLength": 2117
+          },
+          {
+            "name": "next.config.js",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/next.config.js",
+            "readable": true,
+            "size": 431,
+            "permissions": "100644",
+            "contentLength": 431
+          },
+          {
+            "name": "tsconfig.json",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/tsconfig.json",
+            "readable": true,
+            "size": 945,
+            "permissions": "100644",
+            "contentLength": 945
+          },
+          {
+            "name": "tailwind.config.ts",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/tailwind.config.ts",
+            "readable": true,
+            "size": 2479,
+            "permissions": "100644",
+            "contentLength": 2479
+          }
+        ],
+        "readableFiles": [
+          {
+            "name": "package.json",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/package.json",
+            "readable": true,
+            "size": 2119,
+            "permissions": "100644",
+            "contentLength": 2117
+          },
+          {
+            "name": "next.config.js",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/next.config.js",
+            "readable": true,
+            "size": 431,
+            "permissions": "100644",
+            "contentLength": 431
+          },
+          {
+            "name": "tsconfig.json",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/tsconfig.json",
+            "readable": true,
+            "size": 945,
+            "permissions": "100644",
+            "contentLength": 945
+          },
+          {
+            "name": "tailwind.config.ts",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/tailwind.config.ts",
+            "readable": true,
+            "size": 2479,
+            "permissions": "100644",
+            "contentLength": 2479
+          }
+        ],
+        "unreadableFiles": [],
+        "missingFiles": []
+      }
+    },
+    {
+      "name": "File Write Permissions",
+      "status": "passed",
+      "message": "All test directories are writable (3 directories)",
+      "duration": 1,
+      "details": {
+        "testedDirs": [
+          {
+            "name": "public",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/public",
+            "writable": true,
+            "testFile": "test-write-1750112137826.tmp",
+            "contentMatches": true
+          },
+          {
+            "name": "coverage",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/coverage",
+            "writable": true,
+            "testFile": "test-write-1750112137827.tmp",
+            "contentMatches": true
+          },
+          {
+            "name": "tests/ops",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/tests/ops",
+            "writable": true,
+            "testFile": "test-write-1750112137827.tmp",
+            "contentMatches": true
+          }
+        ],
+        "writableDirs": [
+          {
+            "name": "public",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/public",
+            "writable": true,
+            "testFile": "test-write-1750112137826.tmp",
+            "contentMatches": true
+          },
+          {
+            "name": "coverage",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/coverage",
+            "writable": true,
+            "testFile": "test-write-1750112137827.tmp",
+            "contentMatches": true
+          },
+          {
+            "name": "tests/ops",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/tests/ops",
+            "writable": true,
+            "testFile": "test-write-1750112137827.tmp",
+            "contentMatches": true
+          }
+        ],
+        "nonWritableDirs": [],
+        "testFiles": [
+          "/Users/20015403/Documents/PROJECTS/personal/prima-facie/public/test-write-1750112137826.tmp",
+          "/Users/20015403/Documents/PROJECTS/personal/prima-facie/coverage/test-write-1750112137827.tmp",
+          "/Users/20015403/Documents/PROJECTS/personal/prima-facie/tests/ops/test-write-1750112137827.tmp"
+        ]
+      }
+    },
+    {
+      "name": "Temporary Directory Access",
+      "status": "passed",
+      "message": "Temporary directory access is working correctly",
+      "duration": 1,
+      "details": {
+        "tempDir": "/var/folders/k4/qqw4rk7526d_l_cyn5d1p2080000gp/T",
+        "testDir": "/var/folders/k4/qqw4rk7526d_l_cyn5d1p2080000gp/T/prima-facie-test-1750112137827",
+        "testFile": "/var/folders/k4/qqw4rk7526d_l_cyn5d1p2080000gp/T/prima-facie-test-1750112137827/test-file.txt",
+        "contentMatches": true,
+        "fileSize": 31,
+        "permissions": "100644"
+      }
+    },
+    {
+      "name": "Log Directory Permissions",
+      "status": "passed",
+      "message": "Log directories are accessible (3 directories, 1 created)",
+      "duration": 0,
+      "details": {
+        "checkedDirs": [
+          {
+            "name": "logs",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/logs",
+            "exists": true,
+            "created": true,
+            "writable": true,
+            "permissions": "40755",
+            "lastModified": "2025-06-16T22:15:37.828Z"
+          },
+          {
+            "name": "coverage",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/coverage",
+            "exists": true,
+            "created": false,
+            "writable": true,
+            "permissions": "40755",
+            "lastModified": "2025-06-16T22:15:37.827Z"
+          },
+          {
+            "name": ".next",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/.next",
+            "exists": true,
+            "created": false,
+            "writable": true,
+            "permissions": "40755",
+            "lastModified": "2025-06-16T00:43:37.668Z"
+          }
+        ],
+        "accessibleDirs": [
+          {
+            "name": "logs",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/logs",
+            "exists": true,
+            "created": true,
+            "writable": true,
+            "permissions": "40755",
+            "lastModified": "2025-06-16T22:15:37.828Z"
+          },
+          {
+            "name": "coverage",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/coverage",
+            "exists": true,
+            "created": false,
+            "writable": true,
+            "permissions": "40755",
+            "lastModified": "2025-06-16T22:15:37.827Z"
+          },
+          {
+            "name": ".next",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/.next",
+            "exists": true,
+            "created": false,
+            "writable": true,
+            "permissions": "40755",
+            "lastModified": "2025-06-16T00:43:37.668Z"
+          }
+        ],
+        "createdDirs": [
+          {
+            "name": "logs",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/logs",
+            "exists": true,
+            "created": true,
+            "writable": true,
+            "permissions": "40755",
+            "lastModified": "2025-06-16T22:15:37.828Z"
+          }
+        ],
+        "errors": []
+      }
+    },
+    {
+      "name": "File Size and Disk Space Check",
+      "status": "passed",
+      "message": "File system usage is reasonable (0 large files)",
+      "duration": 269,
+      "details": {
+        "projectRoot": "/Users/20015403/Documents/PROJECTS/personal/prima-facie",
+        "diskSpace": {
+          "available": "Unable to determine",
+          "total": "Unable to determine",
+          "used": "Unable to determine"
+        },
+        "largeFiles": [],
+        "directoryStats": {
+          "node_modules": {
+            "size": 431444219,
+            "sizeMB": "411.46",
+            "exists": true
+          },
+          ".next": {
+            "size": 418736208,
+            "sizeMB": "399.34",
+            "exists": true
+          },
+          "coverage": {
+            "size": 323598,
+            "sizeMB": "0.31",
+            "exists": true
+          },
+          "public": {
+            "size": 0,
+            "sizeMB": "0.00",
+            "exists": true
+          }
+        }
+      }
+    },
+    {
+      "name": "Console Logging Functionality",
+      "status": "passed",
+      "message": "Console logging is functional (4 log entries captured)",
+      "duration": 0,
+      "details": {
+        "logCount": 4,
+        "logLevels": [
+          "log",
+          "warn",
+          "error"
+        ],
+        "logs": [
+          {
+            "level": "log",
+            "args": [
+              "Test log message"
+            ],
+            "timestamp": "2025-06-16T22:15:38.099Z"
+          },
+          {
+            "level": "warn",
+            "args": [
+              "Test warning message"
+            ],
+            "timestamp": "2025-06-16T22:15:38.099Z"
+          },
+          {
+            "level": "error",
+            "args": [
+              "Test error message"
+            ],
+            "timestamp": "2025-06-16T22:15:38.099Z"
+          },
+          {
+            "level": "log",
+            "args": [
+              {
+                "message": "Structured log",
+                "level": "info",
+                "component": "test"
+              }
+            ],
+            "timestamp": "2025-06-16T22:15:38.099Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Log File Creation and Rotation",
+      "status": "passed",
+      "message": "Log file operations successful (4 entries, rotation tested)",
+      "duration": 1,
+      "details": {
+        "logDir": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/logs",
+        "testLogFile": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/logs/test-app.log",
+        "logEntries": [
+          {
+            "level": "INFO",
+            "message": "Application started",
+            "timestamp": "2025-06-16T22:15:38.100Z"
+          },
+          {
+            "level": "DEBUG",
+            "message": "Debug information",
+            "timestamp": "2025-06-16T22:15:38.100Z"
+          },
+          {
+            "level": "ERROR",
+            "message": "Test error message",
+            "timestamp": "2025-06-16T22:15:38.100Z"
+          },
+          {
+            "level": "WARN",
+            "message": "Warning message",
+            "timestamp": "2025-06-16T22:15:38.100Z"
+          }
+        ],
+        "fileStats": {
+          "size": 207,
+          "created": "2025-06-16T22:15:38.100Z",
+          "modified": "2025-06-16T22:15:38.100Z",
+          "permissions": "100644"
+        },
+        "rotationTest": {
+          "rotatedFile": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/logs/test-app-1750112138100.log",
+          "rotatedSize": 207,
+          "newFile": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/logs/test-app.log",
+          "newFileSize": 45
+        }
+      }
+    },
+    {
+      "name": "Error Tracking and Reporting",
+      "status": "passed",
+      "message": "Error tracking is functional (2 errors handled, 5 patterns tested)",
+      "duration": 12,
+      "details": {
+        "errorTypes": [
+          {
+            "type": "synchronous",
+            "message": "Test synchronous error",
+            "handled": true
+          },
+          {
+            "type": "asynchronous",
+            "message": "Test async error",
+            "handled": true
+          }
+        ],
+        "handledErrors": 2,
+        "unhandledErrors": 0,
+        "errorPatterns": [
+          {
+            "original": {
+              "message": "Test error with stack",
+              "hasStack": true,
+              "hasCode": true,
+              "hasDetails": true
+            },
+            "serialized": {
+              "size": 575,
+              "keys": [
+                "message",
+                "stack",
+                "code",
+                "details",
+                "timestamp"
+              ]
+            }
+          },
+          {
+            "category": "DatabaseError",
+            "code": "DB_CONNECTION_FAILED",
+            "categorized": true
+          },
+          {
+            "category": "ValidationError",
+            "code": "INVALID_INPUT",
+            "categorized": true
+          },
+          {
+            "category": "AuthenticationError",
+            "code": "UNAUTHORIZED",
+            "categorized": true
+          },
+          {
+            "category": "NetworkError",
+            "code": "TIMEOUT",
+            "categorized": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "Performance Monitoring Setup",
+      "status": "passed",
+      "message": "Performance monitoring is functional (3 measurements, avg: 3.67ms)",
+      "duration": 17,
+      "details": {
+        "memoryMonitoring": {
+          "heapUsed": 9217672,
+          "heapTotal": 18710528,
+          "external": 2032976,
+          "rss": 66437120,
+          "heapUsedMB": "8.79",
+          "heapTotalMB": "17.84"
+        },
+        "performanceMarks": [
+          {
+            "name": "test-start",
+            "supported": true
+          },
+          {
+            "name": "test-end",
+            "supported": true
+          },
+          {
+            "name": "test-duration",
+            "supported": true
+          }
+        ],
+        "timingMeasurements": [
+          {
+            "operation": "test_operation_0",
+            "duration": 0,
+            "timestamp": 1750112138112
+          },
+          {
+            "operation": "test_operation_1",
+            "duration": 0,
+            "timestamp": 1750112138112
+          },
+          {
+            "operation": "test_operation_2",
+            "duration": 11,
+            "timestamp": 1750112138112
+          }
+        ],
+        "resourceUsage": {
+          "cpu": {
+            "user": 130287,
+            "system": 225103,
+            "userMs": 130.287,
+            "systemMs": 225.103
+          },
+          "uptime": 0.707181958,
+          "platform": "darwin",
+          "nodeVersion": "v22.14.0"
+        }
+      }
+    },
+    {
+      "name": "Application Health Metrics",
+      "status": "passed",
+      "message": "Application health monitoring is functional (score: 100.0%)",
+      "duration": 1,
+      "details": {
+        "healthChecks": [
+          {
+            "name": "memory_usage",
+            "status": "healthy",
+            "value": "50.23%",
+            "raw": {
+              "rss": 66633728,
+              "heapTotal": 18710528,
+              "heapUsed": 9398624,
+              "external": 2073012,
+              "arrayBuffers": 16675
+            },
+            "timestamp": "2025-06-16T22:15:38.130Z"
+          },
+          {
+            "name": "uptime",
+            "status": "healthy",
+            "value": "0.71s",
+            "raw": 0.70734825,
+            "timestamp": "2025-06-16T22:15:38.130Z"
+          },
+          {
+            "name": "event_loop_delay",
+            "status": "healthy",
+            "value": "0ms",
+            "raw": 0,
+            "timestamp": "2025-06-16T22:15:38.130Z"
+          }
+        ],
+        "metrics": {
+          "healthScore": 100,
+          "healthyChecks": 3,
+          "totalChecks": 3
+        },
+        "systemInfo": {
+          "platform": "darwin",
+          "arch": "arm64",
+          "nodeVersion": "v22.14.0",
+          "pid": 23511,
+          "ppid": 23503,
+          "cwd": "/Users/20015403/Documents/PROJECTS/personal/prima-facie"
+        },
+        "applicationStatus": {
+          "environment": "development",
+          "hasEnvVars": false,
+          "packageManager": "npm"
+        }
+      }
+    },
+    {
+      "name": "Log Analysis and Alerting",
+      "status": "warning",
+      "message": "Log analysis detected 2 high-severity patterns",
+      "duration": 1,
+      "details": {
+        "logFile": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/logs/analysis-test.log",
+        "logEntries": [
+          {
+            "timestamp": "2025-06-16T22:15:38.130Z",
+            "message": "INFO: Application started successfully"
+          },
+          {
+            "timestamp": "2025-06-16T22:15:39.130Z",
+            "message": "DEBUG: User authentication attempt"
+          },
+          {
+            "timestamp": "2025-06-16T22:15:40.130Z",
+            "message": "ERROR: Database connection failed - connection timeout"
+          },
+          {
+            "timestamp": "2025-06-16T22:15:41.130Z",
+            "message": "WARN: High memory usage detected - 85% heap utilization"
+          },
+          {
+            "timestamp": "2025-06-16T22:15:42.130Z",
+            "message": "ERROR: Failed to process payment - payment_gateway_timeout"
+          },
+          {
+            "timestamp": "2025-06-16T22:15:43.130Z",
+            "message": "INFO: User session created"
+          },
+          {
+            "timestamp": "2025-06-16T22:15:44.130Z",
+            "message": "ERROR: Database connection failed - connection timeout"
+          },
+          {
+            "timestamp": "2025-06-16T22:15:45.130Z",
+            "message": "WARN: Rate limit approaching for user 123"
+          },
+          {
+            "timestamp": "2025-06-16T22:15:46.130Z",
+            "message": "ERROR: Unhandled exception in payment processor"
+          },
+          {
+            "timestamp": "2025-06-16T22:15:47.130Z",
+            "message": "INFO: Backup completed successfully"
+          }
+        ],
+        "patterns": {
+          "totalLines": 10,
+          "errorCount": 4,
+          "warningCount": 2,
+          "infoCount": 3,
+          "debugCount": 1
+        },
+        "alerts": [
+          {
+            "pattern": "Database connectivity issues",
+            "severity": "high",
+            "count": 2,
+            "matches": [
+              "ERROR: Database connection failed",
+              "ERROR: Database connection failed"
+            ]
+          },
+          {
+            "pattern": "Memory usage warning",
+            "severity": "medium",
+            "count": 1,
+            "matches": [
+              "WARN: High memory usage"
+            ]
+          },
+          {
+            "pattern": "Payment processing errors",
+            "severity": "high",
+            "count": 2,
+            "matches": [
+              "ERROR: Failed to process payment - payment",
+              "ERROR: Unhandled exception in payment"
+            ]
+          },
+          {
+            "pattern": "Rate limiting alerts",
+            "severity": "medium",
+            "count": 1,
+            "matches": [
+              "Rate limit"
+            ]
+          }
+        ],
+        "analysis": {
+          "errorRate": 40,
+          "warningRate": 20,
+          "alertCount": 4,
+          "highSeverityAlerts": 2
+        }
+      }
+    },
+    {
+      "name": "Database Backup Configuration Test",
+      "status": "warning",
+      "message": "Limited backup capabilities - some tools or connectivity missing",
+      "duration": 601,
+      "details": {
+        "backupTools": [
+          {
+            "tool": "pg_dump",
+            "available": true,
+            "version": "pg_dump (PostgreSQL) 14.18 (Homebrew)"
+          },
+          {
+            "tool": "psql",
+            "available": true,
+            "version": "psql (PostgreSQL) 14.18 (Homebrew)"
+          }
+        ],
+        "configuration": {
+          "hasSupabaseUrl": false,
+          "hasServiceKey": false,
+          "urlFormat": "missing"
+        },
+        "connectivity": {},
+        "permissions": {
+          "backupDir": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups",
+          "canWrite": true,
+          "canRead": true
+        }
+      }
+    },
+    {
+      "name": "File System Backup Test",
+      "status": "passed",
+      "message": "File system backup test passed (3 files backed up and verified)",
+      "duration": 43,
+      "details": {
+        "backupDir": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups",
+        "testBackupPath": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/filesystem-backup-1750112138732",
+        "sourceFiles": [
+          {
+            "name": "config.json",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/test-source/config.json",
+            "size": 56,
+            "created": "2025-06-16T22:15:38.733Z"
+          },
+          {
+            "name": "data.txt",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/test-source/data.txt",
+            "size": 36,
+            "created": "2025-06-16T22:15:38.733Z"
+          },
+          {
+            "name": "binary.dat",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/test-source/binary.dat",
+            "size": 5,
+            "created": "2025-06-16T22:15:38.733Z"
+          }
+        ],
+        "backedUpFiles": [
+          {
+            "name": "config.json",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/filesystem-backup-1750112138732/config.json",
+            "size": 56,
+            "backedUp": "2025-06-16T22:15:38.733Z"
+          },
+          {
+            "name": "data.txt",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/filesystem-backup-1750112138732/data.txt",
+            "size": 36,
+            "backedUp": "2025-06-16T22:15:38.733Z"
+          },
+          {
+            "name": "binary.dat",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/filesystem-backup-1750112138732/binary.dat",
+            "size": 5,
+            "backedUp": "2025-06-16T22:15:38.733Z"
+          }
+        ],
+        "verification": {
+          "passed": true,
+          "results": [
+            {
+              "file": "config.json",
+              "status": "verified",
+              "message": "File backup verified successfully"
+            },
+            {
+              "file": "data.txt",
+              "status": "verified",
+              "message": "File backup verified successfully"
+            },
+            {
+              "file": "binary.dat",
+              "status": "verified",
+              "message": "File backup verified successfully"
+            }
+          ]
+        },
+        "compression": {
+          "available": true,
+          "originalSize": 97,
+          "compressedSize": 659,
+          "compressionRatio": "-579.38%",
+          "tarFile": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/filesystem-backup-1750112138732.tar.gz"
+        }
+      }
+    },
+    {
+      "name": "Database Schema Backup Test",
+      "status": "failed",
+      "message": "Schema backup test failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Recovery Procedure Test",
+      "status": "warning",
+      "message": "Some recovery scenarios failed (1/2 passed)",
+      "duration": 13,
+      "details": {
+        "recoveryTestDir": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/recovery-test",
+        "testScenarios": [
+          {
+            "scenario": "config_recovery",
+            "steps": [
+              {
+                "step": "detection",
+                "status": "passed",
+                "message": "Corruption detected"
+              },
+              {
+                "step": "restore",
+                "status": "passed",
+                "message": "Backup restored"
+              },
+              {
+                "step": "verification",
+                "status": "passed",
+                "message": "Recovery verified"
+              }
+            ],
+            "success": true
+          },
+          {
+            "scenario": "database_recovery",
+            "steps": [
+              {
+                "step": "connection_attempt_1",
+                "status": "failed",
+                "message": "TypeError: fetch failed"
+              },
+              {
+                "step": "connection_attempt_2",
+                "status": "failed",
+                "message": "supabaseUrl is required."
+              },
+              {
+                "step": "connection_attempt_3",
+                "status": "failed",
+                "message": "supabaseUrl is required."
+              }
+            ],
+            "success": false
+          }
+        ],
+        "recoverySteps": [],
+        "verification": {
+          "successfulScenarios": 1,
+          "totalScenarios": 2,
+          "successRate": 50
+        }
+      }
+    },
+    {
+      "name": "Backup Retention and Cleanup Test",
+      "status": "passed",
+      "message": "Backup retention test passed (2 old backups cleaned, 3 retained)",
+      "duration": 1,
+      "details": {
+        "backupDir": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups",
+        "testBackups": [
+          {
+            "name": "backup-daily-2024-01-01.tar.gz",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/backup-daily-2024-01-01.tar.gz",
+            "age": 30,
+            "type": "daily",
+            "size": 54,
+            "created": "2025-05-17T22:15:38.789Z"
+          },
+          {
+            "name": "backup-daily-2024-01-15.tar.gz",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/backup-daily-2024-01-15.tar.gz",
+            "age": 16,
+            "type": "daily",
+            "size": 54,
+            "created": "2025-05-31T22:15:38.789Z"
+          },
+          {
+            "name": "backup-weekly-2024-01-07.tar.gz",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/backup-weekly-2024-01-07.tar.gz",
+            "age": 23,
+            "type": "weekly",
+            "size": 55,
+            "created": "2025-05-24T22:15:38.789Z"
+          },
+          {
+            "name": "backup-monthly-2023-12-01.tar.gz",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/backup-monthly-2023-12-01.tar.gz",
+            "age": 45,
+            "type": "monthly",
+            "size": 56,
+            "created": "2025-05-02T22:15:38.789Z"
+          },
+          {
+            "name": "backup-daily-current.tar.gz",
+            "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups/backup-daily-current.tar.gz",
+            "age": 0,
+            "type": "daily",
+            "size": 51,
+            "created": "2025-06-16T22:15:38.789Z"
+          }
+        ],
+        "retentionPolicy": {
+          "daily": {
+            "keepDays": 7,
+            "keepCount": 7
+          },
+          "weekly": {
+            "keepDays": 30,
+            "keepCount": 4
+          },
+          "monthly": {
+            "keepDays": 365,
+            "keepCount": 12
+          }
+        },
+        "cleanupResults": {
+          "totalBackups": 5,
+          "backupsToKeep": 3,
+          "backupsToDelete": 2,
+          "deletedCount": 2,
+          "deletedSize": 108,
+          "freedSpaceMB": "0.00"
+        }
+      }
+    },
+    {
+      "name": "HTTPS Configuration Test",
+      "status": "failed",
+      "message": "No URL configured for HTTPS testing",
+      "duration": 0,
+      "details": {
+        "httpsSupport": {},
+        "certificates": {},
+        "redirects": {},
+        "securityHeaders": {}
+      }
+    },
+    {
+      "name": "CORS Configuration Test",
+      "status": "warning",
+      "message": "No URL configured for CORS testing",
+      "duration": 0,
+      "details": {
+        "corsHeaders": {},
+        "preflightTest": {},
+        "originValidation": {}
+      }
+    },
+    {
+      "name": "Authentication Security Test",
+      "status": "failed",
+      "message": "Authentication security test failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Rate Limiting Test",
+      "status": "failed",
+      "message": "Rate limiting test failed: supabaseUrl is required.",
+      "duration": 1,
+      "details": {
+        "error": "supabaseUrl is required.",
+        "results": {
+          "rateLimitTests": [],
+          "burstTests": [],
+          "recoveryTests": [],
+          "configuration": {}
+        }
+      }
+    },
+    {
+      "name": "Environment Security Test",
+      "status": "failed",
+      "message": "Critical security issues: Missing Supabase URL configuration, Missing Supabase anonymous key, NODE_ENV not set...",
+      "duration": 0,
+      "details": {
+        "environmentVariables": {
+          "NEXT_PUBLIC_SUPABASE_URL": {
+            "present": false,
+            "length": 0,
+            "isPublic": true
+          },
+          "NEXT_PUBLIC_SUPABASE_ANON_KEY": {
+            "present": false,
+            "length": 0,
+            "isPublic": true
+          },
+          "SUPABASE_SERVICE_ROLE_KEY": {
+            "present": false,
+            "length": 0,
+            "isPublic": false
+          },
+          "NODE_ENV": {
+            "present": false,
+            "length": 0,
+            "isPublic": false
+          }
+        },
+        "secrets": {
+          "potentialSecretsFound": 0,
+          "secrets": [],
+          "publicSecrets": []
+        },
+        "filePermissions": [
+          {
+            "file": ".env",
+            "exists": false
+          },
+          {
+            "file": ".env.local",
+            "exists": true,
+            "permissions": "100644",
+            "worldReadable": true,
+            "groupReadable": true
+          },
+          {
+            "file": ".env.production",
+            "exists": false
+          }
+        ],
+        "configuration": {
+          "isProduction": false,
+          "isDevelopment": false,
+          "debugEnabled": false,
+          "verboseLogging": false
+        }
+      }
+    },
+    {
+      "name": "Database Query Performance Benchmark",
+      "status": "failed",
+      "message": "Database performance benchmark failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Memory Usage Benchmark",
+      "status": "passed",
+      "message": "Memory benchmark completed successfully (0.08MB increase, 4 tests)",
+      "duration": 509,
+      "details": {
+        "initialMemory": {
+          "rss": 70254592,
+          "heapTotal": 19759104,
+          "heapUsed": 12396624,
+          "external": 3251788,
+          "arrayBuffers": 65898
+        },
+        "memoryTests": [
+          {
+            "name": "Large Array Creation",
+            "duration": 0.12,
+            "result": 10,
+            "memoryDiff": {
+              "heapUsed": 842104,
+              "heapTotal": 0,
+              "external": 0,
+              "rss": 0
+            },
+            "memoryDiffMB": {
+              "heapUsed": 0.8,
+              "heapTotal": 0,
+              "external": 0,
+              "rss": 0
+            },
+            "startMemory": {
+              "rss": 70254592,
+              "heapTotal": 19759104,
+              "heapUsed": 12397720,
+              "external": 3251788,
+              "arrayBuffers": 65898
+            },
+            "endMemory": {
+              "rss": 70254592,
+              "heapTotal": 19759104,
+              "heapUsed": 13239824,
+              "external": 3251788,
+              "arrayBuffers": 65898
+            }
+          },
+          {
+            "name": "Object Creation/Destruction",
+            "duration": 0.33,
+            "result": 1000,
+            "memoryDiff": {
+              "heapUsed": 320832,
+              "heapTotal": 0,
+              "external": 0,
+              "rss": 0
+            },
+            "memoryDiffMB": {
+              "heapUsed": 0.31,
+              "heapTotal": 0,
+              "external": 0,
+              "rss": 0
+            },
+            "startMemory": {
+              "rss": 71237632,
+              "heapTotal": 20004864,
+              "heapUsed": 10296696,
+              "external": 3382864,
+              "arrayBuffers": 65694
+            },
+            "endMemory": {
+              "rss": 71237632,
+              "heapTotal": 20004864,
+              "heapUsed": 10617528,
+              "external": 3382864,
+              "arrayBuffers": 65694
+            }
+          },
+          {
+            "name": "String Manipulation",
+            "duration": 0.21,
+            "result": 70890,
+            "memoryDiff": {
+              "heapUsed": 97272,
+              "heapTotal": 0,
+              "external": 0,
+              "rss": 0
+            },
+            "memoryDiffMB": {
+              "heapUsed": 0.09,
+              "heapTotal": 0,
+              "external": 0,
+              "rss": 0
+            },
+            "startMemory": {
+              "rss": 71237632,
+              "heapTotal": 20004864,
+              "heapUsed": 10621680,
+              "external": 3382864,
+              "arrayBuffers": 65694
+            },
+            "endMemory": {
+              "rss": 71237632,
+              "heapTotal": 20004864,
+              "heapUsed": 10718952,
+              "external": 3382864,
+              "arrayBuffers": 65694
+            }
+          },
+          {
+            "name": "JSON Operations",
+            "duration": 3.26,
+            "result": 1000,
+            "memoryDiff": {
+              "heapUsed": 637912,
+              "heapTotal": 163840,
+              "external": 0,
+              "rss": 475136
+            },
+            "memoryDiffMB": {
+              "heapUsed": 0.61,
+              "heapTotal": 0.16,
+              "external": 0,
+              "rss": 0.45
+            },
+            "startMemory": {
+              "rss": 71237632,
+              "heapTotal": 20004864,
+              "heapUsed": 10728648,
+              "external": 3382864,
+              "arrayBuffers": 65694
+            },
+            "endMemory": {
+              "rss": 71712768,
+              "heapTotal": 20168704,
+              "heapUsed": 11366560,
+              "external": 3382864,
+              "arrayBuffers": 65694
+            }
+          }
+        ],
+        "memoryLeaks": {
+          "preLeakHeap": 11377600,
+          "postLeakHeap": 12467680,
+          "postGCHeap": 12470560,
+          "leakMemoryMB": 1.04,
+          "recoveredMemoryMB": 0,
+          "memoryRecoveryRate": -0.26
+        },
+        "garbageCollection": {
+          "available": false,
+          "note": "Run with --expose-gc flag to enable manual garbage collection"
+        },
+        "recommendations": [
+          "Poor memory recovery rate: -0.26%"
+        ]
+      }
+    },
+    {
+      "name": "CPU Performance Benchmark",
+      "status": "passed",
+      "message": "CPU performance acceptable: 21.8ms average (score: 45.86)",
+      "duration": 1021,
+      "details": {
+        "cpuTests": [
+          {
+            "name": "Mathematical Calculations",
+            "iterations": 3,
+            "successfulIterations": 3,
+            "avgDuration": 32.54,
+            "minDuration": 27.71,
+            "maxDuration": 39.78,
+            "totalCPUTime": 99.27000000000001,
+            "results": [
+              {
+                "iteration": 1,
+                "duration": 39.78,
+                "result": 42.81400898467612,
+                "cpuUsage": {
+                  "user": 41175,
+                  "system": 251,
+                  "userMs": 41.17,
+                  "systemMs": 0.25
+                },
+                "success": true
+              },
+              {
+                "iteration": 2,
+                "duration": 30.14,
+                "result": 42.81400898467612,
+                "cpuUsage": {
+                  "user": 30054,
+                  "system": 89,
+                  "userMs": 30.05,
+                  "systemMs": 0.09
+                },
+                "success": true
+              },
+              {
+                "iteration": 3,
+                "duration": 27.71,
+                "result": 42.81400898467612,
+                "cpuUsage": {
+                  "user": 27700,
+                  "system": 11,
+                  "userMs": 27.7,
+                  "systemMs": 0.01
+                },
+                "success": true
+              }
+            ]
+          },
+          {
+            "name": "Array Sorting",
+            "iterations": 5,
+            "successfulIterations": 5,
+            "avgDuration": 20.67,
+            "minDuration": 19.69,
+            "maxDuration": 21.78,
+            "totalCPUTime": 106.03,
+            "results": [
+              {
+                "iteration": 1,
+                "duration": 20.63,
+                "result": 50000,
+                "cpuUsage": {
+                  "user": 21034,
+                  "system": 835,
+                  "userMs": 21.03,
+                  "systemMs": 0.83
+                },
+                "success": true
+              },
+              {
+                "iteration": 2,
+                "duration": 21.27,
+                "result": 50000,
+                "cpuUsage": {
+                  "user": 20499,
+                  "system": 949,
+                  "userMs": 20.5,
+                  "systemMs": 0.95
+                },
+                "success": true
+              },
+              {
+                "iteration": 3,
+                "duration": 19.69,
+                "result": 50000,
+                "cpuUsage": {
+                  "user": 19596,
+                  "system": 320,
+                  "userMs": 19.6,
+                  "systemMs": 0.32
+                },
+                "success": true
+              },
+              {
+                "iteration": 4,
+                "duration": 21.78,
+                "result": 50000,
+                "cpuUsage": {
+                  "user": 21820,
+                  "system": 912,
+                  "userMs": 21.82,
+                  "systemMs": 0.91
+                },
+                "success": true
+              },
+              {
+                "iteration": 5,
+                "duration": 19.96,
+                "result": 50000,
+                "cpuUsage": {
+                  "user": 19066,
+                  "system": 999,
+                  "userMs": 19.07,
+                  "systemMs": 1
+                },
+                "success": true
+              }
+            ]
+          },
+          {
+            "name": "String Processing",
+            "iterations": 3,
+            "successfulIterations": 3,
+            "avgDuration": 3.9,
+            "minDuration": 3.59,
+            "maxDuration": 4.44,
+            "totalCPUTime": 11.7,
+            "results": [
+              {
+                "iteration": 1,
+                "duration": 3.59,
+                "result": 47000,
+                "cpuUsage": {
+                  "user": 3576,
+                  "system": 16,
+                  "userMs": 3.58,
+                  "systemMs": 0.02
+                },
+                "success": true
+              },
+              {
+                "iteration": 2,
+                "duration": 3.67,
+                "result": 47000,
+                "cpuUsage": {
+                  "user": 3672,
+                  "system": 2,
+                  "userMs": 3.67,
+                  "systemMs": 0
+                },
+                "success": true
+              },
+              {
+                "iteration": 3,
+                "duration": 4.44,
+                "result": 47000,
+                "cpuUsage": {
+                  "user": 4432,
+                  "system": 3,
+                  "userMs": 4.43,
+                  "systemMs": 0
+                },
+                "success": true
+              }
+            ]
+          },
+          {
+            "name": "Object Serialization",
+            "iterations": 3,
+            "successfulIterations": 3,
+            "avgDuration": 30.11,
+            "minDuration": 27.9,
+            "maxDuration": 33.61,
+            "totalCPUTime": 99.25,
+            "results": [
+              {
+                "iteration": 1,
+                "duration": 33.61,
+                "result": 10000,
+                "cpuUsage": {
+                  "user": 34212,
+                  "system": 1265,
+                  "userMs": 34.21,
+                  "systemMs": 1.26
+                },
+                "success": true
+              },
+              {
+                "iteration": 2,
+                "duration": 28.82,
+                "result": 10000,
+                "cpuUsage": {
+                  "user": 32207,
+                  "system": 1390,
+                  "userMs": 32.21,
+                  "systemMs": 1.39
+                },
+                "success": true
+              },
+              {
+                "iteration": 3,
+                "duration": 27.9,
+                "result": 10000,
+                "cpuUsage": {
+                  "user": 29157,
+                  "system": 1022,
+                  "userMs": 29.16,
+                  "systemMs": 1.02
+                },
+                "success": true
+              }
+            ]
+          }
+        ],
+        "overallPerformance": {
+          "avgTestDuration": 21.8,
+          "fastestTest": 3.9,
+          "slowestTest": 32.54,
+          "totalCPUTime": 316.25,
+          "performanceScore": 45.86
+        },
+        "systemInfo": {
+          "platform": "darwin",
+          "arch": "arm64",
+          "nodeVersion": "v22.14.0",
+          "cpuCount": 8,
+          "totalMemory": 17179869184,
+          "freeMemory": 72122368
+        },
+        "recommendations": []
+      }
+    },
+    {
+      "name": "Network Latency Benchmark",
+      "status": "failed",
+      "message": "Network latency benchmark failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "Basic Application Health Check",
+      "status": "failed",
+      "message": "Application health check failed: Missing required environment variables, Some dependencies are unhealthy",
+      "duration": 1,
+      "details": {
+        "applicationStatus": {
+          "environment": "unknown",
+          "hasRequiredEnvVars": false,
+          "configurationValid": true
+        },
+        "dependencies": {
+          "supabase-js": {
+            "status": "error",
+            "error": "supabaseUrl is required."
+          },
+          "filesystem": {
+            "status": "available"
+          }
+        },
+        "systemHealth": {
+          "uptime": 2.903173208,
+          "memoryUsage": {
+            "heapUsed": 31441936,
+            "heapTotal": 59113472,
+            "external": 3382656,
+            "rss": 116899840,
+            "heapUsedMB": 29.99,
+            "heapTotalMB": 56.38
+          },
+          "cpuUsage": {
+            "user": 477083,
+            "system": 241506,
+            "userMs": 477.08,
+            "systemMs": 241.51
+          },
+          "platform": "darwin",
+          "nodeVersion": "v22.14.0",
+          "pid": 23511
+        },
+        "metrics": {
+          "heapUsagePercent": 53.19,
+          "uptimeHours": 0,
+          "dependenciesHealthy": 1,
+          "totalDependencies": 2
+        }
+      }
+    },
+    {
+      "name": "Database Health Check",
+      "status": "failed",
+      "message": "Database health check failed: supabaseUrl is required.",
+      "duration": 0,
+      "details": {
+        "error": "supabaseUrl is required."
+      }
+    },
+    {
+      "name": "External Services Health Check",
+      "status": "failed",
+      "message": "Supabase URL not configured",
+      "duration": 0,
+      "details": {
+        "supabaseAPI": {},
+        "dnsResolution": {},
+        "networkConnectivity": {},
+        "serviceStatus": {}
+      }
+    },
+    {
+      "name": "Resource Utilization Health Check",
+      "status": "failed",
+      "message": "Critical resource utilization issues (health score: 50%)",
+      "duration": 0,
+      "details": {
+        "memory": {
+          "heapUsed": 31479792,
+          "heapTotal": 59113472,
+          "external": 3382656,
+          "rss": 116916224,
+          "heapUsedMB": 30.02,
+          "heapTotalMB": 56.38,
+          "heapUsagePercent": 53.25,
+          "status": "healthy"
+        },
+        "cpu": {
+          "user": 477593,
+          "system": 241860,
+          "userMs": 477.59,
+          "systemMs": 241.86,
+          "uptime": 2.9,
+          "uptimeHours": 0,
+          "status": "starting"
+        },
+        "diskSpace": {},
+        "networkResources": {
+          "testRequestTime": 0,
+          "networkHealthy": false,
+          "error": "supabaseUrl is required.",
+          "status": "unavailable"
+        },
+        "recommendations": [
+          "System memory usage is very high",
+          "Application recently started - monitor stability"
+        ],
+        "systemResources": {
+          "totalMemoryMB": 16384,
+          "freeMemoryMB": 79.03,
+          "systemMemoryUsagePercent": 99.52,
+          "cpuCount": 8,
+          "platform": "darwin",
+          "arch": "arm64"
+        },
+        "overallHealth": {
+          "score": 50,
+          "status": "critical"
+        }
+      }
+    },
+    {
+      "name": "Build Process Validation",
+      "status": "warning",
+      "message": "Build process issues: TypeScript compilation errors, Linting errors",
+      "duration": 11453,
+      "details": {
+        "buildConfiguration": {
+          "hasNextConfig": true,
+          "hasTSConfig": true,
+          "hasTailwindConfig": true,
+          "hasPostCSSConfig": true,
+          "buildScript": "next build",
+          "startScript": "next start",
+          "devDependencies": 24,
+          "dependencies": 18
+        },
+        "dependencies": {
+          "required": [
+            "next",
+            "react",
+            "react-dom",
+            "@supabase/supabase-js"
+          ],
+          "missing": [],
+          "allPresent": true
+        },
+        "buildTest": {
+          "typeCheck": "failed",
+          "typeCheckError": "Command failed: npx tsc --noEmit",
+          "linting": "failed",
+          "lintingError": "Command failed: npx next lint --quiet\n\n ⚠ The Next.js plugin was not detected in your ESLint configuration. See https://nextjs.org/docs/basic-features/eslint#migrating-existing-config\n\n./app/(dashboard)/admin/discount-rules/page.tsx\n9:3  Error: 'EyeIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n10:3  Error: 'CheckCircleIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n13:3  Error: 'BanknotesIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n15:3  Error: 'ClockIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n30:3  Error: 'AppliesTo' is defined but never used.  @typescript-eslint/no-unused-vars\n35:3  Error: 'APPLIES_TO_OPTIONS' is defined but never used.  @typescript-eslint/no-unused-vars\n59:11  Error: 'user' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n156:42  Error: 'id' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars\n244:65  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./app/(dashboard)/admin/payment-plans/page.tsx\n9:3  Error: 'CheckCircleIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n10:3  Error: 'XCircleIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n11:3  Error: 'ExclamationTriangleIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n13:3  Error: 'EyeIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n22:3  Error: 'PaymentPlanSummary' is defined but never used.  @typescript-eslint/no-unused-vars\n45:11  Error: 'user' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n\n./app/(dashboard)/admin/subscription-plans/page.tsx\n299:33  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n495:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./app/(dashboard)/billing/invoices/page.tsx\n8:10  Error: 'Tabs' is defined but never used.  @typescript-eslint/no-unused-vars\n8:16  Error: 'TabsContent' is defined but never used.  @typescript-eslint/no-unused-vars\n8:29  Error: 'TabsList' is defined but never used.  @typescript-eslint/no-unused-vars\n8:39  Error: 'TabsTrigger' is defined but never used.  @typescript-eslint/no-unused-vars\n20:3  Error: 'Calendar' is defined but never used.  @typescript-eslint/no-unused-vars\n25:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n26:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n28:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./app/(dashboard)/billing/time-tracking/page.tsx\n11:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n12:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./app/(dashboard)/clients/[id]/edit/page.tsx\n190:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./app/(dashboard)/clients/[id]/page.tsx\n214:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n215:54  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./app/(dashboard)/clients/page.tsx\n143:19  Error: 'setClients' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n233:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./app/(dashboard)/matters/[id]/page.tsx\n16:3  Error: 'XMarkIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n145:9  Error: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n146:18  Error: 'setMatter' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n147:18  Error: 'setEvents' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n148:21  Error: 'setDocuments' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n150:10  Error: 'loading' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n150:19  Error: 'setLoading' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n\n./app/(dashboard)/matters/[id]/workflow/page.tsx\n3:20  Error: 'useEffect' is defined but never used.  @typescript-eslint/no-unused-vars\n10:3  Error: 'ClockIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n11:3  Error: 'ExclamationTriangleIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n13:3  Error: 'DocumentTextIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n14:3  Error: 'CalendarIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n16:3  Error: 'ChatBubbleLeftRightIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n129:9  Error: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n332:19  Error: 'statusInfo' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n\n./app/(dashboard)/matters/new/page.tsx\n77:7  Error: 'brazilianStates' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n\n./app/(dashboard)/matters/page.tsx\n113:19  Error: 'setMatters' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n\n./app/api/whatsapp/webhook/route.ts\n4:10  Error: 'chatService' is defined but never used.  @typescript-eslint/no-unused-vars\n93:9  Error: 'fileName' is never reassigned. Use 'const' instead.  prefer-const\n318:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./app/portal/client/dashboard/page.tsx\n147:16  Error: 'setData' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n\n./app/portal/client/matters/[id]/page.tsx\n304:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n509:51  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n531:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n573:33  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n574:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./app/portal/client/matters/page.tsx\n159:19  Error: 'setMatters' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n201:9  Error: 'formatCurrency' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n\n./components/chat/chat-interface.tsx\n13:10  Error: 'CheckIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n13:21  Error: 'CheckCheckIcon' is defined but never used.  @typescript-eslint/no-unused-vars\n140:49  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./components/chat/message-status-indicator.tsx\n192:34  Error: 'messageId' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars\n\n./components/chat/new-conversation-modal.tsx\n11:10  Error: 'supabase' is defined but never used.  @typescript-eslint/no-unused-vars\n125:19  Error: 'setClients' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n126:18  Error: 'setTopics' is assigned a value but never used.  @typescript-eslint/no-unused-vars\n\n./components/features/billing/case-billing-form.tsx\n17:10  Error: 'caseBillingService' is defined but never used.  @typescript-eslint/no-unused-vars\n118:71  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./components/features/billing/case-outcome-form.tsx\n11:10  Error: 'Separator' is defined but never used.  @typescript-eslint/no-unused-vars\n96:65  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./components/features/billing/case-type-form.tsx\n8:10  Error: 'Textarea' is defined but never used.  @typescript-eslint/no-unused-vars\n88:62  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any\n\n./components/features/billing/time-entry-form.tsx\n21:3  Error: 'AlertCircle' is defined but never used.  @typescript-eslint/no-unused-vars\n22:3  Error: 'CheckCircle' is defined but never used.  @typescript-eslint/no-unused-vars\n24:3  Error: 'Calendar' is defined but never used.  @typescript-eslint/no-unused-vars\n26:3  Error: 'MapPin' is defined but never used.  @typescript-esl",
+          "canRunBuildTools": true
+        },
+        "outputValidation": {
+          "hasPreviousBuild": true,
+          "buildDirectory": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/.next",
+          "buildStats": {
+            "lastModified": "2025-06-16T22:15:37.828Z",
+            "fileCount": 11,
+            "hasStaticDir": true,
+            "hasServerDir": true,
+            "hasCacheDir": true
+          }
+        }
+      }
+    },
+    {
+      "name": "Production Environment Configuration",
+      "status": "failed",
+      "message": "Production configuration not ready: Missing required env vars: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, Service role key not configured...",
+      "duration": 0,
+      "details": {
+        "environmentVariables": {
+          "required": {
+            "NEXT_PUBLIC_SUPABASE_URL": {
+              "present": false,
+              "length": 0,
+              "masked": null
+            },
+            "NEXT_PUBLIC_SUPABASE_ANON_KEY": {
+              "present": false,
+              "length": 0,
+              "masked": null
+            },
+            "SUPABASE_SERVICE_ROLE_KEY": {
+              "present": false,
+              "length": 0,
+              "masked": null
+            }
+          },
+          "optional": {
+            "NODE_ENV": {
+              "present": false,
+              "value": null
+            },
+            "VERCEL_URL": {
+              "present": false,
+              "value": null
+            },
+            "NEXT_PUBLIC_VERCEL_URL": {
+              "present": false,
+              "value": null
+            }
+          },
+          "environment": {
+            "isProduction": false,
+            "isDevelopment": false,
+            "isTest": false
+          }
+        },
+        "securityConfiguration": {
+          "httpsRequired": true,
+          "corsConfigured": true,
+          "authenticationRequired": false,
+          "environmentSecrets": {
+            "hasServiceKey": false,
+            "hasAnonKey": false,
+            "serviceKeyLength": 0
+          }
+        },
+        "performanceSettings": {
+          "reactStrictMode": true,
+          "swcMinify": true,
+          "hasImageOptimization": true,
+          "hasRedirects": true,
+          "compressionEnabled": true
+        },
+        "monitoring": {
+          "errorBoundariesConfigured": true,
+          "loggingConfigured": true,
+          "metricsAvailable": false,
+          "healthCheckEndpoint": false,
+          "databaseConnection": {
+            "successful": false,
+            "error": "supabaseUrl is required."
+          }
+        }
+      }
+    },
+    {
+      "name": "Database Migration Readiness",
+      "status": "warning",
+      "message": "Migration readiness issues: Cannot access database schema",
+      "duration": 1,
+      "details": {
+        "migrationFiles": {
+          "searchedDirectories": [
+            "/Users/20015403/Documents/PROJECTS/personal/prima-facie/database/migrations",
+            "/Users/20015403/Documents/PROJECTS/personal/prima-facie/migrations",
+            "/Users/20015403/Documents/PROJECTS/personal/prima-facie/sql/migrations"
+          ],
+          "foundMigrations": [
+            {
+              "directory": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/database/migrations",
+              "fileCount": 5,
+              "files": [
+                "001_initial_schema.sql",
+                "002_row_level_security.sql",
+                "phase8.10.1-financial-management-schema.sql",
+                "phase8.6.1-time-tracking-schema.sql",
+                "phase8.7.1-dual-invoice-schema.sql"
+              ]
+            }
+          ],
+          "totalMigrationFiles": 5
+        },
+        "schemaValidation": {
+          "schemaFiles": [
+            {
+              "file": "setup-database.sql",
+              "exists": true,
+              "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/setup-database.sql",
+              "size": 7485
+            },
+            {
+              "file": "schema.sql",
+              "exists": false,
+              "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/schema.sql",
+              "size": 0
+            },
+            {
+              "file": "database-schema.sql",
+              "exists": false,
+              "path": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/database-schema.sql",
+              "size": 0
+            }
+          ],
+          "hasSchemaFiles": true,
+          "totalSchemaSize": 7485
+        },
+        "dataIntegrity": {
+          "canAccessSchema": false,
+          "error": "supabaseUrl is required."
+        },
+        "backupReadiness": {
+          "backupDirExists": true,
+          "backupDirPath": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/backups",
+          "existingBackups": 0,
+          "recentBackups": 0
+        }
+      }
+    },
+    {
+      "name": "Deployment Platform Compatibility",
+      "status": "passed",
+      "message": "Deployment platform compatibility verified (Next.js app with 1 API routes)",
+      "duration": 0,
+      "details": {
+        "vercelCompatibility": {
+          "hasVercelConfig": false,
+          "configPath": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/vercel.json",
+          "hasBuilds": false,
+          "hasRedirects": false,
+          "hasRewrites": false,
+          "hasHeaders": false,
+          "hasEnvironmentVariables": false,
+          "framework": "nextjs"
+        },
+        "nextjsFeatures": {
+          "hasNextConfig": true,
+          "reactStrictMode": true,
+          "swcMinify": true,
+          "hasImageConfig": true,
+          "hasRedirects": true,
+          "hasRewrites": false,
+          "hasHeaders": false,
+          "experimental": false
+        },
+        "staticAssets": {
+          "hasPublicDir": true,
+          "hasStylesDir": true,
+          "publicDirPath": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/public",
+          "stylesDirPath": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/styles",
+          "publicFiles": 0,
+          "hasImages": false,
+          "hasFavicon": false
+        },
+        "apiRoutes": {
+          "hasAppApiDir": true,
+          "hasPagesApiDir": false,
+          "appApiPath": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/app/api",
+          "pagesApiPath": "/Users/20015403/Documents/PROJECTS/personal/prima-facie/pages/api",
+          "appApiRoutes": 1,
+          "usingAppRouter": true
+        },
+        "deploymentScripts": {
+          "build": "next build",
+          "start": "next start",
+          "dev": "next dev",
+          "lint": "next lint",
+          "test": "jest"
+        }
+      }
+    },
+    {
+      "name": "Final Deployment Checklist",
+      "status": "failed",
+      "message": "Deployment blocked: 2 critical requirements not met (score: 56%)",
+      "duration": 1,
+      "details": {
+        "checklist": {
+          "Security Headers": {
+            "passed": false,
+            "optional": true
+          },
+          "Error Boundaries": {
+            "passed": false,
+            "optional": true
+          },
+          "Monitoring Setup": {
+            "passed": false,
+            "optional": true
+          },
+          "Performance Optimization": {
+            "passed": true,
+            "optional": true
+          },
+          "Testing Coverage": {
+            "passed": true,
+            "optional": true
+          }
+        },
+        "criticalRequirements": {
+          "Environment Variables": {
+            "passed": false,
+            "required": true
+          },
+          "Build Configuration": {
+            "passed": true,
+            "required": true
+          },
+          "Database Connection": {
+            "passed": false,
+            "required": true
+          },
+          "Static Assets": {
+            "passed": true,
+            "required": true
+          },
+          "TypeScript Configuration": {
+            "passed": true,
+            "required": true
+          }
+        },
+        "recommendations": [
+          "Critical: Fix Environment Variables",
+          "Critical: Fix Database Connection",
+          "Recommended: Implement Security Headers",
+          "Recommended: Implement Error Boundaries",
+          "Recommended: Implement Monitoring Setup",
+          "Configure security headers for production",
+          "Add error boundaries for better error handling",
+          "Set up monitoring and analytics"
+        ],
+        "deploymentScore": 56
+      }
+    }
+  ],
+  "startTime": "2025-06-16T22:15:37.432Z",
+  "endTime": "2025-06-16T22:15:51.782Z",
+  "duration": 14350
+}

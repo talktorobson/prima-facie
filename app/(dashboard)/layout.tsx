@@ -1,11 +1,25 @@
+'use client'
+
 import { Sidebar } from '@/components/layout/sidebar'
 import { MobileMenu } from '@/components/layout/mobile-menu'
+import { useAuthContext } from '@/lib/providers/auth-provider'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const { loading } = useAuthContext()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="large" />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar />

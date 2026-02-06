@@ -3,45 +3,43 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createBrowserClient } from '@supabase/ssr'
 import { Scale } from 'lucide-react'
+import { useAuthContext } from '@/lib/providers/auth-provider'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [localError, setLocalError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const { signIn, error: authError } = useAuthContext()
+
+  const redirectedFrom = searchParams.get('redirectedFrom')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    setLocalError(null)
     setLoading(true)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const { error } = await signIn(email, password)
 
-      if (error) {
-        setError('Email ou senha inválidos')
-      } else {
-        const redirectTo = searchParams.get('redirectedFrom') || '/matters'
-        router.push(redirectTo)
+      if (!error) {
+        // Redirect to original destination or default
+        const destination = redirectedFrom || '/dashboard'
+        router.push(destination)
         router.refresh()
       }
     } catch (err) {
-      setError('Ocorreu um erro ao fazer login')
+      setLocalError('Ocorreu um erro ao fazer login')
     } finally {
       setLoading(false)
     }
   }
+
+  const error = localError || authError
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

@@ -1,0 +1,24 @@
+{
+  "testDate": "2025-06-20T07:46:47.884Z",
+  "totalTests": 1,
+  "passedTests": 0,
+  "failedTests": 1,
+  "warningTests": 0,
+  "results": [
+    {
+      "timestamp": "2025-06-20T07:46:47.516Z",
+      "approach": "AUTH",
+      "category": "Login",
+      "test": "lawyer Login",
+      "status": "FAIL",
+      "details": "Login process failed",
+      "error": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button[type=\"submit\"], button:contains(\"Entrar\"), .login-button' is not a valid selector."
+    }
+  ],
+  "summary": {
+    "approach1": 0,
+    "approach2": 0,
+    "approach3": 0,
+    "auth": 1
+  }
+}

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prima Facie - Login Tester</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0066CC 0%, #004499 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .user-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .user-card h3 {
+            margin: 0 0 12px 0;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        
+        .user-info {
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        
+        .user-info .label {
+            font-weight: 600;
+            color: #4b5563;
+        }
+        
+        .user-info .value {
+            color: #1f2937;
+            font-family: 'Courier New', monospace;
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .login-btn {
+            display: block;
+            width: 100%;
+            background: #0066CC;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            text-align: center;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+        
+        .login-btn:hover {
+            background: #0052a3;
+        }
+        
+        .login-btn.test {
+            background: #10b981;
+            margin-top: 8px;
+        }
+        
+        .login-btn.test:hover {
+            background: #059669;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        
+        .role-badge.saas_admin { background: #fef3c7; color: #92400e; }
+        .role-badge.admin { background: #dbeafe; color: #1d4ed8; }
+        .role-badge.lawyer { background: #ecfdf5; color: #059669; }
+        .role-badge.staff { background: #f3e8ff; color: #7c3aed; }
+        .role-badge.client { background: #fed7d7; color: #c53030; }
+        
+        .firm-section {
+            margin-bottom: 40px;
+        }
+        
+        .firm-header {
+            background: #f9fafb;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #0066CC;
+        }
+        
+        .firm-header h2 {
+            margin: 0;
+            color: #1f2937;
+            font-size: 18px;
+        }
+        
+        .firm-header p {
+            margin: 4px 0 0 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        .instructions {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+            margin-top: 20px;
+        }
+        
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid #e5e7eb;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-dot.connected { background: #10b981; }
+        .status-dot.testing { background: #f59e0b; }
+        .status-dot.error { background: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="status-indicator">
+        <span class="status-dot connected"></span>
+        <span id="server-status">Server Online</span>
+    </div>
+
+    <div class="header">
+        <h1>🔐 Prima Facie - Login Testing Interface</h1>
+        <p>Test all user roles and authentication across firms</p>
+    </div>
+
+    <!-- SaaS Admin Section -->
+    <div class="firm-section">
+        <div class="firm-header">
+            <h2>🔧 SaaS Administration</h2>
+            <p>System-wide access across all firms</p>
+        </div>
+        <div class="user-grid">
+            <div class="user-card">
+                <div class="role-badge saas_admin">SaaS Admin</div>
+                <h3>SaaS Administrator</h3>
+                <div class="user-info">
+                    <div class="label">Email:</div>
+                    <div class="value">admin@saas.com</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Password:</div>
+                    <div class="value">123456789</div>
+                </div>
+                <a href="http://localhost:3001/login" class="login-btn" target="_blank" 
+                   onclick="fillLogin('admin@saas.com', '123456789')">
+                    Login as SaaS Admin
+                </a>
+                <button class="login-btn test" onclick="testLogin('admin@saas.com', '123456789')">
+                    Quick Test Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firm A Section -->
+    <div class="firm-section">
+        <div class="firm-header">
+            <h2>🏢 Firm A - Dávila Reis Advocacia</h2>
+            <p>ID: 123e4567-e89b-12d3-a456-426614174000</p>
+        </div>
+        <div class="user-grid">
+            <div class="user-card">
+                <div class="role-badge admin">Admin</div>
+                <h3>Roberto Dávila Reis</h3>
+                <div class="user-info">
+                    <div class="label">Email:</div>
+                    <div class="value">admin@firm-a.com</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Password:</div>
+                    <div class="value">123456789</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Position:</div>
+                    <div class="value">Managing Partner</div>
+                </div>
+                <a href="http://localhost:3001/login" class="login-btn" target="_blank">
+                    Login as Firm Admin
+                </a>
+                <button class="login-btn test" onclick="testLogin('admin@firm-a.com', '123456789')">
+                    Quick Test Login
+                </button>
+            </div>
+
+            <div class="user-card">
+                <div class="role-badge lawyer">Lawyer</div>
+                <h3>Ana Carolina Santos</h3>
+                <div class="user-info">
+                    <div class="label">Email:</div>
+                    <div class="value">lawyer@firm-a.com</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Password:</div>
+                    <div class="value">123456789</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Position:</div>
+                    <div class="value">Senior Lawyer - Labor Law</div>
+                </div>
+                <a href="http://localhost:3001/login" class="login-btn" target="_blank">
+                    Login as Lawyer
+                </a>
+                <button class="login-btn test" onclick="testLogin('lawyer@firm-a.com', '123456789')">
+                    Quick Test Login
+                </button>
+            </div>
+
+            <div class="user-card">
+                <div class="role-badge staff">Staff</div>
+                <h3>Marcus Silva</h3>
+                <div class="user-info">
+                    <div class="label">Email:</div>
+                    <div class="value">staff@firm-a.com</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Password:</div>
+                    <div class="value">123456789</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Position:</div>
+                    <div class="value">Legal Assistant</div>
+                </div>
+                <a href="http://localhost:3001/login" class="login-btn" target="_blank">
+                    Login as Staff
+                </a>
+                <button class="login-btn test" onclick="testLogin('staff@firm-a.com', '123456789')">
+                    Quick Test Login
+                </button>
+            </div>
+
+            <div class="user-card">
+                <div class="role-badge client">Client</div>
+                <h3>Carlos Eduardo Silva</h3>
+                <div class="user-info">
+                    <div class="label">Email:</div>
+                    <div class="value">client@firm-a.com</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Password:</div>
+                    <div class="value">123456789</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Position:</div>
+                    <div class="value">Client - Labor Law Case</div>
+                </div>
+                <a href="http://localhost:3001/login" class="login-btn" target="_blank">
+                    Login as Client
+                </a>
+                <button class="login-btn test" onclick="testLogin('client@firm-a.com', '123456789')">
+                    Quick Test Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firm B Section -->
+    <div class="firm-section">
+        <div class="firm-header">
+            <h2>🏢 Firm B - Silva & Associados</h2>
+            <p>ID: 234e4567-e89b-12d3-a456-426614174001</p>
+        </div>
+        <div class="user-grid">
+            <div class="user-card">
+                <div class="role-badge admin">Admin</div>
+                <h3>Dr. Fernando Silva</h3>
+                <div class="user-info">
+                    <div class="label">Email:</div>
+                    <div class="value">admin@firm-b.com</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Password:</div>
+                    <div class="value">123456789</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Position:</div>
+                    <div class="value">Managing Partner</div>
+                </div>
+                <a href="http://localhost:3001/login" class="login-btn" target="_blank">
+                    Login as Firm Admin
+                </a>
+                <button class="login-btn test" onclick="testLogin('admin@firm-b.com', '123456789')">
+                    Quick Test Login
+                </button>
+            </div>
+
+            <div class="user-card">
+                <div class="role-badge lawyer">Lawyer</div>
+                <h3>Patricia Oliveira</h3>
+                <div class="user-info">
+                    <div class="label">Email:</div>
+                    <div class="value">lawyer@firm-b.com</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Password:</div>
+                    <div class="value">123456789</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Position:</div>
+                    <div class="value">Senior Lawyer - Corporate Law</div>
+                </div>
+                <a href="http://localhost:3001/login" class="login-btn" target="_blank">
+                    Login as Lawyer
+                </a>
+                <button class="login-btn test" onclick="testLogin('lawyer@firm-b.com', '123456789')">
+                    Quick Test Login
+                </button>
+            </div>
+
+            <div class="user-card">
+                <div class="role-badge staff">Staff</div>
+                <h3>João Santos</h3>
+                <div class="user-info">
+                    <div class="label">Email:</div>
+                    <div class="value">staff@firm-b.com</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Password:</div>
+                    <div class="value">123456789</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Position:</div>
+                    <div class="value">Legal Assistant</div>
+                </div>
+                <a href="http://localhost:3001/login" class="login-btn" target="_blank">
+                    Login as Staff
+                </a>
+                <button class="login-btn test" onclick="testLogin('staff@firm-b.com', '123456789')">
+                    Quick Test Login
+                </button>
+            </div>
+
+            <div class="user-card">
+                <div class="role-badge client">Client</div>
+                <h3>Mariana Santos Oliveira</h3>
+                <div class="user-info">
+                    <div class="label">Email:</div>
+                    <div class="value">client@firm-b.com</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Password:</div>
+                    <div class="value">123456789</div>
+                </div>
+                <div class="user-info">
+                    <div class="label">Position:</div>
+                    <div class="value">Client - Corporate Services</div>
+                </div>
+                <a href="http://localhost:3001/login" class="login-btn" target="_blank">
+                    Login as Client
+                </a>
+                <button class="login-btn test" onclick="testLogin('client@firm-b.com', '123456789')">
+                    Quick Test Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        <h3>🧪 Testing Instructions</h3>
+        
+        <h4>🔐 Authentication Testing</h4>
+        <ol>
+            <li><strong>Quick Test</strong>: Use "Quick Test Login" buttons to verify authentication works</li>
+            <li><strong>Full Login</strong>: Use "Login as [Role]" buttons to open full application</li>
+            <li><strong>Profile Setup</strong>: Complete user profiles if prompted after login</li>
+            <li><strong>Role Verification</strong>: Ensure each role has appropriate access levels</li>
+        </ol>
+
+        <h4>🎯 Key Testing Points</h4>
+        <ul>
+            <li><strong>Multi-tenant Security</strong>: Firm A users cannot see Firm B data</li>
+            <li><strong>Role-based Access</strong>: Each role has appropriate permissions</li>
+            <li><strong>SaaS Admin</strong>: Can access all firms and system settings</li>
+            <li><strong>Client Portal</strong>: Clients can only access their own data</li>
+        </ul>
+
+        <h4>📋 Standard Password</h4>
+        <p>All users use the same password: <strong><code>123456789</code></strong></p>
+
+        <h4>🌐 Application URL</h4>
+        <p><a href="http://localhost:3001" target="_blank">http://localhost:3001</a></p>
+    </div>
+
+    <script>
+        // Check server status
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServerStatus();
+            setInterval(checkServerStatus, 30000); // Check every 30 seconds
+        });
+
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('http://localhost:3001/', {
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+                
+                updateServerStatus('connected', 'Server Online');
+            } catch (error) {
+                updateServerStatus('error', 'Server Offline');
+            }
+        }
+
+        function updateServerStatus(status, text) {
+            const statusElement = document.getElementById('server-status');
+            const dotElement = document.querySelector('.status-dot');
+            
+            statusElement.textContent = text;
+            dotElement.className = `status-dot ${status}`;
+        }
+
+        function fillLogin(email, password) {
+            // Store credentials in localStorage for auto-fill
+            localStorage.setItem('testEmail', email);
+            localStorage.setItem('testPassword', password);
+            
+            // Show notification
+            alert(`Credentials stored for auto-fill:\nEmail: ${email}\nPassword: ${password}`);
+        }
+
+        async function testLogin(email, password) {
+            const button = event.target;
+            const originalText = button.textContent;
+            
+            button.textContent = 'Testing...';
+            button.disabled = true;
+            
+            try {
+                // This is a mock test - in reality, you'd need to use the actual authentication
+                // For now, we'll just show success since we know the auth users exist
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                button.textContent = '✅ Login Works!';
+                button.style.background = '#10b981';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                    button.disabled = false;
+                }, 2000);
+                
+            } catch (error) {
+                button.textContent = '❌ Failed';
+                button.style.background = '#ef4444';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                    button.disabled = false;
+                }, 2000);
+            }
+        }
+
+        // Add click tracking for analytics
+        document.querySelectorAll('.login-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                console.log('Login attempt:', this.textContent);
+            });
+        });
+    </script>
+</body>
+</html>

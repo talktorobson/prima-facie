@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-06-20T11:43:16.296Z",
+  "portal_analysis": {
+    "client_portal": {
+      "accessibility": "UNKNOWN",
+      "structure_score": 0,
+      "navigation_score": 0,
+      "features": [],
+      "issues": [
+        "Analysis error: page.waitForTimeout is not a function"
+      ]
+    },
+    "staff_portal": {
+      "accessibility": "UNKNOWN",
+      "structure_score": 0,
+      "navigation_score": 0,
+      "features": [],
+      "issues": [
+        "Analysis error: page.waitForTimeout is not a function"
+      ]
+    },
+    "rbac_implementation": {
+      "middleware_protection": "POOR",
+      "role_guards": "UNKNOWN",
+      "access_control_score": 0,
+      "security_issues": [
+        "RBAC analysis error: page.waitForTimeout is not a function"
+      ]
+    },
+    "integration_status": {
+      "messaging_integration": "UNKNOWN",
+      "dashboard_integration": "UNKNOWN",
+      "mobile_responsiveness": "UNKNOWN"
+    }
+  },
+  "test_summary": {
+    "total_checks": 13,
+    "passed_checks": 0,
+    "failed_checks": 5,
+    "warnings": 8
+  }
+}

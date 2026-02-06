@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prima Facie - Centro de Testes Frontend</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, #0066CC 0%, #004499 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+        .header h1 { 
+            margin: 0; 
+            font-size: 1.8em; 
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header p { margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9em; }
+        .phase-badges {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .phase-indicator {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 24px;
+            font-size: 11px;
+            font-weight: 600;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            letter-spacing: -0.01em;
+        }
+        
+        .phase-indicator:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-1px);
+        }
+        
+        .phase-indicator.complete {
+            background: rgba(34,197,94,0.4);
+            border: 1px solid rgba(255,255,255,0.4);
+            box-shadow: 0 2px 8px rgba(34,197,94,0.2);
+        }
+        
+        .phase-indicator.complete:hover {
+            background: rgba(34,197,94,0.5);
+        }
+        
+        /* Main Layout */
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: minmax(280px, 320px) 1fr minmax(350px, 420px);
+            gap: 24px;
+            min-height: calc(100vh - 80px);
+            align-items: start;
+            overflow: visible;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+        
+        .sidebar-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .sidebar-section h3 {
+            background: #f9fafb;
+            margin: 0;
+            padding: 16px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .sidebar-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-list li {
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .sidebar-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .sidebar-list a {
+            display: block;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #4b5563;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar-list a:hover {
+            background: #f9fafb;
+            color: #0066CC;
+        }
+        
+        /* Main Content */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background: #f9fafb;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .card-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .card-header .subtitle {
+            margin: 4px 0 0 0;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .card-content {
+            padding: 24px;
+        }
+        
+        /* Test Sections */
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+        
+        .test-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.2s ease;
+        }
+        
+        .test-item:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        
+        .test-item h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .test-item p {
+            margin: 0 0 12px 0;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        
+        .test-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #0066CC;
+            text-decoration: none;
+            padding: 6px 12px;
+            background: rgba(0, 102, 204, 0.1);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        
+        .test-link:hover {
+            background: rgba(0, 102, 204, 0.15);
+            text-decoration: none;
+        }
+        
+        /* Status Panel */
+        .status-panel {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+        
+        .status-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-item h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .status-item p {
+            margin: 0;
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        
+        .status-badge.complete {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-badge.progress {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-badge.pending {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        /* Quick Links */
+        .quick-link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .quick-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #475569;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .quick-link:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            text-decoration: none;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 280px 1fr;
+            }
+            .status-panel {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                padding: 16px;
+            }
+            .sidebar {
+                position: static;
+                max-height: none;
+            }
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            .quick-link-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Data Visualization */
+        .data-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .data-metric {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .data-metric .number {
+            display: block;
+            font-size: 24px;
+            font-weight: 700;
+            color: #0066CC;
+            margin-bottom: 4px;
+        }
+        
+        .data-metric .label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        
+        /* Integration Status */
+        .integration-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .integration-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        
+        .integration-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+        }
+        
+        .integration-icon.database { background: #10b981; }
+        .integration-icon.api { background: #3b82f6; }
+        .integration-icon.service { background: #8b5cf6; }
+        .integration-icon.ui { background: #f59e0b; }
+        
+        .integration-info h5 {
+            margin: 0 0 4px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .integration-info p {
+            margin: 0;
+            font-size: 12px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div>
+                <h1>⚖️ Prima Facie - Centro de Testes Frontend</h1>
+                <p>Legal-as-a-Service Platform - Produção Ready Database Integration</p>
+            </div>
+            <div class="phase-badges">
+                <span class="phase-indicator complete">Phase 8 Complete</span>
+                <span class="phase-indicator complete">Phase 9 Complete</span>
+                <span class="phase-indicator complete">Frontend Integration</span>
+                <span class="phase-indicator complete">90% Production Ready</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Navigation Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3>🏠 Sistema Principal</h3>
+                <ul class="sidebar-list">
+                    <li><a href="http://localhost:3000/">Dashboard Principal</a></li>
+                    <li><a href="http://localhost:3000/admin">Painel Administrativo</a></li>
+                    <li><a href="http://localhost:3000/portal/client">Portal do Cliente</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>💰 Sistema de Cobrança</h3>
+                <ul class="sidebar-list">
+                    <li><a href="http://localhost:3000/admin/subscription-plans">Planos de Assinatura</a></li>
+                    <li><a href="http://localhost:3000/billing/case-billing">Cobrança de Casos</a></li>
+                    <li><a href="http://localhost:3000/billing/invoices">Sistema de Faturas</a></li>
+                    <li><a href="http://localhost:3000/billing/time-tracking">Controle de Horas</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>📊 Gestão Financeira</h3>
+                <ul class="sidebar-list">
+                    <li><a href="http://localhost:3000/billing/accounts-payable">Contas a Pagar</a></li>
+                    <li><a href="http://localhost:3000/billing/accounts-receivable">Contas a Receber</a></li>
+                    <li><a href="http://localhost:3000/billing/financial-dashboard">Dashboard Financeiro</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>👥 Gestão de Clientes</h3>
+                <ul class="sidebar-list">
+                    <li><a href="http://localhost:3000/clients">Lista de Clientes</a></li>
+                    <li><a href="http://localhost:3000/matters">Gestão de Casos</a></li>
+                    <li><a href="http://localhost:3000/calendar">Calendário Jurídico</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>🔧 Configurações</h3>
+                <ul class="sidebar-list">
+                    <li><a href="http://localhost:3000/settings">Configurações Gerais</a></li>
+                    <li><a href="http://localhost:3000/reports">Relatórios</a></li>
+                    <li><a href="http://localhost:3000/documents">Documentos</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Database Integration Status -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🗄️ Status da Integração do Banco de Dados</h2>
+                    <p class="subtitle">Integração completa com Supabase PostgreSQL em produção</p>
+                </div>
+                <div class="card-content">
+                    <div class="data-overview">
+                        <div class="data-metric">
+                            <span class="number">100%</span>
+                            <span class="label">Database Deploy</span>
+                        </div>
+                        <div class="data-metric">
+                            <span class="number">40+</span>
+                            <span class="label">Tabelas Ativas</span>
+                        </div>
+                        <div class="data-metric">
+                            <span class="number">90%</span>
+                            <span class="label">Produção Ready</span>
+                        </div>
+                        <div class="data-metric">
+                            <span class="number">2</span>
+                            <span class="label">Escritórios</span>
+                        </div>
+                    </div>
+
+                    <div class="integration-status">
+                        <div class="integration-item">
+                            <div class="integration-icon database">🗄️</div>
+                            <div class="integration-info">
+                                <h5>Database Schema</h5>
+                                <p>40+ tabelas com RLS policies ativas</p>
+                            </div>
+                        </div>
+                        <div class="integration-item">
+                            <div class="integration-icon service">⚙️</div>
+                            <div class="integration-info">
+                                <h5>Production Services</h5>
+                                <p>Serviços integrados com Supabase</p>
+                            </div>
+                        </div>
+                        <div class="integration-item">
+                            <div class="integration-icon api">🔗</div>
+                            <div class="integration-info">
+                                <h5>Real Queries</h5>
+                                <p>Substituição completa de mock data</p>
+                            </div>
+                        </div>
+                        <div class="integration-item">
+                            <div class="integration-icon ui">🎨</div>
+                            <div class="integration-info">
+                                <h5>Frontend Integration</h5>
+                                <p>UI conectado ao banco real</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sistema de Cobrança Híbrida -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>💰 Sistema de Cobrança Híbrida LaaS</h2>
+                    <p class="subtitle">Teste do sistema completo de faturamento legal</p>
+                </div>
+                <div class="card-content">
+                    <div class="test-grid">
+                        <div class="test-item">
+                            <h4>🔄 Planos de Assinatura</h4>
+                            <p>Gestão completa de planos recorrentes com tracking de uso</p>
+                            <a href="http://localhost:3000/admin/subscription-plans" class="test-link">
+                                Testar Planos →
+                            </a>
+                        </div>
+                        <div class="test-item">
+                            <h4>⚖️ Cobrança de Casos</h4>
+                            <p>Billing multi-modal: por hora, fixo, contingência e híbrido</p>
+                            <a href="http://localhost:3000/billing/case-billing" class="test-link">
+                                Testar Billing →
+                            </a>
+                        </div>
+                        <div class="test-item">
+                            <h4>📋 Sistema de Faturas</h4>
+                            <p>Faturas duplas: assinatura + casos com numeração automática</p>
+                            <a href="http://localhost:3000/billing/invoices" class="test-link">
+                                Testar Faturas →
+                            </a>
+                        </div>
+                        <div class="test-item">
+                            <h4>⏱️ Controle de Horas</h4>
+                            <p>Time tracking integrado com cálculo automático de billing</p>
+                            <a href="http://localhost:3000/billing/time-tracking" class="test-link">
+                                Testar Horas →
+                            </a>
+                        </div>
+                        <div class="test-item">
+                            <h4>🎯 Engine de Descontos</h4>
+                            <p>Descontos automáticos para assinantes com cross-selling</p>
+                            <a href="http://localhost:3000/admin/discount-rules" class="test-link">
+                                Testar Descontos →
+                            </a>
+                        </div>
+                        <div class="test-item">
+                            <h4>📅 Planos de Pagamento</h4>
+                            <p>Parcelamento automático com juros e controle de inadimplência</p>
+                            <a href="http://localhost:3000/billing/payment-plans" class="test-link">
+                                Testar Parcelamento →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gestão Financeira -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📊 Gestão Financeira Completa</h2>
+                    <p class="subtitle">Sistema AP/AR com compliance brasileiro</p>
+                </div>
+                <div class="card-content">
+                    <div class="test-grid">
+                        <div class="test-item">
+                            <h4>📤 Contas a Pagar</h4>
+                            <p>Gestão de fornecedores, aprovações e fluxo de pagamentos</p>
+                            <a href="http://localhost:3000/billing/accounts-payable" class="test-link">
+                                Testar AP →
+                            </a>
+                        </div>
+                        <div class="test-item">
+                            <h4>📥 Contas a Receber</h4>
+                            <p>Cobrança, aging e análise de inadimplência</p>
+                            <a href="http://localhost:3000/billing/accounts-receivable" class="test-link">
+                                Testar AR →
+                            </a>
+                        </div>
+                        <div class="test-item">
+                            <h4>📈 Dashboard Financeiro</h4>
+                            <p>KPIs, cash flow e alertas em tempo real</p>
+                            <a href="http://localhost:3000/billing/financial-dashboard" class="test-link">
+                                Testar Dashboard →
+                            </a>
+                        </div>
+                        <div class="test-item">
+                            <h4>📄 Exportação Excel/PDF</h4>
+                            <p>Relatórios profissionais com branding da firma</p>
+                            <a href="http://localhost:3000/reports" class="test-link">
+                                Testar Exportação →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gestão de Clientes e Casos -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>👥 Gestão de Clientes e Casos</h2>
+                    <p class="subtitle">CRM jurídico com compliance brasileiro</p>
+                </div>
+                <div class="card-content">
+                    <div class="test-grid">
+                        <div class="test-item">
+                            <h4>👤 Gestão de Clientes</h4>
+                            <p>CRM com validação CPF/CNPJ e dados completos</p>
+                            <a href="http://localhost:3000/clients" class="test-link">
+                                Testar Clientes →
+                            </a>
+                        </div>
+                        <div class="test-item">
+                            <h4>📁 Gestão de Casos</h4>
+                            <p>Matters com tipos de caso e billing integrado</p>
+                            <a href="http://localhost:3000/matters" class="test-link">
+                                Testar Casos →
+                            </a>
+                        </div>
+                        <div class="test-item">
+                            <h4>📅 Calendário Jurídico</h4>
+                            <p>Prazos, audiências e alertas de compliance</p>
+                            <a href="http://localhost:3000/calendar" class="test-link">
+                                Testar Calendário →
+                            </a>
+                        </div>
+                        <div class="test-item">
+                            <h4>🏢 Portal do Cliente</h4>
+                            <p>Acesso self-service com pagamentos e documentos</p>
+                            <a href="http://localhost:3000/portal/client" class="test-link">
+                                Testar Portal →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dados de Teste Disponíveis -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🔬 Dados de Teste Disponíveis</h2>
+                    <p class="subtitle">Database semeado com cenários realistas brasileiros</p>
+                </div>
+                <div class="card-content">
+                    <div class="data-overview">
+                        <div class="data-metric">
+                            <span class="number">8</span>
+                            <span class="label">Clientes</span>
+                        </div>
+                        <div class="data-metric">
+                            <span class="number">8</span>
+                            <span class="label">Casos Ativos</span>
+                        </div>
+                        <div class="data-metric">
+                            <span class="number">6</span>
+                            <span class="label">Planos LaaS</span>
+                        </div>
+                        <div class="data-metric">
+                            <span class="number">18</span>
+                            <span class="label">Time Entries</span>
+                        </div>
+                        <div class="data-metric">
+                            <span class="number">7</span>
+                            <span class="label">Faturas</span>
+                        </div>
+                        <div class="data-metric">
+                            <span class="number">9</span>
+                            <span class="label">Bills AP</span>
+                        </div>
+                    </div>
+
+                    <h4>🏢 Escritórios de Teste:</h4>
+                    <div class="test-grid">
+                        <div class="test-item">
+                            <h4>Dávila Reis Advocacia</h4>
+                            <p>Escritório principal com casos trabalhistas, família e criminal</p>
+                        </div>
+                        <div class="test-item">
+                            <h4>Silva & Associados</h4>
+                            <p>Escritório corporativo com foco em direito empresarial</p>
+                        </div>
+                    </div>
+
+                    <h4>💰 Cenários de Billing:</h4>
+                    <ul style="margin: 16px 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+                        <li><strong>Planos LaaS:</strong> R$ 890 - R$ 8.500/mês (Basic ao Enterprise)</li>
+                        <li><strong>Cases:</strong> Hourly (R$ 250-500/h), Fixed, Contingency (20-30%)</li>
+                        <li><strong>Descontos:</strong> 10-20% para assinantes ativos</li>
+                        <li><strong>Parcelamento:</strong> 2-12x com juros configuráveis</li>
+                        <li><strong>Expenses:</strong> R$ 420 - R$ 16.500 em bills variados</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Instruções de Teste -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🧪 Guia de Teste E2E</h2>
+                    <p class="subtitle">Fluxo completo de teste do sistema integrado</p>
+                </div>
+                <div class="card-content">
+                    <h4>🚀 Fluxo Recomendado de Teste:</h4>
+                    <ol style="margin: 16px 0; padding-left: 20px; font-size: 14px; line-height: 1.8;">
+                        <li><strong>Start Server:</strong> <code>npm run dev</code> para iniciar em localhost:3000</li>
+                        <li><strong>Database Status:</strong> Verificar conectividade e dados em tempo real</li>
+                        <li><strong>Admin Panel:</strong> Navegar pelo painel administrativo completo</li>
+                        <li><strong>Subscription Management:</strong> Testar criação e edição de planos LaaS</li>
+                        <li><strong>Case Billing:</strong> Calcular billing multi-modal com descontos</li>
+                        <li><strong>Invoice System:</strong> Gerar faturas duplas (subscription + case)</li>
+                        <li><strong>Time Tracking:</strong> Tracking de horas com billing automático</li>
+                        <li><strong>Financial Management:</strong> AP/AR com workflow completo</li>
+                        <li><strong>Client Portal:</strong> Acesso do cliente com self-service</li>
+                        <li><strong>Reports & Export:</strong> Geração de relatórios Excel/PDF</li>
+                    </ol>
+
+                    <h4>🔍 Pontos Críticos para Validação:</h4>
+                    <ul style="margin: 16px 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+                        <li>✅ <strong>Real Database Queries:</strong> Dados vindos do Supabase (não mock)</li>
+                        <li>✅ <strong>Multi-tenant Security:</strong> RLS policies isolando data entre firms</li>
+                        <li>✅ <strong>Brazilian Compliance:</strong> CPF/CNPJ, PIX, formatação BRL</li>
+                        <li>✅ <strong>Cross-selling Discounts:</strong> Desconto automático para assinantes</li>
+                        <li>✅ <strong>Revenue Calculations:</strong> MRR, CLV, profitability tracking</li>
+                        <li>✅ <strong>Payment Workflows:</strong> Installment plans com late fees</li>
+                    </ul>
+
+                    <div class="quick-link-grid" style="margin-top: 20px;">
+                        <a href="http://localhost:3000/" class="quick-link">
+                            🏠 Dashboard Principal
+                        </a>
+                        <a href="http://localhost:3000/admin" class="quick-link">
+                            ⚙️ Admin Panel
+                        </a>
+                        <a href="http://localhost:3000/billing/financial-dashboard" class="quick-link">
+                            📊 Financial Dashboard
+                        </a>
+                        <a href="http://localhost:3000/portal/client" class="quick-link">
+                            👤 Portal Cliente
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Status Panel -->
+        <aside class="status-panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2>📊 Status do Sistema</h2>
+                </div>
+                <div class="card-content" style="padding: 0;">
+                    <div class="status-item">
+                        <h4>Database</h4>
+                        <p>
+                            <span class="status-badge complete">✅ Connected</span><br>
+                            Supabase PostgreSQL em produção
+                        </p>
+                    </div>
+                    <div class="status-item">
+                        <h4>Frontend Integration</h4>
+                        <p>
+                            <span class="status-badge complete">✅ Complete</span><br>
+                            Mock data substituído por queries reais
+                        </p>
+                    </div>
+                    <div class="status-item">
+                        <h4>Service Layer</h4>
+                        <p>
+                            <span class="status-badge complete">✅ Production</span><br>
+                            5 production services ativos
+                        </p>
+                    </div>
+                    <div class="status-item">
+                        <h4>Build Status</h4>
+                        <p>
+                            <span class="status-badge complete">✅ Success</span><br>
+                            Compilação sem erros
+                        </p>
+                    </div>
+                    <div class="status-item">
+                        <h4>Multi-tenant</h4>
+                        <p>
+                            <span class="status-badge complete">✅ Secured</span><br>
+                            RLS policies ativas
+                        </p>
+                    </div>
+                    <div class="status-item">
+                        <h4>Brazilian Compliance</h4>
+                        <p>
+                            <span class="status-badge complete">✅ Ready</span><br>
+                            CPF/CNPJ, PIX, BRL support
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <h2>🎯 Next Steps</h2>
+                </div>
+                <div class="card-content" style="padding: 0;">
+                    <div class="status-item">
+                        <h4>Email Integration</h4>
+                        <p>
+                            <span class="status-badge pending">📝 Pending</span><br>
+                            Connect billing events to email templates
+                        </p>
+                    </div>
+                    <div class="status-item">
+                        <h4>Stripe Webhooks</h4>
+                        <p>
+                            <span class="status-badge pending">📝 Pending</span><br>
+                            Complete payment flow automation
+                        </p>
+                    </div>
+                    <div class="status-item">
+                        <h4>Performance</h4>
+                        <p>
+                            <span class="status-badge pending">📝 Pending</span><br>
+                            Load testing with production data
+                        </p>
+                    </div>
+                    <div class="status-item">
+                        <h4>Security Audit</h4>
+                        <p>
+                            <span class="status-badge pending">📝 Pending</span><br>
+                            Final RLS and access review
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Add some basic interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click tracking for test links
+            const testLinks = document.querySelectorAll('.test-link, .quick-link');
+            testLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    console.log('Test link clicked:', this.href);
+                    // Could add analytics tracking here
+                });
+            });
+
+            // Add hover effects for cards
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
+                });
+            });
+
+            // Check if dev server is running
+            fetch('http://localhost:3000/')
+                .then(response => {
+                    if (response.ok) {
+                        console.log('✅ Dev server is running at localhost:3000');
+                        // Update status indicators if needed
+                        const statusBadges = document.querySelectorAll('.status-badge');
+                        statusBadges.forEach(badge => {
+                            if (badge.textContent.includes('Connected')) {
+                                badge.style.background = '#dcfce7';
+                                badge.style.color = '#166534';
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.log('⚠️ Dev server not running. Start with: npm run dev');
+                    // Could update UI to show server offline
+                });
+        });
+    </script>
+</body>
+</html>

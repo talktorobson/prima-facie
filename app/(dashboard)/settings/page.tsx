@@ -60,7 +60,10 @@ export default function SettingsPage() {
   }, [profile])
 
   const fetchSettings = async () => {
-    if (!profile?.law_firm_id) return
+    if (!profile?.law_firm_id) {
+      setLoading(false)
+      return
+    }
 
     try {
       setLoading(true)
@@ -602,6 +605,25 @@ export default function SettingsPage() {
   }
 
   const activeSettingsSection = settingsSections.find(section => section.id === activeSection)
+
+  if (profile?.user_type === 'super_admin') {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Configurações</h1>
+          <p className="mt-2 text-gray-600">
+            Configurações da plataforma
+          </p>
+        </div>
+        <div className="bg-white shadow rounded-lg p-6">
+          <p className="text-gray-500">
+            As configurações de plataforma estão disponíveis em{' '}
+            <a href="/platform" className="text-primary hover:underline font-medium">Plataforma</a>.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

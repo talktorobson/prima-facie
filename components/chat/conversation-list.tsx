@@ -30,8 +30,7 @@ interface ConversationTopic {
   icon: string
 }
 
-// Mock topics for filtering
-const mockTopics: ConversationTopic[] = [
+const CONVERSATION_TOPICS: ConversationTopic[] = [
   { id: '1', name: 'Geral', color: '#0066CC', icon: 'ChatBubbleLeftRightIcon' },
   { id: '2', name: 'Consulta Jurídica', color: '#10B981', icon: 'DocumentTextIcon' },
   { id: '3', name: 'Documentos', color: '#F59E0B', icon: 'PaperClipIcon' },
@@ -48,44 +47,15 @@ interface ConversationItemProps {
 
 const ConversationItem = ({ conversation, isSelected, onClick, isClient = false }: ConversationItemProps) => {
   const getLastMessagePreview = () => {
-    // In real implementation, this would come from the last message
-    const previews = [
-      'Preciso enviar os documentos solicitados...',
-      'A audiência foi remarcada para próxima semana',
-      'Obrigado pelas informações enviadas',
-      'Quando podemos agendar uma reunião?',
-      'Documento enviado com sucesso'
-    ]
-    return previews[Math.floor(Math.random() * previews.length)]
+    return conversation.description || 'Nenhuma mensagem ainda'
   }
 
   const getUnreadCount = () => {
-    // Mock unread count - in real implementation, this would be calculated
-    return Math.floor(Math.random() * 5)
+    return 0
   }
 
   const getStatusIcon = () => {
-    // Mock status - in real implementation, this would come from message status
-    const statuses = ['sent', 'delivered', 'read']
-    const status = statuses[Math.floor(Math.random() * statuses.length)]
-    
-    if (status === 'read') {
-      return (
-        <div className="flex -space-x-1">
-          <CheckIcon className="h-3 w-3 text-blue-500" />
-          <CheckIcon className="h-3 w-3 text-blue-500" />
-        </div>
-      )
-    } else if (status === 'delivered') {
-      return (
-        <div className="flex -space-x-1">
-          <CheckIcon className="h-3 w-3 text-gray-400" />
-          <CheckIcon className="h-3 w-3 text-gray-400" />
-        </div>
-      )
-    } else {
-      return <CheckIcon className="h-3 w-3 text-gray-400" />
-    }
+    return <CheckIcon className="h-3 w-3 text-gray-400" />
   }
 
   const getPriorityIndicator = () => {
@@ -250,32 +220,40 @@ export default function ConversationList({
     conversationType: 'internal' | 'client' | 'whatsapp'
     priority: 'low' | 'normal' | 'high' | 'urgent'
   }) => {
+    const conversationType = data.conversationType === 'whatsapp' ? 'whatsapp' :
+                             data.conversationType === 'internal' ? 'consultation' : 'general' as const
+
     try {
-      // Mock conversation creation for testing
-      const mockConversation: Conversation = {
-        id: `mock-${Date.now()}`,
+      const newConversation = await chatService.createConversation({
         law_firm_id: 'default-firm-id',
         topic_id: data.topicId,
         client_id: data.clientId,
         title: data.title,
-        conversation_type: data.conversationType === 'client' ? 'general' : 
-                          data.conversationType === 'whatsapp' ? 'whatsapp' :
-                          data.conversationType === 'internal' ? 'consultation' : 'general',
+        conversation_type: conversationType,
+        priority: data.priority,
+        status: 'active',
+      })
+
+      setConversations(prev => [newConversation, ...prev])
+      onSelectConversation(newConversation)
+    } catch (error) {
+      console.error('Error creating conversation via Supabase, using fallback:', error)
+      const fallbackConversation: Conversation = {
+        id: `local-${Date.now()}`,
+        law_firm_id: 'default-firm-id',
+        topic_id: data.topicId,
+        client_id: data.clientId,
+        title: data.title,
+        conversation_type: conversationType,
         priority: data.priority,
         status: 'active',
         is_whatsapp_enabled: data.conversationType === 'whatsapp',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
-      
-      // Add to shared mock store for cross-user sync
-      chatService.addMockConversation(mockConversation)
-      
-      setConversations(prev => [mockConversation, ...prev])
-      onSelectConversation(mockConversation)
-      console.log('Mock conversation created and shared:', mockConversation)
-    } catch (error) {
-      console.error('Error creating conversation:', error)
+      chatService.addMockConversation(fallbackConversation)
+      setConversations(prev => [fallbackConversation, ...prev])
+      onSelectConversation(fallbackConversation)
     }
   }
 
@@ -299,8 +277,7 @@ export default function ConversationList({
     // Type filter
     switch (filterType) {
       case 'unread':
-        // In real implementation, check for unread messages
-        return Math.random() > 0.5 // Mock
+        return false
       case 'urgent':
         return conversation.priority === 'urgent'
       default:
@@ -401,7 +378,7 @@ export default function ConversationList({
               >
                 Todos
               </button>
-              {mockTopics.map((topic) => (
+              {CONVERSATION_TOPICS.map((topic) => (
                 <button
                   key={topic.id}
                   onClick={() => setSelectedTopicId(topic.id)}

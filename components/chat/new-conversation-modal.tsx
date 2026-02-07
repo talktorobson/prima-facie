@@ -39,79 +39,12 @@ interface NewConversationModalProps {
   }) => void
 }
 
-// Mock data for development
-const mockClients: Client[] = [
-  {
-    id: '1',
-    name: 'João Silva Santos',
-    email: 'joao.silva@email.com',
-    phone: '+55 11 9 8765-4321',
-    cpf_cnpj: '123.456.789-01'
-  },
-  {
-    id: '2', 
-    name: 'Maria Oliveira Costa',
-    email: 'maria.oliveira@email.com',
-    phone: '+55 11 9 7654-3210',
-    cpf_cnpj: '987.654.321-02'
-  },
-  {
-    id: '3',
-    name: 'Tech Solutions LTDA',
-    email: 'contato@techsolutions.com.br',
-    phone: '+55 11 3456-7890',
-    cpf_cnpj: '12.345.678/0001-90'
-  },
-  {
-    id: '4',
-    name: 'Ana Paula Ferreira',
-    email: 'ana.ferreira@email.com',
-    phone: '+55 11 9 5432-1098',
-    cpf_cnpj: '456.789.123-45'
-  }
-]
-
-const mockTopics: ConversationTopic[] = [
-  {
-    id: '1',
-    name: 'Geral',
-    description: 'Conversas gerais com clientes',
-    color: '#0066CC',
-    icon: 'ChatBubbleLeftRightIcon',
-    is_active: true
-  },
-  {
-    id: '2',
-    name: 'Consulta Jurídica',
-    description: 'Consultas e dúvidas jurídicas',
-    color: '#10B981',
-    icon: 'DocumentTextIcon',
-    is_active: true
-  },
-  {
-    id: '3',
-    name: 'Documentos',
-    description: 'Envio e recebimento de documentos',
-    color: '#F59E0B',
-    icon: 'PaperClipIcon',
-    is_active: true
-  },
-  {
-    id: '4',
-    name: 'Audiências',
-    description: 'Informações sobre audiências e prazos',
-    color: '#EF4444',
-    icon: 'CalendarIcon',
-    is_active: true
-  },
-  {
-    id: '5',
-    name: 'Urgente',
-    description: 'Comunicações urgentes',
-    color: '#DC2626',
-    icon: 'ExclamationTriangleIcon',
-    is_active: true
-  }
+const CONVERSATION_TOPICS: ConversationTopic[] = [
+  { id: '1', name: 'Geral', description: 'Conversas gerais com clientes', color: '#0066CC', icon: 'ChatBubbleLeftRightIcon', is_active: true },
+  { id: '2', name: 'Consulta Jurídica', description: 'Consultas e dúvidas jurídicas', color: '#10B981', icon: 'DocumentTextIcon', is_active: true },
+  { id: '3', name: 'Documentos', description: 'Envio e recebimento de documentos', color: '#F59E0B', icon: 'PaperClipIcon', is_active: true },
+  { id: '4', name: 'Audiências', description: 'Informações sobre audiências e prazos', color: '#EF4444', icon: 'CalendarIcon', is_active: true },
+  { id: '5', name: 'Urgente', description: 'Comunicações urgentes', color: '#DC2626', icon: 'ExclamationTriangleIcon', is_active: true },
 ]
 
 export default function NewConversationModal({ isOpen, onClose, onCreateConversation }: NewConversationModalProps) {
@@ -122,8 +55,8 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
   const [title, setTitle] = useState('')
   const [conversationType, setConversationType] = useState<'internal' | 'client' | 'whatsapp'>('client')
   const [priority, setPriority] = useState<'low' | 'normal' | 'high' | 'urgent'>('normal')
-  const [clients, setClients] = useState<Client[]>(mockClients)
-  const [topics, setTopics] = useState<ConversationTopic[]>(mockTopics)
+  const [clients, setClients] = useState<Client[]>([])
+  const [topics] = useState<ConversationTopic[]>(CONVERSATION_TOPICS)
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -136,6 +69,29 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
       setConversationType('client')
       setPriority('normal')
     }
+  }, [isOpen])
+
+  // Load clients from Supabase
+  useEffect(() => {
+    const loadClients = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('contacts')
+          .select('id, full_name, email, phone, cpf_cnpj')
+          .order('full_name')
+        if (error) throw error
+        setClients((data || []).map(c => ({
+          id: c.id,
+          name: c.full_name,
+          email: c.email,
+          phone: c.phone || undefined,
+          cpf_cnpj: c.cpf_cnpj || undefined,
+        })))
+      } catch (error) {
+        console.error('Error loading clients:', error)
+      }
+    }
+    if (isOpen) loadClients()
   }, [isOpen])
 
   // Filter clients based on search term

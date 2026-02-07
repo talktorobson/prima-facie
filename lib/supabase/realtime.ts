@@ -8,6 +8,9 @@ import type { Message, Conversation } from '@/types/database'
 // Re-export types used by components
 export type { Message, Conversation } from '@/types/database'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const TYPING_AUTO_CLEAR_MS = 4000
+
 // =====================================================
 // Typing Indicator Types
 // =====================================================
@@ -21,7 +24,9 @@ export interface TypingIndicator {
 
 // =====================================================
 // useConversationRealtime
-// Subscribes to new messages in a conversation via postgres_changes
+// Subscribes to new messages in a conversation via postgres_changes.
+// Invalidates the query instead of setQueryData so sender relation
+// is always present (avoids "Usuario" flash).
 // =====================================================
 
 export function useConversationRealtime(conversationId?: string | null) {
@@ -29,8 +34,9 @@ export function useConversationRealtime(conversationId?: string | null) {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    if (!conversationId) return
+    if (!conversationId || !UUID_RE.test(conversationId)) return
 
+    let active = true
     const channel = supabase
       .channel(`conversation-messages:${conversationId}`)
       .on(
@@ -41,24 +47,17 @@ export function useConversationRealtime(conversationId?: string | null) {
           table: 'messages',
           filter: `conversation_id=eq.${conversationId}`,
         },
-        (payload) => {
-          const newMessage = payload.new as Message
-          queryClient.setQueryData(
-            ['conversation-messages', conversationId],
-            (old: Message[] | undefined) => {
-              if (!old) return [newMessage]
-              // Avoid duplicates
-              if (old.some(m => m.id === newMessage.id)) return old
-              return [...old, newMessage]
-            }
-          )
-          // Also refresh conversation list (for last_message_preview)
-          queryClient.invalidateQueries({ queryKey: ['conversations'] })
+        () => {
+          if (!active) return
+          queryClient.invalidateQueries({ queryKey: ['conversation-messages', conversationId] })
         }
       )
-      .subscribe()
+      .subscribe((status, err) => {
+        if (err) console.error('Realtime subscription error (messages):', err)
+      })
 
     return () => {
+      active = false
       supabase.removeChannel(channel)
     }
   }, [conversationId, supabase, queryClient])
@@ -66,7 +65,9 @@ export function useConversationRealtime(conversationId?: string | null) {
 
 // =====================================================
 // useConversationListRealtime
-// Subscribes to conversation updates for the law firm
+// Subscribes to conversation updates for the law firm.
+// The DB trigger on messages INSERT updates conversations.last_message_at,
+// so this single subscription handles both new-message and conversation-edit events.
 // =====================================================
 
 export function useConversationListRealtime(lawFirmId?: string | null) {
@@ -74,7 +75,7 @@ export function useConversationListRealtime(lawFirmId?: string | null) {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    if (!lawFirmId) return
+    if (!lawFirmId || !UUID_RE.test(lawFirmId)) return
 
     const channel = supabase
       .channel(`conversations:${lawFirmId}`)
@@ -90,7 +91,9 @@ export function useConversationListRealtime(lawFirmId?: string | null) {
           queryClient.invalidateQueries({ queryKey: ['conversations'] })
         }
       )
-      .subscribe()
+      .subscribe((status, err) => {
+        if (err) console.error('Realtime subscription error (conversations):', err)
+      })
 
     return () => {
       supabase.removeChannel(channel)
@@ -128,13 +131,13 @@ export function useTypingBroadcast(conversationId?: string | null, userId?: stri
             return [...prev, indicator]
           })
 
-          // Auto-clear after 4 seconds
+          // Auto-clear after timeout
           const existing = typingTimeoutsRef.current.get(indicator.user_id)
           if (existing) clearTimeout(existing)
           const timeout = setTimeout(() => {
             setTypingUsers(prev => prev.filter(t => t.user_id !== indicator.user_id))
             typingTimeoutsRef.current.delete(indicator.user_id)
-          }, 4000)
+          }, TYPING_AUTO_CLEAR_MS)
           typingTimeoutsRef.current.set(indicator.user_id, timeout)
         } else {
           setTypingUsers(prev => prev.filter(t => t.user_id !== indicator.user_id))

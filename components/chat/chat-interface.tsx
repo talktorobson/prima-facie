@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, memo, useMemo, useCallback } from 'react'
 import {
   PaperAirplaneIcon,
   PaperClipIcon,
@@ -29,13 +29,13 @@ interface ChatInterfaceProps {
 }
 
 interface MessageBubbleProps {
-  message: Message & { sender?: { id: string; first_name: string; last_name: string; full_name?: string; email: string } }
+  message: Message & { sender?: { id: string; first_name: string; last_name: string; full_name?: string } }
   isFromCurrentUser: boolean
   showAvatar?: boolean
   showTime?: boolean
 }
 
-const MessageBubble = ({ message, isFromCurrentUser, showAvatar = true, showTime = true }: MessageBubbleProps) => {
+const MessageBubble = memo(({ message, isFromCurrentUser, showAvatar = true, showTime = true }: MessageBubbleProps) => {
   const senderName = message.sender?.full_name || message.sender?.first_name || (isFromCurrentUser ? 'Voce' : 'Usuario')
 
   const renderMessageContent = () => {
@@ -120,7 +120,13 @@ const MessageBubble = ({ message, isFromCurrentUser, showAvatar = true, showTime
       </div>
     </div>
   )
-}
+}, (prev, next) => (
+  prev.message.id === next.message.id &&
+  prev.message.status === next.message.status &&
+  prev.showAvatar === next.showAvatar &&
+  prev.showTime === next.showTime
+))
+MessageBubble.displayName = 'MessageBubble'
 
 const TypingIndicatorComponent = ({ typing }: { typing: TypingIndicator[] }) => {
   if (typing.length === 0) return null
@@ -175,21 +181,29 @@ export default function ChatInterface({
   useConversationRealtime(conversation.id)
   const { sendTyping, typingUsers } = useTypingBroadcast(conversation.id, currentUserId, currentUserName)
 
-  // Mark as read when conversation opens or messages change
+  // Mark as read on conversation open (not on every message change)
+  const markAsRead = markAsReadMutation.mutate
   useEffect(() => {
     if (conversation.id && currentUserId) {
-      markAsReadMutation.mutate({ conversationId: conversation.id, userId: currentUserId })
+      markAsRead({ conversationId: conversation.id, userId: currentUserId })
     }
-  }, [conversation.id, currentUserId, messages.length])
+  }, [conversation.id, currentUserId, markAsRead])
+
+  // Cleanup typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+    }
+  }, [])
 
   // Auto-scroll to bottom
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+  }, [])
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, scrollToBottom])
 
   // Handle typing indicator
   const handleTyping = () => {
@@ -258,8 +272,32 @@ export default function ChatInterface({
     }
   }
 
+  // Memoized message list
+  const renderedMessages = useMemo(() =>
+    messages.map((message, index) => {
+      const prevMessage = messages[index - 1]
+      const isFromSameUser = prevMessage &&
+        prevMessage.sender_id === message.sender_id
+
+      const showAvatar = !isFromSameUser
+      const showTime = !isFromSameUser ||
+        (new Date(message.created_at).getTime() - new Date(prevMessage?.created_at || 0).getTime()) > 300000
+
+      return (
+        <MessageBubble
+          key={message.id}
+          message={message}
+          isFromCurrentUser={isMessageFromCurrentUser(message, currentUserId)}
+          showAvatar={showAvatar}
+          showTime={showTime}
+        />
+      )
+    }),
+    [messages, currentUserId]
+  )
+
   return (
-    <div className="flex flex-col bg-white" style={{ height: '600px' }}>
+    <div className="flex flex-col bg-white h-[600px]">
       {/* Chat Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div className="flex items-center space-x-3">
@@ -307,26 +345,7 @@ export default function ChatInterface({
           </div>
         ) : (
           <>
-            {messages.map((message, index) => {
-              const prevMessage = messages[index - 1]
-              const isFromSameUser = prevMessage &&
-                prevMessage.sender_id === message.sender_id
-
-              const showAvatar = !isFromSameUser
-              const showTime = !isFromSameUser ||
-                (new Date(message.created_at).getTime() - new Date(prevMessage?.created_at || 0).getTime()) > 300000
-
-              return (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  isFromCurrentUser={isMessageFromCurrentUser(message, currentUserId)}
-                  showAvatar={showAvatar}
-                  showTime={showTime}
-                />
-              )
-            })}
-
+            {renderedMessages}
             <TypingIndicatorComponent typing={typingUsers} />
             <div ref={messagesEndRef} />
           </>

@@ -55,7 +55,7 @@ ALTER TABLE messages ADD COLUMN IF NOT EXISTS conversation_id UUID REFERENCES co
 -- SECTION 3: Indexes
 -- =====================================================
 
-CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_time ON messages(conversation_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_conversations_law_firm ON conversations(law_firm_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_last_msg ON conversations(law_firm_id, last_message_at DESC);
 CREATE INDEX IF NOT EXISTS idx_conversation_participants_conv ON conversation_participants(conversation_id);

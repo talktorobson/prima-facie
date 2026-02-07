@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useSupabase } from '@/components/providers'
 import { useCreateConversation } from '@/lib/queries/useMessages'
+import { useToast } from '@/components/ui/toast-provider'
 import type { Conversation, ConversationType, ConversationPriority } from '@/types/database'
 
 interface Contact {
@@ -51,6 +52,7 @@ export default function NewConversationModal({
   onConversationCreated
 }: NewConversationModalProps) {
   const supabase = useSupabase()
+  const toast = useToast()
   const createConversation = useCreateConversation()
 
   const [step, setStep] = useState(1)
@@ -138,6 +140,7 @@ export default function NewConversationModal({
         },
         onError: (error) => {
           console.error('Error creating conversation:', error)
+          toast.error('Erro ao criar conversa. Tente novamente.')
         },
       }
     )

@@ -20,32 +20,18 @@ export function useConversations(lawFirmId?: string | null, userId?: string | nu
   return useQuery({
     queryKey: ['conversations', lawFirmId, userId],
     queryFn: async () => {
-      // Get conversations where user is a participant
-      const { data: participantRows, error: pError } = await supabase
-        .from('conversation_participants')
-        .select('conversation_id')
-        .eq('user_id', userId!)
+      if (!lawFirmId || !userId) throw new Error('Missing lawFirmId or userId')
 
-      if (pError) throw pError
-
-      const conversationIds = (participantRows || []).map(r => r.conversation_id)
-
-      if (conversationIds.length === 0) {
-        // Staff can also see all firm conversations
-        const { data, error } = await supabase
-          .from('conversations')
-          .select('*')
-          .eq('law_firm_id', lawFirmId!)
-          .order('last_message_at', { ascending: false, nullsFirst: false })
-
-        if (error) throw error
-        return (data || []) as Conversation[]
-      }
-
+      // Single query: get conversations where user is a participant via !inner JOIN
       const { data, error } = await supabase
         .from('conversations')
-        .select('*')
-        .eq('law_firm_id', lawFirmId!)
+        .select(`
+          id, law_firm_id, title, conversation_type, priority, topic, status,
+          matter_id, contact_id, last_message_at, last_message_preview, created_at, updated_at,
+          participants:conversation_participants!inner(user_id)
+        `)
+        .eq('law_firm_id', lawFirmId)
+        .eq('participants.user_id', userId)
         .order('last_message_at', { ascending: false, nullsFirst: false })
 
       if (error) throw error
@@ -55,23 +41,31 @@ export function useConversations(lawFirmId?: string | null, userId?: string | nu
   })
 }
 
+const MESSAGE_PAGE_SIZE = 50
+
 export function useConversationMessages(conversationId?: string | null) {
   const supabase = useSupabase()
 
   return useQuery({
     queryKey: ['conversation-messages', conversationId],
     queryFn: async () => {
+      if (!conversationId) throw new Error('Missing conversationId')
+
       const { data, error } = await supabase
         .from('messages')
         .select(`
-          *,
-          sender:users!messages_sender_id_fkey(id, first_name, last_name, full_name, email, avatar_url)
+          id, conversation_id, content, message_type, sender_id, sender_type,
+          parent_message_id, status, file_url, file_name, file_size, file_type,
+          created_at, updated_at,
+          sender:users!messages_sender_id_fkey(id, first_name, last_name, full_name, avatar_url)
         `)
-        .eq('conversation_id', conversationId!)
-        .order('created_at', { ascending: true })
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: false })
+        .limit(MESSAGE_PAGE_SIZE)
 
       if (error) throw error
-      return (data || []) as (Message & { sender?: { id: string; first_name: string; last_name: string; full_name?: string; email: string; avatar_url?: string } })[]
+      // Reverse to show oldest-first in UI
+      return ((data || []) as (Message & { sender?: { id: string; first_name: string; last_name: string; full_name?: string; avatar_url?: string } })[]).reverse()
     },
     enabled: !!conversationId,
   })
@@ -97,8 +91,10 @@ export function useSendMessage() {
       return data as Message
     },
     onSuccess: (data) => {
+      // Invalidate messages for this conversation only
       queryClient.invalidateQueries({ queryKey: ['conversation-messages', data.conversation_id] })
-      queryClient.invalidateQueries({ queryKey: ['conversations'] })
+      // Don't invalidate conversations list — useConversationListRealtime handles it
+      // via the DB trigger that updates conversations.last_message_at
     },
   })
 }
@@ -148,7 +144,6 @@ export function useCreateConversation() {
 
 export function useMarkAsRead() {
   const supabase = useSupabase()
-  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async ({
@@ -165,9 +160,6 @@ export function useMarkAsRead() {
         .eq('user_id', userId)
 
       if (error) throw error
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] })
     },
   })
 }

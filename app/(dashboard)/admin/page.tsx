@@ -16,6 +16,7 @@ import {
   ShieldCheckIcon,
   CreditCardIcon,
   BellIcon,
+  GlobeAltIcon,
 } from '@heroicons/react/24/outline'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -41,6 +42,7 @@ export default function AdminPage() {
     { title: 'Seguranca', description: 'Logs de acesso, auditoria e permissoes', icon: ShieldCheckIcon, href: '/admin/security', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
     { title: 'Faturamento', description: 'Plano de assinatura e historico de pagamentos', icon: CreditCardIcon, href: '/admin/billing', color: 'bg-amber-50 text-amber-600 border-amber-200' },
     { title: 'Notificacoes', description: 'Configurar alertas e comunicacoes automatizadas', icon: BellIcon, href: '/admin/notifications', color: 'bg-rose-50 text-rose-600 border-rose-200' },
+    { title: 'Website', description: 'Editar o site publico do escritorio', icon: GlobeAltIcon, href: '/admin/website', color: 'bg-cyan-50 text-cyan-600 border-cyan-200' },
   ]
 
   return (

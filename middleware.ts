@@ -157,6 +157,7 @@ export async function middleware(req: NextRequest) {
   const platformPaths = ['/platform']
   const portalPaths = ['/portal/client', '/portal/staff']
 
+  const isSitePath = path.startsWith('/site/')
   const isPublicPath = publicPaths.includes(path)
   const isAuthPath = authPaths.some((authPath) => path.startsWith(authPath))
   const isDashboardPath = dashboardPaths.some((dashboardPath) => path.startsWith(dashboardPath))
@@ -165,7 +166,7 @@ export async function middleware(req: NextRequest) {
   const isPortalPath = portalPaths.some((portalPath) => path.startsWith(portalPath))
 
   // Allow public paths
-  if (isPublicPath) {
+  if (isPublicPath || isSitePath) {
     return response
   }
 

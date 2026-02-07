@@ -81,6 +81,11 @@ export type Database = {
         Insert: ActivityLogInsert
         Update: ActivityLogUpdate
       }
+      website_content: {
+        Row: WebsiteContentRow
+        Insert: WebsiteContentInsert
+        Update: WebsiteContentUpdate
+      }
     }
     Views: {
       platform_law_firm_stats: {
@@ -159,6 +164,10 @@ export interface LawFirm extends BaseEntity {
   primary_color?: string
   secondary_color?: string
   custom_domain?: string
+
+  // Website
+  slug?: string
+  website_published?: boolean
   
   // Subscription
   plan_type?: Database['public']['Enums']['plan_type']
@@ -670,6 +679,41 @@ export interface ActivityLog extends LawFirmEntity {
 
 export type ActivityLogInsert = Omit<ActivityLog, 'id' | 'created_at' | 'updated_at'>
 export type ActivityLogUpdate = Partial<ActivityLogInsert>
+
+// =====================================================
+// WEBSITE CONTENT
+// =====================================================
+
+export interface WebsiteContentRow {
+  id: string
+  law_firm_id: string
+  theme: Record<string, unknown>
+  topbar: Record<string, unknown>
+  header: Record<string, unknown>
+  hero: Record<string, unknown>
+  credentials: Record<string, unknown>
+  practice_areas: Record<string, unknown>
+  philosophy: Record<string, unknown>
+  methodology: Record<string, unknown>
+  content_preview: Record<string, unknown>
+  coverage_region: Record<string, unknown>
+  founders: Record<string, unknown>
+  cta_final: Record<string, unknown>
+  footer: Record<string, unknown>
+  contact_info: Record<string, unknown>
+  seo: Record<string, unknown>
+  section_order: string[]
+  hidden_sections: string[]
+  is_published: boolean
+  published_at: string | null
+  created_at: string
+  updated_at: string
+  created_by?: string
+  updated_by?: string
+}
+
+export type WebsiteContentInsert = Omit<WebsiteContentRow, 'id' | 'created_at' | 'updated_at'>
+export type WebsiteContentUpdate = Partial<Omit<WebsiteContentInsert, 'law_firm_id'>>
 
 // =====================================================
 // RELATIONSHIP TYPES

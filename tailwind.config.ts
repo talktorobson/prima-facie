@@ -9,6 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        navy: {
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
+          950: '#082f49',
+        },
         primary: {
           DEFAULT: 'hsl(211 100% 40%)',
           50: '#f0f9ff',

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { clientService, ClientFormData } from '@/lib/clients/client-service'
 import { useMatterTypes } from '@/lib/queries/useSettings'
 import { useUsers } from '@/lib/queries/useAdmin'
@@ -53,8 +54,9 @@ export default function NewClientPage() {
   const router = useRouter()
   const { profile } = useAuth()
   const { profile: authProfile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const { data: matterTypes } = useMatterTypes()
-  const { data: lawyers } = useUsers(authProfile?.law_firm_id, { user_type: 'lawyer' })
+  const { data: lawyers } = useUsers(effectiveLawFirmId, { user_type: 'lawyer' })
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   const [formData, setFormData] = useState({
@@ -271,7 +273,7 @@ export default function NewClientPage() {
       return
     }
 
-    if (!profile?.law_firm_id) {
+    if (!effectiveLawFirmId) {
       setErrors({ submit: 'Erro: Escritório não identificado' })
       return
     }
@@ -304,7 +306,7 @@ export default function NewClientPage() {
       }
 
       // Create client in database
-      const newClient = await clientService.createClient(profile.law_firm_id, clientData)
+      const newClient = await clientService.createClient(effectiveLawFirmId!, clientData)
       
       // Redirect to clients list with success message
       router.push('/clients?created=true')

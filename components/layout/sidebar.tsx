@@ -20,6 +20,7 @@ import {
   MessageSquare
 } from 'lucide-react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { FirmSelector } from '@/components/platform/firm-selector'
 
 interface NavItem {
   name: string
@@ -75,6 +76,9 @@ export function Sidebar() {
           <Scale className="h-8 w-8 text-primary" />
           <span className="text-xl font-bold text-gray-900">Prima Facie</span>
         </div>
+
+        {/* Firm Selector (super_admin only) */}
+        <FirmSelector />
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">

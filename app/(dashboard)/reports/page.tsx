@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import {
   CurrencyDollarIcon,
   FolderIcon,
@@ -21,13 +22,14 @@ const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: 
 
 export default function ReportsPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const [activeTab, setActiveTab] = useState<TabId>('financial')
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0],
   })
 
-  if (!profile?.law_firm_id) {
+  if (!effectiveLawFirmId) {
     return (
       <div className="text-center py-12">
         <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
@@ -91,10 +93,10 @@ export default function ReportsPage() {
       </div>
 
       {/* Active Tab Content */}
-      {activeTab === 'financial' && <FinancialTab lawFirmId={profile.law_firm_id} dateRange={dateRange} />}
-      {activeTab === 'matters' && <MattersTab lawFirmId={profile.law_firm_id} dateRange={dateRange} />}
-      {activeTab === 'team' && <TeamTab lawFirmId={profile.law_firm_id} dateRange={dateRange} />}
-      {activeTab === 'clients' && <ClientsTab lawFirmId={profile.law_firm_id} dateRange={dateRange} />}
+      {activeTab === 'financial' && <FinancialTab lawFirmId={effectiveLawFirmId!} dateRange={dateRange} />}
+      {activeTab === 'matters' && <MattersTab lawFirmId={effectiveLawFirmId!} dateRange={dateRange} />}
+      {activeTab === 'team' && <TeamTab lawFirmId={effectiveLawFirmId!} dateRange={dateRange} />}
+      {activeTab === 'clients' && <ClientsTab lawFirmId={effectiveLawFirmId!} dateRange={dateRange} />}
     </div>
   )
 }

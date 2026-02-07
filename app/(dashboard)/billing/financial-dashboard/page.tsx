@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useInvoices } from '@/lib/queries/useInvoices'
 import { useTimeEntries } from '@/lib/queries/useTimeEntries'
 import {
@@ -39,8 +40,9 @@ const getStatusText = (status: string) => {
 
 export default function FinancialDashboardPage() {
   const { profile } = useAuthContext()
-  const { data: invoices, isLoading: invoicesLoading } = useInvoices(profile?.law_firm_id)
-  const { data: timeEntries, isLoading: timeEntriesLoading } = useTimeEntries(profile?.law_firm_id)
+  const effectiveLawFirmId = useEffectiveLawFirmId()
+  const { data: invoices, isLoading: invoicesLoading } = useInvoices(effectiveLawFirmId)
+  const { data: timeEntries, isLoading: timeEntriesLoading } = useTimeEntries(effectiveLawFirmId)
 
   const isLoading = invoicesLoading || timeEntriesLoading
 

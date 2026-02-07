@@ -12,6 +12,7 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { usePipelineStages, useCreatePipelineCard } from '@/lib/queries/usePipeline'
 import { useMatterTypes } from '@/lib/queries/useSettings'
 import { useToast } from '@/components/ui/toast-provider'
@@ -29,6 +30,7 @@ const sourceOptions = [
 
 export default function NewLeadPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const router = useRouter()
   const toast = useToast()
 
@@ -59,7 +61,7 @@ export default function NewLeadPage() {
   const probabilityValue = watch('probability') ?? 0
 
   const onSubmit = async (data: PipelineCardFormData) => {
-    if (!profile?.law_firm_id) {
+    if (!effectiveLawFirmId) {
       toast.error('Escritorio nao configurado. Faca login novamente.')
       return
     }
@@ -67,7 +69,7 @@ export default function NewLeadPage() {
     try {
       await createCard.mutateAsync({
         ...data,
-        law_firm_id: profile.law_firm_id,
+        law_firm_id: effectiveLawFirmId!,
         estimated_value: data.estimated_value ?? undefined,
         expected_close_date: data.expected_close_date || undefined,
         next_follow_up_date: data.next_follow_up_date || undefined,

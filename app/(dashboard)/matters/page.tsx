@@ -17,7 +17,7 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import { matterService } from '@/lib/matters/matter-service'
-import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { Matter, MatterWithRelations } from '@/types/database'
 
 // Database-powered matter interface
@@ -70,7 +70,7 @@ const priorityOptions = [
 ]
 
 export default function MattersPage() {
-  const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const [matters, setMatters] = useState<MatterDisplay[]>([])
   const [filteredMatters, setFilteredMatters] = useState<MatterDisplay[]>([])
   const [loading, setLoading] = useState(true)
@@ -86,7 +86,7 @@ export default function MattersPage() {
   // Load matters from database
   useEffect(() => {
     async function loadMatters() {
-      if (!profile?.law_firm_id) {
+      if (!effectiveLawFirmId) {
         setLoading(false)
         return
       }
@@ -95,7 +95,7 @@ export default function MattersPage() {
         setLoading(true)
         setError(null)
 
-        const dbMatters = await matterService.getMatters(profile.law_firm_id)
+        const dbMatters = await matterService.getMatters(effectiveLawFirmId!)
 
         // Transform database data to display format
         const displayMatters: MatterDisplay[] = dbMatters.map((matter: any) => {
@@ -138,7 +138,7 @@ export default function MattersPage() {
     }
 
     loadMatters()
-  }, [profile?.law_firm_id])
+  }, [effectiveLawFirmId])
 
   // Filter and search logic
   useEffect(() => {

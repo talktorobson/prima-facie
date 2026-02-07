@@ -2,6 +2,7 @@
 
 import { AdminOnly } from '@/components/auth/role-guard'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useLawFirm, useUpdateLawFirm } from '@/lib/queries/useSettings'
 import { useToast } from '@/components/ui/toast-provider'
 import { useState, useEffect } from 'react'
@@ -17,8 +18,9 @@ import Link from 'next/link'
 
 export default function LawFirmSettingsPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const toast = useToast()
-  const { data: lawFirm, isLoading } = useLawFirm(profile?.law_firm_id ?? undefined)
+  const { data: lawFirm, isLoading } = useLawFirm(effectiveLawFirmId ?? undefined)
   const updateLawFirm = useUpdateLawFirm()
 
   const [name, setName] = useState('')
@@ -57,11 +59,11 @@ export default function LawFirmSettingsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!profile?.law_firm_id) return
+    if (!effectiveLawFirmId) return
 
     updateLawFirm.mutate(
       {
-        id: profile.law_firm_id,
+        id: effectiveLawFirmId,
         updates: {
           name, legal_name: legalName, cnpj, oab_number: oabNumber, email, phone, website,
           address_street: addressStreet, address_number: addressNumber, address_complement: addressComplement,

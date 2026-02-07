@@ -1,24 +1,51 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { SuperAdminOnly } from '@/components/auth/role-guard'
-import { usePlatformFirms, usePlatformStats } from '@/lib/queries/usePlatform'
+import { usePlatformFirms, usePlatformStats, useUpdateFirm } from '@/lib/queries/usePlatform'
+import { useFirmContext } from '@/lib/providers/firm-context'
+import { CreateFirmDialog } from '@/components/platform/create-firm-dialog'
+import { EditFirmDialog } from '@/components/platform/edit-firm-dialog'
 import Link from 'next/link'
 import {
   BuildingOffice2Icon,
   UsersIcon,
   FolderIcon,
   CurrencyDollarIcon,
+  PlusIcon,
+  PencilIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline'
+import type { LawFirm, PlatformLawFirmStats } from '@/types/database'
 
 export default function PlatformPage() {
+  const router = useRouter()
   const { data: firms, isLoading: firmsLoading, error: firmsError } = usePlatformFirms()
   const { data: stats, isLoading: statsLoading, error: statsError } = usePlatformStats()
+  const { selectFirm } = useFirmContext()
+  const updateFirm = useUpdateFirm()
+
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [editingFirm, setEditingFirm] = useState<LawFirm | null>(null)
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString('pt-BR')
+
+  const handleEnterFirm = (firm: PlatformLawFirmStats) => {
+    selectFirm(firm.id, { ...firm } as unknown as LawFirm)
+    router.push('/dashboard')
+  }
+
+  const handleToggleSubscription = async (firm: PlatformLawFirmStats) => {
+    await updateFirm.mutateAsync({
+      id: firm.id,
+      updates: { subscription_active: !firm.subscription_active },
+    })
+  }
 
   const loading = firmsLoading || statsLoading
   const error = firmsError || statsError
@@ -33,11 +60,20 @@ export default function PlatformPage() {
     >
       <div className="space-y-6">
         {/* Header */}
-        <div className="border-b border-gray-200 pb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Plataforma</h1>
-          <p className="mt-2 text-gray-600">
-            Visão geral de todos os escritórios na plataforma
-          </p>
+        <div className="flex items-start justify-between border-b border-gray-200 pb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Plataforma</h1>
+            <p className="mt-2 text-gray-600">
+              Visão geral de todos os escritórios na plataforma
+            </p>
+          </div>
+          <button
+            onClick={() => setShowCreateDialog(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary/90"
+          >
+            <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+            Criar Escritório
+          </button>
         </div>
 
         {/* Stats Cards */}
@@ -134,13 +170,16 @@ export default function PlatformPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Cadastro
                       </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ações
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {firms?.map((firm) => (
                       <tr
                         key={firm.id}
-                        className="hover:bg-gray-50 cursor-pointer"
+                        className="hover:bg-gray-50"
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Link
@@ -173,24 +212,44 @@ export default function PlatformPage() {
                           {formatCurrency(firm.total_revenue)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          <button
+                            onClick={() => handleToggleSubscription(firm)}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer ${
                               firm.subscription_active
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
+                                ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                : 'bg-red-100 text-red-800 hover:bg-red-200'
                             }`}
                           >
                             {firm.subscription_active ? 'Ativo' : 'Inativo'}
-                          </span>
+                          </button>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(firm.created_at)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setEditingFirm({ ...firm } as unknown as LawFirm)}
+                              className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                              title="Editar"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEnterFirm(firm)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100"
+                              title="Acessar como Admin"
+                            >
+                              <ArrowRightOnRectangleIcon className="h-3.5 w-3.5" />
+                              Acessar
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
                     {(!firms || firms.length === 0) && (
                       <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                        <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                           Nenhum escritório cadastrado.
                         </td>
                       </tr>
@@ -202,6 +261,17 @@ export default function PlatformPage() {
           </>
         )}
       </div>
+
+      <CreateFirmDialog
+        open={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+      />
+
+      <EditFirmDialog
+        open={!!editingFirm}
+        firm={editingFirm}
+        onClose={() => setEditingFirm(null)}
+      />
     </SuperAdminOnly>
   )
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { clientService, Client, ClientStats } from '@/lib/clients/client-service'
 import { 
   PlusIcon, 
@@ -39,6 +40,7 @@ const typeOptions = [
 
 export default function ClientsPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const [clients, setClients] = useState<Client[]>([])
   const [filteredClients, setFilteredClients] = useState<Client[]>([])
   const [stats, setStats] = useState<ClientStats | null>(null)
@@ -54,15 +56,15 @@ export default function ClientsPage() {
   // Load clients from database
   useEffect(() => {
     const loadClients = async () => {
-      if (!profile?.law_firm_id) return
-      
+      if (!effectiveLawFirmId) return
+
       try {
         setIsLoading(true)
         setError(null)
-        
+
         const [loadedClients, clientStats] = await Promise.all([
-          clientService.getClients(profile.law_firm_id!),
-          clientService.getClientStats(profile.law_firm_id!)
+          clientService.getClients(effectiveLawFirmId!),
+          clientService.getClientStats(effectiveLawFirmId!)
         ])
         
         setClients(loadedClients)
@@ -76,7 +78,7 @@ export default function ClientsPage() {
     }
 
     loadClients()
-  }, [profile?.law_firm_id])
+  }, [effectiveLawFirmId])
 
   // Filter and search logic
   useEffect(() => {

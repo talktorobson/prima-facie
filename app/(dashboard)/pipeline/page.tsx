@@ -20,6 +20,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { supabase } from '@/lib/supabase/client'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 
 interface Lead {
   id: string
@@ -75,6 +76,7 @@ const legalAreaOptions = [
 
 export default function PipelinePage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const router = useRouter()
   const [leads, setLeads] = useState<Lead[]>([])
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([])
@@ -105,7 +107,7 @@ export default function PipelinePage() {
   }, [searchTerm, statusFilter, sourceFilter, areaFilter, leads])
 
   const fetchLeads = async () => {
-    if (!profile?.law_firm_id) {
+    if (!effectiveLawFirmId) {
       setLoading(false)
       return
     }

@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useInvoices } from '@/lib/queries/useInvoices'
 import { useTimeEntries } from '@/lib/queries/useTimeEntries'
 import {
@@ -33,8 +34,9 @@ const statusText = (s: string) => {
 
 export default function BillingPage() {
   const { profile } = useAuthContext()
-  const { data: invoices, isLoading: il } = useInvoices(profile?.law_firm_id)
-  const { data: timeEntries, isLoading: tl } = useTimeEntries(profile?.law_firm_id)
+  const effectiveLawFirmId = useEffectiveLawFirmId()
+  const { data: invoices, isLoading: il } = useInvoices(effectiveLawFirmId)
+  const { data: timeEntries, isLoading: tl } = useTimeEntries(effectiveLawFirmId)
   const loading = il || tl
 
   const stats = useMemo(() => {

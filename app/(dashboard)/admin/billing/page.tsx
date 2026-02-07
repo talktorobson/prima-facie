@@ -2,6 +2,7 @@
 
 import { AdminOnly } from '@/components/auth/role-guard'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useLawFirm } from '@/lib/queries/useSettings'
 import { useInvoices } from '@/lib/queries/useInvoices'
 import Link from 'next/link'
@@ -24,8 +25,9 @@ const planLimits: Record<string, { users: number; matters: number; storage: stri
 
 export default function AdminBillingPage() {
   const { profile } = useAuthContext()
-  const { data: lawFirm, isLoading: firmLoading } = useLawFirm(profile?.law_firm_id ?? undefined)
-  const { data: invoices, isLoading: invoicesLoading } = useInvoices(profile?.law_firm_id)
+  const effectiveLawFirmId = useEffectiveLawFirmId()
+  const { data: lawFirm, isLoading: firmLoading } = useLawFirm(effectiveLawFirmId ?? undefined)
+  const { data: invoices, isLoading: invoicesLoading } = useInvoices(effectiveLawFirmId)
 
   const isLoading = firmLoading || invoicesLoading
 

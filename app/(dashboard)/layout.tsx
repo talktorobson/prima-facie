@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { MobileMenu } from '@/components/layout/mobile-menu'
 import { useAuthContext } from '@/lib/providers/auth-provider'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { FirmContextGuard } from '@/components/platform/firm-context-guard'
 
 export default function DashboardLayout({
   children,
@@ -27,7 +28,9 @@ export default function DashboardLayout({
 
       <main className="lg:pl-64">
         <div className="px-4 sm:px-6 lg:px-8 py-8 lg:py-8 pt-20 lg:pt-8">
-          {children}
+          <FirmContextGuard>
+            {children}
+          </FirmContextGuard>
         </div>
       </main>
     </div>

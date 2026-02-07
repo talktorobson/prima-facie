@@ -1,23 +1,48 @@
 'use client'
 
-import { useParams } from 'next/navigation'
+import { useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { SuperAdminOnly } from '@/components/auth/role-guard'
-import { usePlatformFirmDetail, usePlatformFirmUsers } from '@/lib/queries/usePlatform'
+import {
+  usePlatformFirmDetail,
+  usePlatformFirmUsers,
+  useDeactivatePlatformUser,
+  useResetUserPassword,
+} from '@/lib/queries/usePlatform'
+import { useFirmContext } from '@/lib/providers/firm-context'
+import { EditFirmDialog } from '@/components/platform/edit-firm-dialog'
+import { CreateUserDialog } from '@/components/platform/create-user-dialog'
+import { EditUserDialog } from '@/components/platform/edit-user-dialog'
 import {
   ArrowLeftIcon,
   BuildingOffice2Icon,
   UsersIcon,
   EnvelopeIcon,
   GlobeAltIcon,
+  PencilIcon,
+  PlusIcon,
+  ArrowRightOnRectangleIcon,
+  NoSymbolIcon,
+  KeyIcon,
 } from '@heroicons/react/24/outline'
+import type { User, LawFirm } from '@/types/database'
 
 export default function PlatformFirmDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const firmId = params.id as string
 
   const { data: firm, isLoading: firmLoading } = usePlatformFirmDetail(firmId)
   const { data: users, isLoading: usersLoading } = usePlatformFirmUsers(firmId)
+  const { selectFirm } = useFirmContext()
+  const deactivateUser = useDeactivatePlatformUser()
+  const resetPassword = useResetUserPassword()
+
+  const [showEditFirm, setShowEditFirm] = useState(false)
+  const [showCreateUser, setShowCreateUser] = useState(false)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [confirmDeactivate, setConfirmDeactivate] = useState<string | null>(null)
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString('pt-BR')
@@ -27,6 +52,23 @@ export default function PlatformFirmDetailPage() {
     lawyer: 'Advogado',
     staff: 'Equipe',
     client: 'Cliente',
+  }
+
+  const handleEnterFirm = () => {
+    if (firm) {
+      selectFirm(firm.id, firm)
+      router.push('/dashboard')
+    }
+  }
+
+  const handleDeactivateUser = async (userId: string) => {
+    await deactivateUser.mutateAsync(userId)
+    setConfirmDeactivate(null)
+  }
+
+  const handleResetPassword = async (userId: string) => {
+    await resetPassword.mutateAsync(userId)
+    alert('Link de recuperação enviado.')
   }
 
   const loading = firmLoading || usersLoading
@@ -66,10 +108,30 @@ export default function PlatformFirmDetailPage() {
                   <BuildingOffice2Icon className="h-8 w-8 text-blue-600" />
                 </div>
                 <div className="flex-1">
-                  <h1 className="text-2xl font-bold text-gray-900">{firm.name}</h1>
-                  {firm.legal_name && (
-                    <p className="text-gray-500">{firm.legal_name}</p>
-                  )}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-900">{firm.name}</h1>
+                      {firm.legal_name && (
+                        <p className="text-gray-500">{firm.legal_name}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowEditFirm(true)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                        Editar
+                      </button>
+                      <button
+                        onClick={handleEnterFirm}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100"
+                      >
+                        <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                        Acessar como Admin
+                      </button>
+                    </div>
+                  </div>
                   <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="flex items-center text-sm text-gray-600">
                       <EnvelopeIcon className="h-4 w-4 mr-2 text-gray-400" />
@@ -128,11 +190,20 @@ export default function PlatformFirmDetailPage() {
 
             {/* Users List */}
             <div className="bg-white rounded-lg border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
-                <UsersIcon className="h-5 w-5 text-gray-400" />
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Usuários ({users?.length ?? 0})
-                </h2>
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <UsersIcon className="h-5 w-5 text-gray-400" />
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Usuários ({users?.length ?? 0})
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setShowCreateUser(true)}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90"
+                >
+                  <PlusIcon className="-ml-0.5 mr-1.5 h-4 w-4" />
+                  Criar Usuário
+                </button>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -152,6 +223,9 @@ export default function PlatformFirmDetailPage() {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                         Último Login
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                        Ações
                       </th>
                     </tr>
                   </thead>
@@ -177,7 +251,7 @@ export default function PlatformFirmDetailPage() {
                                 : 'bg-gray-100 text-gray-800'
                             }`}
                           >
-                            {user.status === 'active' ? 'Ativo' : user.status}
+                            {user.status === 'active' ? 'Ativo' : user.status === 'inactive' ? 'Inativo' : user.status}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -185,11 +259,55 @@ export default function PlatformFirmDetailPage() {
                             ? formatDate(user.last_login_at)
                             : 'Nunca'}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => setEditingUser(user)}
+                              className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                              title="Editar"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleResetPassword(user.id)}
+                              className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                              title="Resetar Senha"
+                            >
+                              <KeyIcon className="h-4 w-4" />
+                            </button>
+                            {user.status === 'active' && (
+                              confirmDeactivate === user.id ? (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => handleDeactivateUser(user.id)}
+                                    className="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 rounded hover:bg-red-100"
+                                  >
+                                    Confirmar
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmDeactivate(null)}
+                                    className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-50 rounded hover:bg-gray-100"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setConfirmDeactivate(user.id)}
+                                  className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                  title="Desativar"
+                                >
+                                  <NoSymbolIcon className="h-4 w-4" />
+                                </button>
+                              )
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                     {(!users || users.length === 0) && (
                       <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                           Nenhum usuário cadastrado neste escritório.
                         </td>
                       </tr>
@@ -201,6 +319,24 @@ export default function PlatformFirmDetailPage() {
           </>
         )}
       </div>
+
+      <EditFirmDialog
+        open={showEditFirm}
+        firm={firm ?? null}
+        onClose={() => setShowEditFirm(false)}
+      />
+
+      <CreateUserDialog
+        open={showCreateUser}
+        lawFirmId={firmId}
+        onClose={() => setShowCreateUser(false)}
+      />
+
+      <EditUserDialog
+        open={!!editingUser}
+        user={editingUser}
+        onClose={() => setEditingUser(null)}
+      />
     </SuperAdminOnly>
   )
 }

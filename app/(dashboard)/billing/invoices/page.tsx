@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useInvoices, useCreateInvoice, useDeleteInvoice, useUpdateInvoiceStatus } from '@/lib/queries/useInvoices'
 import { useMatters } from '@/lib/queries/useMatters'
 import { useToast } from '@/components/ui/toast-provider'
@@ -40,6 +41,7 @@ const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-md text-sm foc
 
 export default function InvoicesPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const toast = useToast()
   const [statusFilter, setStatusFilter] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -47,8 +49,8 @@ export default function InvoicesPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [statusMenuId, setStatusMenuId] = useState<string | null>(null)
 
-  const { data: invoices, isLoading, error, refetch } = useInvoices(profile?.law_firm_id, statusFilter ? { status: statusFilter } : undefined)
-  const { data: matters } = useMatters(profile?.law_firm_id)
+  const { data: invoices, isLoading, error, refetch } = useInvoices(effectiveLawFirmId, statusFilter ? { status: statusFilter } : undefined)
+  const { data: matters } = useMatters(effectiveLawFirmId)
   const createMut = useCreateInvoice()
   const deleteMut = useDeleteInvoice()
   const statusMut = useUpdateInvoiceStatus()
@@ -71,9 +73,9 @@ export default function InvoicesPage() {
   }, [invoices, searchTerm])
 
   const onCreate = async (data: InvoiceFormData) => {
-    if (!profile?.law_firm_id) { toast.error('Escritório não encontrado'); return }
+    if (!effectiveLawFirmId) { toast.error('Escritório não encontrado'); return }
     try {
-      await createMut.mutateAsync({ ...data, law_firm_id: profile.law_firm_id, status: data.status || 'draft' })
+      await createMut.mutateAsync({ ...data, law_firm_id: effectiveLawFirmId, status: data.status || 'draft' })
       toast.success('Fatura criada com sucesso')
       setShowCreateDialog(false)
       reset()

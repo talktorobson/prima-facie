@@ -2,6 +2,7 @@
 
 import { AdminOnly } from '@/components/auth/role-guard'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useUsers, useActivityLogs } from '@/lib/queries/useAdmin'
 import { useLawFirm } from '@/lib/queries/useSettings'
 import { useMatters } from '@/lib/queries/useMatters'
@@ -21,10 +22,11 @@ import { ptBR } from 'date-fns/locale'
 
 export default function AdminPage() {
   const { profile } = useAuthContext()
-  const { data: users } = useUsers(profile?.law_firm_id)
-  const { data: lawFirm } = useLawFirm(profile?.law_firm_id ?? undefined)
-  const { data: matters } = useMatters(profile?.law_firm_id)
-  const { data: activityLogs } = useActivityLogs(profile?.law_firm_id)
+  const effectiveLawFirmId = useEffectiveLawFirmId()
+  const { data: users } = useUsers(effectiveLawFirmId)
+  const { data: lawFirm } = useLawFirm(effectiveLawFirmId ?? undefined)
+  const { data: matters } = useMatters(effectiveLawFirmId)
+  const { data: activityLogs } = useActivityLogs(effectiveLawFirmId)
 
   const activeUsers = users?.filter(u => u.status === 'active').length ?? 0
   const activeMatters = matters?.filter(m => m.status === 'active').length ?? 0

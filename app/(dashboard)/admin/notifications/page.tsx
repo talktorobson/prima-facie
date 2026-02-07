@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { AdminOnly } from '@/components/auth/role-guard'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useLawFirm, useUpdateLawFirm } from '@/lib/queries/useSettings'
 import { useToast } from '@/components/ui/toast-provider'
 import Link from 'next/link'
@@ -30,8 +31,9 @@ const defaults: NotificationSettings = {
 
 export default function AdminNotificationsPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const toast = useToast()
-  const { data: lawFirm, isLoading } = useLawFirm(profile?.law_firm_id ?? undefined)
+  const { data: lawFirm, isLoading } = useLawFirm(effectiveLawFirmId ?? undefined)
   const updateLawFirm = useUpdateLawFirm()
 
   const [settings, setSettings] = useState<NotificationSettings>(defaults)
@@ -57,7 +59,7 @@ export default function AdminNotificationsPage() {
   }
 
   const handleSave = () => {
-    if (!profile?.law_firm_id) return
+    if (!effectiveLawFirmId) return
 
     const features = {
       ...((lawFirm?.features as Record<string, unknown>) || {}),
@@ -65,7 +67,7 @@ export default function AdminNotificationsPage() {
     }
 
     updateLawFirm.mutate(
-      { id: profile.law_firm_id, updates: { features } },
+      { id: effectiveLawFirmId, updates: { features } },
       {
         onSuccess: () => toast.success('Configuracoes de notificacao salvas!'),
         onError: () => toast.error('Erro ao salvar configuracoes.'),

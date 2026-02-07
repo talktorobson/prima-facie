@@ -14,7 +14,7 @@ import {
   CheckCircleIcon,
   TrashIcon
 } from '@heroicons/react/24/outline'
-import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useMatter, useUpdateMatter, useDeleteMatter } from '@/lib/queries/useMatters'
 import { useUsers } from '@/lib/queries/useAdmin'
 import { useMatterTypes } from '@/lib/queries/useSettings'
@@ -50,14 +50,14 @@ const billingMethodOptions = [
 export default function EditMatterPage() {
   const params = useParams()
   const router = useRouter()
-  const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const matterId = params.id as string
   const supabase = useSupabase()
 
   const { data: matter, isLoading: matterLoading } = useMatter(matterId)
   const updateMatter = useUpdateMatter()
   const deleteMatter = useDeleteMatter()
-  const { data: lawyers = [] } = useUsers(profile?.law_firm_id, { user_type: 'lawyer' })
+  const { data: lawyers = [] } = useUsers(effectiveLawFirmId, { user_type: 'lawyer' })
   const { data: matterTypes = [] } = useMatterTypes()
   const { data: contacts = [] } = useQuery({
     queryKey: ['contacts'],

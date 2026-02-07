@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useLawFirm, useUpdateLawFirm } from '@/lib/queries/useSettings'
 import { useToast } from '@/components/ui/toast-provider'
 import {
@@ -40,8 +41,9 @@ const tabs: TabDef[] = [
 
 export default function SettingsPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const toast = useToast()
-  const { data: lawFirm, isLoading } = useLawFirm(profile?.law_firm_id ?? undefined)
+  const { data: lawFirm, isLoading } = useLawFirm(effectiveLawFirmId ?? undefined)
   const updateLawFirm = useUpdateLawFirm()
 
   const [activeTab, setActiveTab] = useState<TabId>('firm')
@@ -137,9 +139,9 @@ export default function SettingsPage() {
   }
 
   const handleSaveFirm = () => {
-    if (!profile?.law_firm_id) return
+    if (!effectiveLawFirmId) return
     updateLawFirm.mutate(
-      { id: profile.law_firm_id, updates: { name: firmName, cnpj: firmCnpj, oab_number: firmOab, phone: firmPhone, email: firmEmail, website: firmWebsite } },
+      { id: effectiveLawFirmId!, updates: { name: firmName, cnpj: firmCnpj, oab_number: firmOab, phone: firmPhone, email: firmEmail, website: firmWebsite } },
       {
         onSuccess: () => { toast.success('Configuracoes do escritorio salvas com sucesso!'); setFirmDirty(false) },
         onError: () => { toast.error('Erro ao salvar configuracoes do escritorio.') },

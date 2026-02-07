@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { 
   PlusIcon,
   CalendarDaysIcon,
@@ -38,6 +39,7 @@ const initialFormData: PaymentPlanFormData = {
 
 export default function PaymentPlansPage(): JSX.Element {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const [plans, setPlans] = useState<PaymentPlan[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -48,17 +50,17 @@ export default function PaymentPlansPage(): JSX.Element {
   const [sortBy, setSortBy] = useState<'name' | 'amount' | 'created' | 'due_date'>('created')
 
   const loadPaymentPlans = useCallback(async () => {
-    if (!profile?.law_firm_id) return
+    if (!effectiveLawFirmId) return
     try {
       setIsLoading(true)
-      const plansData = await paymentPlanService.getPaymentPlans(profile.law_firm_id)
+      const plansData = await paymentPlanService.getPaymentPlans(effectiveLawFirmId)
       setPlans(plansData)
     } catch (error) {
       console.error('Error loading payment plans:', error)
     } finally {
       setIsLoading(false)
     }
-  }, [profile?.law_firm_id])
+  }, [effectiveLawFirmId])
 
   useEffect(() => {
     loadPaymentPlans()
@@ -141,8 +143,8 @@ export default function PaymentPlansPage(): JSX.Element {
       if (editingPlan) {
         await paymentPlanService.updatePaymentPlan(editingPlan.id, formData)
       } else {
-        if (!profile?.law_firm_id) return
-        await paymentPlanService.createPaymentPlan(profile.law_firm_id, formData.matter_id, formData)
+        if (!effectiveLawFirmId) return
+        await paymentPlanService.createPaymentPlan(effectiveLawFirmId, formData.matter_id, formData)
       }
       
       await loadPaymentPlans()

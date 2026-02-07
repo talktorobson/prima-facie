@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { StaffOnly } from '@/components/auth/role-guard'
 import { useCalendarEvents } from '@/lib/queries/useCalendarEvents'
 import {
@@ -47,6 +48,7 @@ const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 export default function CalendarPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [showEventDetails, setShowEventDetails] = useState(false)
@@ -54,7 +56,7 @@ export default function CalendarPage() {
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth() + 1 // JavaScript months are 0-indexed
 
-  const { data: events = [], isLoading } = useCalendarEvents(profile?.law_firm_id, year, month)
+  const { data: events = [], isLoading } = useCalendarEvents(effectiveLawFirmId, year, month)
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear()

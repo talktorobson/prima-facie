@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useQuery } from '@tanstack/react-query'
 import { useSupabase } from '@/components/providers'
-import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useUsers } from '@/lib/queries/useAdmin'
 import { useMatterTypes } from '@/lib/queries/useSettings'
 import { useCreateMatter } from '@/lib/queries/useMatters'
@@ -56,7 +56,7 @@ const billingMethodOptions = [
 export default function NewMatterPage() {
   const router = useRouter()
   const supabase = useSupabase()
-  const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const createMatter = useCreateMatter()
 
   // Fetch contacts from Supabase
@@ -73,7 +73,7 @@ export default function NewMatterPage() {
   })
 
   // Fetch lawyers
-  const { data: lawyers = [] } = useUsers(profile?.law_firm_id, { user_type: 'lawyer' })
+  const { data: lawyers = [] } = useUsers(effectiveLawFirmId, { user_type: 'lawyer' })
 
   // Fetch matter types
   const { data: matterTypes = [] } = useMatterTypes()

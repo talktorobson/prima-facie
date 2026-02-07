@@ -2,6 +2,7 @@
 
 import { AdminOnly } from '@/components/auth/role-guard'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useUsers, useCreateUser, useUpdateUser, useDeactivateUser } from '@/lib/queries/useAdmin'
 import { useToast } from '@/components/ui/toast-provider'
 import { useState } from 'react'
@@ -24,6 +25,7 @@ import Link from 'next/link'
 
 export default function UsersManagementPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const toast = useToast()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState('all')
@@ -31,7 +33,7 @@ export default function UsersManagementPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
 
-  const { data: users, isLoading } = useUsers(profile?.law_firm_id)
+  const { data: users, isLoading } = useUsers(effectiveLawFirmId)
   const createUser = useCreateUser()
   const updateUser = useUpdateUser()
   const deactivateUser = useDeactivateUser()
@@ -107,7 +109,7 @@ export default function UsersManagementPage() {
       )
     } else {
       createUser.mutate(
-        { email: data.email, first_name: data.first_name, last_name: data.last_name, user_type: data.user_type, oab_number: data.oab_number, position: data.position, phone: data.phone, law_firm_id: profile?.law_firm_id ?? null },
+        { email: data.email, first_name: data.first_name, last_name: data.last_name, user_type: data.user_type, oab_number: data.oab_number, position: data.position, phone: data.phone, law_firm_id: effectiveLawFirmId ?? null },
         {
           onSuccess: () => { toast.success('Usuario criado com sucesso!'); setShowModal(false) },
           onError: () => { toast.error('Erro ao criar usuario.') },

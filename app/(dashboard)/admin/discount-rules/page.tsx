@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import {
   PlusIcon,
   PencilIcon,
@@ -51,6 +52,7 @@ const initialFormData: DiscountRuleFormData = {
 
 export default function DiscountRulesPage(): JSX.Element {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const [rules, setRules] = useState<DiscountRule[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -61,17 +63,17 @@ export default function DiscountRulesPage(): JSX.Element {
   const [sortBy, setSortBy] = useState<'name' | 'priority' | 'created' | 'uses'>('priority')
 
   const loadDiscountRules = useCallback(async () => {
-    if (!profile?.law_firm_id) return
+    if (!effectiveLawFirmId) return
     try {
       setIsLoading(true)
-      const rulesData = await discountService.getDiscountRules(profile.law_firm_id)
+      const rulesData = await discountService.getDiscountRules(effectiveLawFirmId)
       setRules(rulesData)
     } catch (error) {
       console.error('Error loading discount rules:', error)
     } finally {
       setIsLoading(false)
     }
-  }, [profile?.law_firm_id])
+  }, [effectiveLawFirmId])
 
   useEffect(() => {
     loadDiscountRules()
@@ -165,8 +167,8 @@ export default function DiscountRulesPage(): JSX.Element {
       if (editingRule) {
         await discountService.updateDiscountRule(editingRule.id, formData)
       } else {
-        if (!profile?.law_firm_id) return
-        await discountService.createDiscountRule(profile.law_firm_id, formData)
+        if (!effectiveLawFirmId) return
+        await discountService.createDiscountRule(effectiveLawFirmId, formData)
       }
       
       await loadDiscountRules()
@@ -200,10 +202,10 @@ export default function DiscountRulesPage(): JSX.Element {
   }
 
   const handleCreatePresetRules = async () => {
-    if (!profile?.law_firm_id) return
+    if (!effectiveLawFirmId) return
     try {
       setIsLoading(true)
-      await discountService.createPresetRules(profile.law_firm_id)
+      await discountService.createPresetRules(effectiveLawFirmId)
       await loadDiscountRules()
     } catch (error) {
       console.error('Error creating preset rules:', error)

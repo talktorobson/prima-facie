@@ -8,6 +8,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { StaffOnly, ClientOnly } from '@/components/auth/role-guard'
 import { clientService, type ClientStats } from '@/lib/clients/client-service'
 import { matterService, type MatterStats } from '@/lib/matters/matter-service'
@@ -112,6 +113,7 @@ interface DashboardStats {
 
 export default function DashboardPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<DashboardStats>({
@@ -121,8 +123,8 @@ export default function DashboardPage() {
 
   const isSuperAdmin = profile?.user_type === 'super_admin'
 
-  const { data: activityLogs, isLoading: logsLoading } = useActivityLogs(profile?.law_firm_id)
-  const { data: tasks, isLoading: tasksLoading } = useTasks(profile?.law_firm_id)
+  const { data: activityLogs, isLoading: logsLoading } = useActivityLogs(effectiveLawFirmId)
+  const { data: tasks, isLoading: tasksLoading } = useTasks(effectiveLawFirmId)
 
   const recentLogs = useMemo(() => (activityLogs ?? []).slice(0, 5), [activityLogs])
 
@@ -136,22 +138,22 @@ export default function DashboardPage() {
   }, [tasks])
 
   useEffect(() => {
-    if (profile?.law_firm_id && !isSuperAdmin) {
+    if (effectiveLawFirmId) {
       fetchDashboardData()
-    } else if (isSuperAdmin) {
+    } else {
       setLoading(false)
     }
-  }, [profile?.law_firm_id, isSuperAdmin])
+  }, [effectiveLawFirmId])
 
   const fetchDashboardData = async () => {
-    if (!profile?.law_firm_id) return
+    if (!effectiveLawFirmId) return
 
     try {
       setLoading(true)
 
       const [clientStats, matterStats] = await Promise.all([
-        clientService.getClientStats(profile.law_firm_id),
-        matterService.getMatterStats(profile.law_firm_id)
+        clientService.getClientStats(effectiveLawFirmId!),
+        matterService.getMatterStats(effectiveLawFirmId!)
       ])
 
       setStats({ clientStats, matterStats })

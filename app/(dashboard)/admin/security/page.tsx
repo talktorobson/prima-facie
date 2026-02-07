@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { AdminOnly } from '@/components/auth/role-guard'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useActivityLogs, useUsers } from '@/lib/queries/useAdmin'
 import Link from 'next/link'
 import { ArrowLeftIcon, ShieldCheckIcon, FunnelIcon } from '@heroicons/react/24/outline'
@@ -11,11 +12,12 @@ import { ptBR } from 'date-fns/locale'
 
 export default function AdminSecurityPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const [entityFilter, setEntityFilter] = useState('')
   const [userFilter, setUserFilter] = useState('')
 
-  const { data: activityLogs, isLoading: logsLoading } = useActivityLogs(profile?.law_firm_id)
-  const { data: users, isLoading: usersLoading } = useUsers(profile?.law_firm_id)
+  const { data: activityLogs, isLoading: logsLoading } = useActivityLogs(effectiveLawFirmId)
+  const { data: users, isLoading: usersLoading } = useUsers(effectiveLawFirmId)
 
   const isLoading = logsLoading || usersLoading
 

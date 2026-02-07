@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { StaffOnly } from '@/components/auth/role-guard'
 import { useTasks, useToggleTaskStatus, useDeleteTask } from '@/lib/queries/useTasks'
 import { useToast } from '@/components/ui/toast-provider'
@@ -38,8 +39,9 @@ const priorityOptions = [
 
 export default function TasksPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const toast = useToast()
-  const { data: tasks = [], isLoading } = useTasks(profile?.law_firm_id)
+  const { data: tasks = [], isLoading } = useTasks(effectiveLawFirmId)
   const toggleStatus = useToggleTaskStatus()
   const deleteTask = useDeleteTask()
 

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useSupabase } from '@/components/providers'
 import { StaffOnly } from '@/components/auth/role-guard'
 import { useDocuments, useUploadDocument, useDeleteDocument } from '@/lib/queries/useDocuments'
@@ -78,9 +79,10 @@ const BTN = 'inline-flex items-center p-2 border border-gray-300 rounded-md shad
 
 export default function DocumentsPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const supabase = useSupabase()
   const toast = useToast()
-  const { data: documents = [], isLoading } = useDocuments(profile?.law_firm_id)
+  const { data: documents = [], isLoading } = useDocuments(effectiveLawFirmId)
   const uploadMut = useUploadDocument()
   const deleteMut = useDeleteDocument()
 
@@ -133,7 +135,7 @@ export default function DocumentsPage() {
   const handleUpload = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!file) { toast.error('Selecione um arquivo.'); return }
-    if (!profile?.law_firm_id) { toast.error('Escritorio nao identificado.'); return }
+    if (!effectiveLawFirmId) { toast.error('Escritorio nao identificado.'); return }
     const fd = new FormData(e.currentTarget)
     const name = (fd.get('name') as string) || file.name
     const description = (fd.get('description') as string) || undefined
@@ -144,7 +146,7 @@ export default function DocumentsPage() {
       await uploadMut.mutateAsync({
         file,
         metadata: {
-          law_firm_id: profile.law_firm_id, name, description, category,
+          law_firm_id: effectiveLawFirmId, name, description, category,
           access_level: al as 'public' | 'internal' | 'restricted' | 'confidential',
           is_confidential: al === 'confidential',
           tags: tags.length ? tags : undefined,

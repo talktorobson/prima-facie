@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import {
   useTimeEntries, useCreateTimeEntry, useUpdateTimeEntry, useDeleteTimeEntry,
 } from '@/lib/queries/useTimeEntries'
@@ -70,6 +71,7 @@ function TimeEntryFormFields({ form, matters }: { form: UseFormReturn<TimeEntryF
 
 export default function TimeTrackingPage() {
   const { profile } = useAuthContext()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const toast = useToast()
   const [searchTerm, setSearchTerm] = useState('')
   const [billableFilter, setBillableFilter] = useState<'all' | 'billable' | 'non-billable'>('all')
@@ -83,8 +85,8 @@ export default function TimeTrackingPage() {
     return undefined
   }, [billableFilter])
 
-  const { data: timeEntries, isLoading, error, refetch } = useTimeEntries(profile?.law_firm_id, filters)
-  const { data: matters } = useMatters(profile?.law_firm_id)
+  const { data: timeEntries, isLoading, error, refetch } = useTimeEntries(effectiveLawFirmId, filters)
+  const { data: matters } = useMatters(effectiveLawFirmId)
   const createMut = useCreateTimeEntry()
   const updateMut = useUpdateTimeEntry()
   const deleteMut = useDeleteTimeEntry()
@@ -123,9 +125,9 @@ export default function TimeTrackingPage() {
   }, [timeEntries])
 
   const onCreateEntry = async (data: TimeEntryFormData) => {
-    if (!profile?.law_firm_id || !profile?.id) { toast.error('Perfil não encontrado'); return }
+    if (!effectiveLawFirmId || !profile?.id) { toast.error('Perfil não encontrado'); return }
     try {
-      await createMut.mutateAsync({ ...data, law_firm_id: profile.law_firm_id, user_id: profile.id })
+      await createMut.mutateAsync({ ...data, law_firm_id: effectiveLawFirmId, user_id: profile.id })
       toast.success('Lançamento criado com sucesso')
       setShowCreateDialog(false)
       createForm.reset({ work_date: new Date().toISOString().split('T')[0], is_billable: true, hours_worked: 1, matter_id: '', description: '' })

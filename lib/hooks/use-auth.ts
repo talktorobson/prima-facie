@@ -95,17 +95,19 @@ export function useAuth(): AuthState & AuthActions {
 
       if (signInError) {
         setError('Email ou senha inválidos')
+        setLoading(false)
         return { error: signInError.message }
       }
 
-      // Profile will be loaded by auth state change listener
+      // On success, loading stays true until Effect 2 fetches the profile.
+      // The onAuthStateChange callback will set `user`, which triggers
+      // Effect 2 → fetchUserProfile → setProfile + setLoading(false).
       return {}
     } catch (err) {
       const errorMessage = 'Erro ao fazer login'
       setError(errorMessage)
-      return { error: errorMessage }
-    } finally {
       setLoading(false)
+      return { error: errorMessage }
     }
   }
 
@@ -147,16 +149,17 @@ export function useAuth(): AuthState & AuthActions {
 
       if (profileError) {
         setError('Erro ao criar perfil do usuário')
+        setLoading(false)
         return { error: profileError.message }
       }
 
+      // On success, loading stays true until Effect 2 fetches the profile.
       return {}
     } catch (err) {
       const errorMessage = 'Erro ao criar conta'
       setError(errorMessage)
-      return { error: errorMessage }
-    } finally {
       setLoading(false)
+      return { error: errorMessage }
     }
   }
 
@@ -212,10 +215,16 @@ export function useAuth(): AuthState & AuthActions {
       (event, session) => {
         if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
           setUser(session.user)
-          setLoading(false)
+          // Don't set loading=false here — wait for profile fetch in Effect 2.
+          // Setting it here causes a window where layout renders but profile
+          // is still null, making RoleGuard show an infinite spinner.
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setProfile(null)
+          setLoading(false)
+        } else if (event === 'INITIAL_SESSION' && !session?.user) {
+          // No active session — stop loading immediately
+          setUser(null)
           setLoading(false)
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
           setUser(session.user)
@@ -241,6 +250,7 @@ export function useAuth(): AuthState & AuthActions {
     fetchUserProfile(user).then((userProfile) => {
       if (!cancelled) {
         setProfile(userProfile)
+        setLoading(false)
       }
     })
 

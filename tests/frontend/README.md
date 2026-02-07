@@ -1,447 +1,137 @@
 # Prima Facie Frontend Test Suite
 
-Comprehensive frontend UI testing suite for the Prima Facie Legal-as-a-Service platform, covering all major user interface components and interactions based on Phase 8.7 features.
+Comprehensive frontend UI testing suite for the Prima Facie legal practice management platform. Covers billing, time tracking, financial management, client portal, Brazilian compliance, admin pages, portal billing, pipeline editing, public pages, and cross-page navigation.
 
-## 📋 Test Coverage Overview
+## Test Coverage Overview
 
-This test suite includes **177 comprehensive UI tests** across 5 major functional areas:
+**11 test files** with **~270 tests** across 10 functional areas:
 
-### 1. Invoice Management UI Tests (42 tests)
-**File:** `01-invoice-management-ui.test.tsx`
+### Test Files
 
-**Coverage:**
-- ✅ Subscription invoice creation with automated numbering (SUB-2024-000001)
-- ✅ Case billing invoice creation (CASE-2024-000001) 
-- ✅ Payment plan invoice creation (PLAN-2024-000001)
-- ✅ Invoice status workflow (draft → sent → paid)
-- ✅ Invoice line items management (CRUD operations)
-- ✅ Payment recording and tracking
-- ✅ Invoice templates and customization
-- ✅ Unified billing dashboard functionality
-- ✅ Invoice numbering sequence validation
-- ✅ Responsive design and accessibility
+| # | File | Tests | Coverage Area |
+|---|------|-------|---------------|
+| 00 | `00-test-runner.test.tsx` | ~30 | Test runner orchestration and integration |
+| 01 | `01-invoice-management-ui.test.tsx` | 42 | Invoice creation, status workflow, line items, payments |
+| 02 | `02-time-tracking-ui.test.tsx` | 38 | Timer, time entries, billable tracking, templates |
+| 03 | `03-financial-management-ui.test.tsx` | 35 | Vendors, bills, expenses, AP/AR, cash flow |
+| 04 | `04-client-portal-ui.test.tsx` | 33 | Client dashboard, case progress, documents, messaging |
+| 05 | `05-brazilian-compliance-ui.test.tsx` | 29 | CPF/CNPJ, PIX, Portuguese UI, tax calculations |
+| 06 | `06-admin-pages.test.tsx` | 29 | Admin dashboard, analytics, security, billing, notifications |
+| 07 | `07-portal-billing.test.tsx` | 11 | Client billing portal, invoices, summary cards |
+| 08 | `08-pipeline-edit.test.tsx` | 15 | Pipeline lead edit form, validation, pre-population |
+| 09 | `09-public-pages.test.tsx` | 23 | Terms, privacy, pricing, about, contact pages |
+| 10 | `10-navigation-ctas.test.tsx` | 15 | Cross-page links, CTAs, middleware public paths |
 
-### 2. Time Tracking UI Tests (38 tests)
-**File:** `02-time-tracking-ui.test.tsx`
+### Detailed Coverage
 
-**Coverage:**
-- ✅ Timer start/stop functionality with live updates
-- ✅ Time entry creation and editing
-- ✅ Billable vs non-billable time tracking
-- ✅ Time entry templates usage and creation
-- ✅ Daily/weekly/monthly time reports
-- ✅ Rate calculations and billing integration
-- ✅ Live billing calculation display
-- ✅ Time formatting and validation
-- ✅ Mobile and tablet compatibility
-- ✅ Keyboard navigation support
+**Invoice Management (01)**: Subscription/case/payment-plan invoice creation with numbering, status workflow (draft -> sent -> paid), line items CRUD, payment recording, unified billing dashboard.
 
-### 3. Financial Management UI Tests (35 tests)
-**File:** `03-financial-management-ui.test.tsx`
+**Time Tracking (02)**: Timer start/stop, billable vs non-billable tracking, time entry CRUD, templates, daily/weekly/monthly reports, rate calculations, live billing display.
 
-**Coverage:**
-- ✅ Vendor management (create, edit, delete, filter)
-- ✅ Bill processing workflow
-- ✅ Expense categorization and tracking
-- ✅ Payment processing and recording
-- ✅ Budget tracking and financial alerts
-- ✅ Financial reporting and dashboards
-- ✅ Accounts payable/receivable management
-- ✅ Cash flow monitoring
-- ✅ Multi-currency support (BRL)
-- ✅ Financial metrics and KPIs
+**Financial Management (03)**: Vendor CRUD, bill processing, expense categorization, AP/AR management, cash flow monitoring, financial KPIs, BRL formatting.
 
-### 4. Client Portal UI Tests (33 tests)
-**File:** `04-client-portal-ui.test.tsx`
+**Client Portal (04)**: Personalized dashboard, case progress timeline, document access, invoice viewing, payment methods (PIX, credit card, bank transfer), messaging, activity feed.
 
-**Coverage:**
-- ✅ Client dashboard with personalized greeting
-- ✅ Case progress tracking with timeline
-- ✅ Document access and download permissions
-- ✅ Invoice viewing and payment processing
-- ✅ Communication tools and messaging
-- ✅ Appointment scheduling interface
-- ✅ Activity feed and notifications
-- ✅ Document filtering and search
-- ✅ Payment method selection (PIX, credit card, bank transfer)
-- ✅ Mobile-optimized client experience
+**Brazilian Compliance (05)**: CPF/CNPJ validation and formatting, PIX QR codes, Portuguese interface, tax calculations (Simples Nacional, Lucro Presumido), CEP validation, state selection.
 
-### 5. Brazilian Legal Compliance UI Tests (29 tests)
-**File:** `05-brazilian-compliance-ui.test.tsx`
+**Admin Pages (06)**: Admin dashboard with 8 section links and 4 stat cards, analytics (summary cards, charts, tables), security (audit log, filters), billing (plan comparison, invoice history), notifications (6 toggles, save mutation).
 
-**Coverage:**
-- ✅ CNPJ/CPF input validation and formatting
-- ✅ PIX payment integration with QR codes
-- ✅ Portuguese language interface
-- ✅ Brazilian tax calculation displays (Simples Nacional, Lucro Presumido)
-- ✅ Legal document templates (Brazilian format)
-- ✅ CEP validation and address autocomplete
-- ✅ Brazilian phone number formatting
-- ✅ Currency formatting (Real - BRL)
-- ✅ State selection (all 26 states + DF)
-- ✅ Brazilian business compliance features
+**Portal Billing (07)**: Client billing page with summary cards (paid/outstanding/overdue), invoice table with status badges, R$ formatting, loading spinner, empty state.
 
-## 🛠️ Technologies and Tools
+**Pipeline Edit (08)**: Lead edit form with all fields, pre-population from existing data, probability slider, stage/source selects, form submission, validation errors, loading state.
 
-### Testing Framework
-- **Jest** - JavaScript testing framework
-- **React Testing Library** - React component testing utilities
-- **jsdom** - DOM simulation for testing
-- **@testing-library/user-event** - User interaction simulation
+**Public Pages (09)**: Terms (9 sections), Privacy (8 sections, LGPD), Pricing (3 plans with R$ pricing), About (mission/vision/values), Contact (header/nav/footer).
 
-### UI Testing Features
-- **Component rendering** - Full component tree rendering
-- **User interaction simulation** - Clicks, typing, form submission
-- **Async testing** - Handling promises and async operations
-- **Mock implementations** - Supabase, Next.js router, browser APIs
-- **Accessibility testing** - ARIA labels, keyboard navigation
-- **Responsive design testing** - Mobile, tablet, desktop viewports
+**Navigation CTAs (10)**: Register page legal links, portal dashboard quick links, pipeline edit buttons, middleware public paths validation.
 
-### Test Utilities
-- **QueryClient Provider** - React Query testing wrapper
-- **Mock data generators** - Realistic test data
-- **Clipboard API mocking** - Copy/paste functionality testing
-- **Timer mocking** - Time-based functionality testing
-- **File operations** - Upload/download simulation
+## Running Tests
 
-## 🚀 Running the Tests
-
-### Prerequisites
 ```bash
-# Ensure you have Node.js 18+ and npm installed
-node --version  # Should be 18+
-npm --version   # Should be 8+
-```
-
-### Installation
-```bash
-# Install dependencies
-npm install
-
-# Install additional testing dependencies (if not already included)
-npm install --save-dev @testing-library/jest-dom @testing-library/react @testing-library/user-event
-```
-
-### Running Tests
-
-#### Run All Frontend Tests
-```bash
-# Run all frontend tests
+# All frontend tests
 npm test tests/frontend/
 
-# Run with coverage report
+# Individual test file
+npm test tests/frontend/06-admin-pages.test.tsx
+
+# With coverage
 npm run test:coverage tests/frontend/
 
-# Run in watch mode (development)
+# Watch mode
 npm run test:watch tests/frontend/
-```
 
-#### Run Individual Test Suites
-```bash
-# Invoice Management Tests
-npm test tests/frontend/01-invoice-management-ui.test.tsx
-
-# Time Tracking Tests  
-npm test tests/frontend/02-time-tracking-ui.test.tsx
-
-# Financial Management Tests
-npm test tests/frontend/03-financial-management-ui.test.tsx
-
-# Client Portal Tests
-npm test tests/frontend/04-client-portal-ui.test.tsx
-
-# Brazilian Compliance Tests
-npm test tests/frontend/05-brazilian-compliance-ui.test.tsx
-
-# Test Runner (Integration Tests)
-npm test tests/frontend/00-test-runner.test.tsx
-```
-
-#### Run Tests with Specific Options
-```bash
-# Run tests with verbose output
+# Verbose output
 npm test tests/frontend/ -- --verbose
 
-# Run tests matching a pattern
+# Pattern matching
 npm test tests/frontend/ -- --testNamePattern="invoice"
-
-# Run tests in specific file
-npm test tests/frontend/01-invoice-management-ui.test.tsx -- --watch
-
-# Generate coverage report
-npm test tests/frontend/ -- --coverage --coverageDirectory=coverage/frontend
 ```
 
-## 📊 Test Structure and Organization
+## Test Architecture
 
-### Test File Organization
-```
-tests/frontend/
-├── 00-test-runner.test.tsx           # Test suite runner and integration tests
-├── 01-invoice-management-ui.test.tsx # Invoice system UI tests
-├── 02-time-tracking-ui.test.tsx      # Time tracking UI tests
-├── 03-financial-management-ui.test.tsx # Financial dashboard UI tests
-├── 04-client-portal-ui.test.tsx      # Client portal UI tests
-├── 05-brazilian-compliance-ui.test.tsx # Brazilian compliance UI tests
-└── README.md                         # This file
-```
+### Mock Component Pattern
 
-### Test Categories per File
+All test files use **self-contained mock components** that replicate page logic inline. This avoids importing from `@/` paths (which have a known Jest config issue with `moduleNameMapper`).
 
-Each test file follows a consistent structure:
-
-1. **Component Rendering Tests** - Basic component mounting and display
-2. **User Interaction Tests** - Click, type, form submission simulation  
-3. **State Management Tests** - Component state changes and updates
-4. **Validation Tests** - Form validation and error handling
-5. **Integration Tests** - Component interaction and data flow
-6. **Responsive Design Tests** - Mobile, tablet, desktop layouts
-7. **Accessibility Tests** - ARIA compliance and keyboard navigation
-8. **Error Handling Tests** - Edge cases and error scenarios
-
-### Mock Components
-
-Each test file includes mock implementations of key components:
-- **MockUnifiedBillingDashboard** - Invoice management interface
-- **MockTimeTracker** - Time tracking timer and entries
-- **MockFinancialDashboard** - Financial metrics and reporting
-- **MockClientDashboard** - Client portal interface
-- **MockBrazilianDocumentForm** - Brazilian compliance forms
-
-## 🧪 Test Patterns and Best Practices
-
-### Component Testing Pattern
 ```typescript
-describe('Component Name', () => {
-  let user: UserEvent
-
-  beforeEach(() => {
-    user = userEvent.setup()
-    jest.clearAllMocks()
-  })
-
-  it('should render component correctly', async () => {
-    render(<TestWrapper><MockComponent /></TestWrapper>)
-    expect(screen.getByTestId('component')).toBeInTheDocument()
-  })
-
-  it('should handle user interactions', async () => {
-    const onAction = jest.fn()
-    render(<TestWrapper><MockComponent onAction={onAction} /></TestWrapper>)
-    
-    await user.click(screen.getByTestId('action-button'))
-    expect(onAction).toHaveBeenCalledWith(expectedData)
-  })
-})
-```
-
-### Async Testing Pattern
-```typescript
-it('should handle async operations', async () => {
-  render(<TestWrapper><MockComponent /></TestWrapper>)
-  
-  await user.click(screen.getByTestId('submit-btn'))
-  
-  await waitFor(() => {
-    expect(screen.getByTestId('success-message')).toBeInTheDocument()
-  })
-})
-```
-
-### Form Testing Pattern
-```typescript
-it('should validate form inputs', async () => {
-  render(<TestWrapper><MockForm /></TestWrapper>)
-  
-  const input = screen.getByTestId('required-input')
-  await user.type(input, 'test value')
-  
-  await user.click(screen.getByTestId('submit-btn'))
-  
-  expect(mockSubmit).toHaveBeenCalledWith({
-    field: 'test value'
-  })
-})
-```
-
-## 🎯 Key Testing Scenarios
-
-### Invoice Management Scenarios
-- Create subscription invoice with automatic numbering
-- Process invoice status changes (draft → sent → paid)
-- Add/edit/remove line items from invoices
-- Record payments and update invoice status
-- Generate invoices for different billing types
-
-### Time Tracking Scenarios  
-- Start/stop timer with real-time updates
-- Create time entries with billable calculations
-- Use templates for common time entry types
-- Edit existing time entries and recalculate amounts
-- Generate time reports with filtering
-
-### Financial Management Scenarios
-- Create and manage vendor records
-- Process bills and record payments
-- View financial dashboard with metrics
-- Export financial reports
-- Handle multi-currency transactions
-
-### Client Portal Scenarios
-- View personalized client dashboard
-- Track case progress with timeline
-- Download available documents
-- Pay invoices using multiple payment methods
-- Communicate with law firm staff
-
-### Brazilian Compliance Scenarios
-- Validate CNPJ/CPF with proper formatting
-- Generate PIX payments with QR codes
-- Calculate Brazilian taxes (Simples Nacional)
-- Format Brazilian addresses with CEP
-- Display content in Portuguese
-
-## 🔧 Configuration and Setup
-
-### Jest Configuration
-The tests use the existing Jest configuration in `jest.config.js`:
-
-```javascript
-const customJestConfig = {
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testEnvironment: 'jsdom',
-  moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/$1',
-  },
-  testMatch: [
-    '<rootDir>/tests/**/*.test.{js,jsx,ts,tsx}',
-  ],
+// Mock components are defined in each test file
+const MockComponent = ({ data }: { data?: DataType[] }) => {
+  const items = data ?? defaultMockData
+  return (
+    <div data-testid="component">
+      {items.map(item => (
+        <div key={item.id} data-testid={`item-${item.id}`}>
+          {item.name}
+        </div>
+      ))}
+    </div>
+  )
 }
 ```
 
-### Test Environment Setup
-```javascript
-// jest.setup.js
-import '@testing-library/jest-dom'
+### TestWrapper
 
-// Mock Next.js router
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    refresh: jest.fn(),
-  }),
-}))
+Every test file includes a `TestWrapper` with `QueryClientProvider`:
 
-// Mock Supabase client
-jest.mock('@/lib/supabase/client', () => ({
-  createClient: () => mockSupabase
-}))
+```typescript
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+}
 ```
 
-## 📈 Coverage Goals
+### Common Patterns
 
-### Target Coverage Metrics
-- **Statements:** 95%+
-- **Branches:** 90%+  
-- **Functions:** 95%+
-- **Lines:** 95%+
+- `userEvent.setup()` for user interactions
+- `jest.mock('next/navigation')` for router mocking
+- `data-testid` attributes for element selection
+- `within()` for scoped queries within containers
+- `waitFor()` for async assertions
+- Props for loading/empty/error state testing
 
-### Coverage Areas
-- ✅ All UI components render correctly
-- ✅ User interactions work as expected
-- ✅ Form validation and submission
-- ✅ State management and updates
-- ✅ Error handling and edge cases
-- ✅ Responsive design compatibility
-- ✅ Accessibility compliance
-- ✅ Brazilian compliance features
+## Jest Configuration
 
-## 🐛 Debugging and Troubleshooting
+Tests use the project's `jest.config.js` with `jsdom` environment. Note: `moduleNameMapping` in the config is a typo (should be `moduleNameMapper`), so `@/` path aliases don't resolve. Mock components work around this by being self-contained.
 
-### Common Issues and Solutions
-
-#### Test Timeouts
 ```bash
-# Increase timeout for async operations
-await waitFor(() => {
-  expect(element).toBeInTheDocument()
-}, { timeout: 10000 })
+# jest.setup.js provides:
+# - @testing-library/jest-dom matchers
+# - next/navigation mock
+# - @supabase/auth-helpers-nextjs mock
+# - Environment variable stubs
 ```
 
-#### Mock Issues
-```bash
-# Clear mocks between tests
-beforeEach(() => {
-  jest.clearAllMocks()
-})
-```
+## Adding New Tests
 
-#### Component Not Found
-```bash
-# Use proper test IDs
-expect(screen.getByTestId('component-name')).toBeInTheDocument()
-```
-
-### Debug Mode
-```bash
-# Run tests in debug mode
-npm test tests/frontend/ -- --detectOpenHandles --forceExit
-
-# Run with additional logging
-DEBUG=* npm test tests/frontend/
-```
-
-## 🔄 Continuous Integration
-
-### GitHub Actions Integration
-```yaml
-name: Frontend Tests
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - run: npm ci
-      - run: npm test tests/frontend/ -- --coverage
-      - uses: codecov/codecov-action@v3
-```
-
-## 📚 Additional Resources
-
-### Documentation Links
-- [React Testing Library Documentation](https://testing-library.com/docs/react-testing-library/intro/)
-- [Jest Documentation](https://jestjs.io/docs/getting-started)
-- [User Event Documentation](https://testing-library.com/docs/user-event/intro)
-
-### Prima Facie Specific Resources
-- Main project README: `/README.md`
-- Dual invoice system: `/docs/dual-invoice-system.md`
-- API documentation: `/database/docs/`
-
-## 🤝 Contributing
-
-### Adding New Tests
-1. Follow the existing file naming convention
-2. Use the established test structure and patterns
-3. Include proper mock implementations
-4. Add comprehensive test coverage
-5. Update this README with new test information
-
-### Test Guidelines
-- Each test should be independent and isolated
-- Use descriptive test names that explain the behavior
-- Include both positive and negative test cases
-- Test error conditions and edge cases
-- Ensure tests are deterministic and repeatable
+1. Follow the naming convention: `{NN}-{feature-name}.test.tsx`
+2. Use self-contained mock components (no `@/` imports)
+3. Include `TestWrapper` with `QueryClientProvider`
+4. Use `data-testid` for element selection
+5. Test rendering, interactions, loading states, empty states, and edge cases
+6. All UI text should be in Portuguese (matching the app)
 
 ---
 
-**Last Updated:** December 2024  
-**Test Suite Version:** 1.0.0  
-**Total Tests:** 177  
-**Coverage Target:** 95%+
+**Last Updated:** February 2026
+**Total Tests:** ~270

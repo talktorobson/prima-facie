@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { 
+import { useQuery } from '@tanstack/react-query'
+import { useSupabase } from '@/components/providers'
+import { useAuthContext } from '@/lib/providers/auth-provider'
+import {
   ArrowLeftIcon,
   DocumentTextIcon,
   CalendarIcon,
@@ -13,310 +16,139 @@ import {
   CheckCircleIcon,
   ChatBubbleLeftRightIcon,
   PaperClipIcon,
-  EyeIcon,
-  ArrowDownTrayIcon as DownloadIcon,
   XMarkIcon,
   CloudArrowUpIcon
 } from '@heroicons/react/24/outline'
 
-// Mock data for matter details
-const getMockMatterDetail = (id: string) => {
-  const matters = {
-    '1': {
-      id: '1',
-      matter_number: 'PROC-2024-001',
-      title: 'Ação Trabalhista - Rescisão Indevida',
-      status: 'ativo',
-      area_juridica: 'trabalhista',
-      created_date: '2024-01-10',
-      last_update: '2024-01-20',
-      next_hearing: '2024-02-15',
-      assigned_lawyer: {
-        name: 'Dra. Maria Silva Santos',
-        email: 'maria.santos@davilareislaw.com',
-        phone: '(11) 3456-7890',
-        oab: 'OAB/SP 123.456'
-      },
-      priority: 'alta',
-      client_summary: 'Ação trabalhista movida contra a empresa XYZ Ltda devido à rescisão indevida do contrato de trabalho. O processo busca o pagamento de verbas rescisórias, multa do FGTS, aviso prévio indenizado e danos morais.',
-      estimated_duration: '6 meses',
-      case_value: 50000.00,
-      progress_percentage: 35,
-      process_number: '1234567-89.2024.5.02.0001',
-      court: 'TRT-2 - Tribunal Regional do Trabalho da 2ª Região',
-      vara: '15ª Vara do Trabalho de São Paulo',
-      timeline: [
-        {
-          id: '1',
-          date: '2024-01-20',
-          title: 'Petição inicial protocolada',
-          description: 'Petição inicial foi protocolada no TRT-2 com todos os documentos necessários.',
-          type: 'document',
-          visible_to_client: true,
-          lawyer_notes: 'Aguardando distribuição do processo'
-        },
-        {
-          id: '2',
-          date: '2024-01-18',
-          title: 'Audiência agendada',
-          description: 'Audiência de conciliação marcada para 15/02/2024 às 14:00h na 15ª Vara do Trabalho.',
-          type: 'hearing',
-          visible_to_client: true,
-          lawyer_notes: 'Cliente deve comparecer com documentos de identificação'
-        },
-        {
-          id: '3',
-          date: '2024-01-15',
-          title: 'Documentos coletados',
-          description: 'Todos os documentos necessários foram coletados e organizados.',
-          type: 'document',
-          visible_to_client: true,
-          lawyer_notes: ''
-        },
-        {
-          id: '4',
-          date: '2024-01-10',
-          title: 'Processo criado',
-          description: 'Processo iniciado após consulta inicial com o cliente.',
-          type: 'status',
-          visible_to_client: true,
-          lawyer_notes: 'Primeira reunião realizada'
-        }
-      ],
-      documents: [
-        {
-          id: '1',
-          title: 'Petição Inicial',
-          description: 'Petição inicial da ação trabalhista',
-          file_name: 'peticao_inicial.pdf',
-          file_size: '2.5 MB',
-          upload_date: '2024-01-20',
-          category: 'peticao',
-          visible_to_client: true,
-          url: '#'
-        },
-        {
-          id: '2',
-          title: 'Contrato de Trabalho',
-          description: 'Cópia do contrato de trabalho assinado',
-          file_name: 'contrato_trabalho.pdf',
-          file_size: '1.2 MB',
-          upload_date: '2024-01-15',
-          category: 'documento',
-          visible_to_client: true,
-          url: '#'
-        },
-        {
-          id: '3',
-          title: 'Carteira de Trabalho',
-          description: 'Digitalização da carteira de trabalho',
-          file_name: 'carteira_trabalho.pdf',
-          file_size: '3.1 MB',
-          upload_date: '2024-01-15',
-          category: 'documento',
-          visible_to_client: true,
-          url: '#'
-        },
-        {
-          id: '4',
-          title: 'Comprovantes de Pagamento',
-          description: 'Últimos 6 holerites',
-          file_name: 'holerites.pdf',
-          file_size: '4.8 MB',
-          upload_date: '2024-01-15',
-          category: 'documento',
-          visible_to_client: true,
-          url: '#'
-        },
-        {
-          id: '5',
-          title: 'Termo de Rescisão',
-          description: 'Documento de rescisão fornecido pela empresa',
-          file_name: 'termo_rescisao.pdf',
-          file_size: '800 KB',
-          upload_date: '2024-01-12',
-          category: 'documento',
-          visible_to_client: true,
-          url: '#'
-        },
-        {
-          id: '6',
-          title: 'Estratégia Processual',
-          description: 'Documento interno com estratégia do caso',
-          file_name: 'estrategia_interna.pdf',
-          file_size: '1.5 MB',
-          upload_date: '2024-01-18',
-          category: 'interno',
-          visible_to_client: false,
-          url: '#'
-        }
-      ],
-      next_steps: [
-        {
-          title: 'Audiência de Conciliação',
-          description: 'Comparecer à audiência marcada para 15/02/2024',
-          due_date: '2024-02-15',
-          priority: 'alta'
-        },
-        {
-          title: 'Aguardar Manifestação da Ré',
-          description: 'Empresa tem prazo de 15 dias para se manifestar',
-          due_date: '2024-02-05',
-          priority: 'media'
-        }
-      ]
-    },
-    '2': {
-      id: '2',
-      matter_number: 'PROC-2024-012',
-      title: 'Revisão Contratual - Compra e Venda',
-      status: 'aguardando_documentos',
-      area_juridica: 'civil',
-      created_date: '2024-01-15',
-      last_update: '2024-01-18',
-      next_hearing: null,
-      assigned_lawyer: {
-        name: 'Dr. João Santos Oliveira',
-        email: 'joao.oliveira@davilareislaw.com',
-        phone: '(11) 3456-7891',
-        oab: 'OAB/SP 234.567'
-      },
-      priority: 'media',
-      client_summary: 'Revisão de contrato de compra e venda de imóvel. Análise de cláusulas e adequação às normas vigentes.',
-      estimated_duration: '3 meses',
-      case_value: 25000.00,
-      progress_percentage: 15,
-      process_number: null,
-      court: null,
-      vara: null,
-      timeline: [
-        {
-          id: '1',
-          date: '2024-01-18',
-          title: 'Solicitação de documentos',
-          description: 'Dr. João solicitou documentos complementares para análise completa.',
-          type: 'document',
-          visible_to_client: true,
-          lawyer_notes: 'Prazo até 25/01/2024'
-        },
-        {
-          id: '2',
-          date: '2024-01-15',
-          title: 'Consulta inicial',
-          description: 'Primeira reunião para entendimento do caso.',
-          type: 'meeting',
-          visible_to_client: true,
-          lawyer_notes: 'Cliente apresentou minuta do contrato'
-        }
-      ],
-      documents: [
-        {
-          id: '1',
-          title: 'Minuta de Contrato',
-          description: 'Primeira versão do contrato de compra e venda',
-          file_name: 'minuta_contrato.pdf',
-          file_size: '1.8 MB',
-          upload_date: '2024-01-15',
-          category: 'contrato',
-          visible_to_client: true,
-          url: '#'
-        },
-        {
-          id: '2',
-          title: 'Certidão do Imóvel',
-          description: 'Certidão de matrícula do imóvel',
-          file_name: 'certidao_imovel.pdf',
-          file_size: '2.2 MB',
-          upload_date: '2024-01-16',
-          category: 'documento',
-          visible_to_client: true,
-          url: '#'
-        }
-      ],
-      next_steps: [
-        {
-          title: 'Envio de Documentos Pendentes',
-          description: 'Enviar documentos solicitados pelo advogado',
-          due_date: '2024-01-25',
-          priority: 'alta'
-        }
-      ]
-    }
-  }
-  
-  return matters[id as keyof typeof matters] || null
-}
-
 const getStatusColor = (status: string) => {
-  const colors = {
+  const colors: Record<string, string> = {
     ativo: 'text-green-700 bg-green-50 ring-green-600/20',
+    active: 'text-green-700 bg-green-50 ring-green-600/20',
     aguardando_documentos: 'text-yellow-700 bg-yellow-50 ring-yellow-600/20',
     suspenso: 'text-red-700 bg-red-50 ring-red-600/20',
-    finalizado: 'text-gray-700 bg-gray-50 ring-gray-600/20'
+    finalizado: 'text-gray-700 bg-gray-50 ring-gray-600/20',
+    closed: 'text-gray-700 bg-gray-50 ring-gray-600/20'
   }
-  return colors[status as keyof typeof colors] || colors.ativo
+  return colors[status] || 'text-green-700 bg-green-50 ring-green-600/20'
 }
 
 const getStatusLabel = (status: string) => {
-  const labels = {
+  const labels: Record<string, string> = {
     ativo: 'Ativo',
+    active: 'Ativo',
     aguardando_documentos: 'Aguardando Documentos',
     suspenso: 'Suspenso',
-    finalizado: 'Finalizado'
+    finalizado: 'Finalizado',
+    closed: 'Finalizado'
   }
-  return labels[status as keyof typeof labels] || status
+  return labels[status] || status
 }
 
 const getPriorityIcon = (priority: string) => {
-  if (priority === 'alta') {
+  if (priority === 'alta' || priority === 'high') {
     return <ExclamationTriangleIcon className="h-4 w-4 text-red-500" />
   }
-  if (priority === 'media') {
+  if (priority === 'media' || priority === 'medium') {
     return <ClockIcon className="h-4 w-4 text-yellow-500" />
   }
   return <CheckCircleIcon className="h-4 w-4 text-green-500" />
 }
 
 const getTimelineIcon = (type: string) => {
-  const icons = {
+  const icons: Record<string, typeof DocumentTextIcon> = {
     document: DocumentTextIcon,
     hearing: CalendarIcon,
     meeting: UserIcon,
     status: CheckCircleIcon
   }
-  const IconComponent = icons[type as keyof typeof icons] || DocumentTextIcon
+  const IconComponent = icons[type] || DocumentTextIcon
   return <IconComponent className="h-5 w-5 text-white" />
 }
 
 const getTimelineColor = (type: string) => {
-  const colors = {
+  const colors: Record<string, string> = {
     document: 'bg-blue-500',
     hearing: 'bg-green-500',
     meeting: 'bg-purple-500',
     status: 'bg-gray-500'
   }
-  return colors[type as keyof typeof colors] || 'bg-blue-500'
+  return colors[type] || 'bg-blue-500'
+}
+
+function useMatterDetail(matterId: string) {
+  const supabase = useSupabase()
+  const { profile } = useAuthContext()
+
+  return useQuery({
+    queryKey: ['portal', 'matter-detail', matterId],
+    queryFn: async () => {
+      // Verify the client has access to this matter via matter_contacts
+      const { data: contact } = await supabase
+        .from('contacts')
+        .select('id')
+        .eq('user_id', profile!.id)
+        .single()
+
+      if (!contact) return null
+
+      const { data: matterContact } = await supabase
+        .from('matter_contacts')
+        .select('matter_id')
+        .eq('contact_id', contact.id)
+        .eq('matter_id', matterId)
+        .single()
+
+      if (!matterContact) return null
+
+      // Fetch full matter details
+      const { data: matter, error } = await supabase
+        .from('matters')
+        .select(`
+          *,
+          matter_type:matter_types(name),
+          responsible_lawyer:users!matters_responsible_lawyer_id_fkey(
+            id, full_name, email, phone, oab_number, position
+          )
+        `)
+        .eq('id', matterId)
+        .single()
+
+      if (error) throw error
+
+      // Fetch documents visible to client
+      const { data: documents } = await supabase
+        .from('documents')
+        .select('id, name, description, file_type, file_size, created_at, access_level, storage_path')
+        .eq('matter_id', matterId)
+        .in('access_level', ['public', 'internal'])
+        .order('created_at', { ascending: false })
+
+      // Fetch tasks related to this matter (as timeline)
+      const { data: tasks } = await supabase
+        .from('tasks')
+        .select('id, title, description, status, priority, due_date, created_at')
+        .eq('matter_id', matterId)
+        .order('created_at', { ascending: false })
+
+      return {
+        ...matter,
+        documents: documents || [],
+        tasks: tasks || []
+      }
+    },
+    enabled: !!profile?.id && !!matterId,
+  })
 }
 
 export default function ClientMatterDetailPage() {
   const params = useParams()
   const matterId = params.id as string
-  
-  const [isLoading, setIsLoading] = useState(true)
-  const [matter, setMatter] = useState<any>(null)
+
+  const { data: matter, isLoading, error } = useMatterDetail(matterId)
   const [activeTab, setActiveTab] = useState('overview')
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
-
-  useEffect(() => {
-    // Load matter data
-    const matterData = getMockMatterDetail(matterId)
-    if (matterData) {
-      setMatter(matterData)
-    }
-    setTimeout(() => setIsLoading(false), 1000)
-  }, [matterId])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR')
@@ -331,13 +163,11 @@ export default function ClientMatterDetailPage() {
 
   const handleFileUpload = async (e: React.FormEvent) => {
     e.preventDefault()
-    const formData = new FormData(e.target as HTMLFormElement)
-    
+
     setIsUploading(true)
     setUploadProgress(0)
-    
+
     try {
-      // Simulate upload progress
       const uploadInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) {
@@ -347,8 +177,7 @@ export default function ClientMatterDetailPage() {
           return prev + 10
         })
       }, 200)
-      
-      // Simulate upload completion
+
       setTimeout(() => {
         setUploadProgress(100)
         setTimeout(() => {
@@ -356,59 +185,21 @@ export default function ClientMatterDetailPage() {
           setUploadProgress(0)
           setShowUploadModal(false)
           alert('Documento enviado com sucesso! Aguarde análise da equipe jurídica.')
-          // TODO: Refresh documents list or add to matter.documents
         }, 500)
       }, 2000)
-    } catch (error) {
-      console.error('Upload error:', error)
+    } catch (err) {
+      console.error('Upload error:', err)
       setIsUploading(false)
       setUploadProgress(0)
       alert('Erro ao enviar documento. Tente novamente.')
     }
   }
 
-  const handleDocumentView = (document: any) => {
-    // Create a preview/view functionality
-    if (document.url) {
-      window.open(document.url, '_blank')
-    } else {
-      alert(`Visualizando: ${document.title}\n\nEste documento está sendo processado pela equipe jurídica.`)
-    }
-  }
-
-  const handleDocumentDownload = async (document: any) => {
-    try {
-      console.log(`Iniciando download de: ${document.title}`)
-      
-      if (document.url) {
-        // If document has a URL, download it
-        const link = document.createElement('a')
-        link.href = document.url
-        link.download = document.file_name || document.title
-        link.target = '_blank'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      } else {
-        // Create a mock document file for demonstration
-        const mockContent = `DOCUMENTO DO PROCESSO: ${matter.title}\n\nTítulo: ${document.title}\nDescrição: ${document.description}\nData: ${document.upload_date}\nCategoria: ${document.category}\n\nEste é um documento de demonstração do sistema Prima Facie.\n\n--- DÁVILA REIS ADVOCACIA ---`
-        const blob = new Blob([mockContent], { type: 'text/plain;charset=utf-8' })
-        
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = `${document.file_name || document.title}.txt`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
-      }
-      
-      alert(`Download de "${document.title}" iniciado com sucesso!`)
-    } catch (error) {
-      console.error('Download error:', error)
-      alert('Erro ao fazer download do documento. Tente novamente.')
-    }
+  const formatFileSize = (bytes: number | null) => {
+    if (!bytes) return 'N/A'
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
   if (isLoading) {
@@ -422,7 +213,7 @@ export default function ClientMatterDetailPage() {
     )
   }
 
-  if (!matter) {
+  if (error || !matter) {
     return (
       <div className="text-center py-12">
         <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
@@ -444,6 +235,8 @@ export default function ClientMatterDetailPage() {
     )
   }
 
+  const lawyer = matter.responsible_lawyer as Record<string, unknown> | null
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -463,7 +256,7 @@ export default function ClientMatterDetailPage() {
                   <p className="text-sm text-gray-500">{matter.matter_number}</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                  {getPriorityIcon(matter.priority)}
+                  {getPriorityIcon(matter.priority || 'normal')}
                   <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(matter.status)}`}>
                     {getStatusLabel(matter.status)}
                   </span>
@@ -473,39 +266,31 @@ export default function ClientMatterDetailPage() {
           </div>
 
           {/* Summary */}
-          <p className="text-gray-600 mb-4">{matter.client_summary}</p>
+          {matter.description && (
+            <p className="text-gray-600 mb-4">{matter.description}</p>
+          )}
 
           {/* Quick Info */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="flex items-center text-sm text-gray-600">
-              <UserIcon className="h-4 w-4 mr-2" />
-              {matter.assigned_lawyer.name}
-            </div>
+            {lawyer && (
+              <div className="flex items-center text-sm text-gray-600">
+                <UserIcon className="h-4 w-4 mr-2" />
+                {lawyer.full_name as string}
+              </div>
+            )}
             <div className="flex items-center text-sm text-gray-600">
               <CalendarIcon className="h-4 w-4 mr-2" />
-              {matter.next_hearing ? `Audiência: ${formatDate(matter.next_hearing)}` : 'Sem audiência agendada'}
+              {matter.next_court_date
+                ? `Audiência: ${formatDate(matter.next_court_date)}`
+                : 'Sem audiência agendada'}
             </div>
             <div className="flex items-center text-sm text-gray-600">
               <ClockIcon className="h-4 w-4 mr-2" />
-              Atualizado: {formatDate(matter.last_update)}
+              Aberto: {matter.opened_date ? formatDate(matter.opened_date) : 'N/A'}
             </div>
             <div className="flex items-center text-sm text-gray-600">
               <DocumentTextIcon className="h-4 w-4 mr-2" />
-              {matter.documents.filter(d => d.visible_to_client).length} documentos
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="mt-4">
-            <div className="flex justify-between text-sm text-gray-600 mb-1">
-              <span>Progresso do Processo</span>
-              <span>{matter.progress_percentage}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-primary h-2 rounded-full"
-                style={{ width: `${matter.progress_percentage}%` }}
-              ></div>
+              {matter.documents?.length || 0} documentos
             </div>
           </div>
         </div>
@@ -526,14 +311,14 @@ export default function ClientMatterDetailPage() {
               Visão Geral
             </button>
             <button
-              onClick={() => setActiveTab('timeline')}
+              onClick={() => setActiveTab('tasks')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'timeline'
+                activeTab === 'tasks'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Cronologia
+              Atividades
             </button>
             <button
               onClick={() => setActiveTab('documents')}
@@ -562,92 +347,120 @@ export default function ClientMatterDetailPage() {
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              {/* Case Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Detalhes do Processo</h3>
                   <dl className="space-y-3">
                     <div>
                       <dt className="text-sm font-medium text-gray-500">Número do Processo</dt>
-                      <dd className="text-sm text-gray-900">{matter.process_number || 'Ainda não distribuído'}</dd>
+                      <dd className="text-sm text-gray-900">{matter.court_case_number || 'Ainda não distribuído'}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Tribunal</dt>
-                      <dd className="text-sm text-gray-900">{matter.court || 'A definir'}</dd>
+                      <dt className="text-sm font-medium text-gray-500">Tipo de Processo</dt>
+                      <dd className="text-sm text-gray-900">
+                        {(matter.matter_type as Record<string, unknown>)?.name || 'N/A'}
+                      </dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Vara</dt>
-                      <dd className="text-sm text-gray-900">{matter.vara || 'A definir'}</dd>
+                      <dt className="text-sm font-medium text-gray-500">Tribunal / Vara</dt>
+                      <dd className="text-sm text-gray-900">{matter.court_branch || 'A definir'}</dd>
                     </div>
+                    {matter.estimated_value && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Valor da Causa</dt>
+                        <dd className="text-sm text-gray-900">{formatCurrency(matter.estimated_value)}</dd>
+                      </div>
+                    )}
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Valor da Causa</dt>
-                      <dd className="text-sm text-gray-900">{formatCurrency(matter.case_value)}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Duração Estimada</dt>
-                      <dd className="text-sm text-gray-900">{matter.estimated_duration}</dd>
+                      <dt className="text-sm font-medium text-gray-500">Data de Abertura</dt>
+                      <dd className="text-sm text-gray-900">{matter.opened_date ? formatDate(matter.opened_date) : 'N/A'}</dd>
                     </div>
                   </dl>
                 </div>
 
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Próximas Etapas</h3>
-                  <div className="space-y-3">
-                    {matter.next_steps.map((step: any, index: number) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-medium text-gray-900">{step.title}</h4>
-                          {getPriorityIcon(step.priority)}
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">{step.description}</p>
-                        <p className="text-xs text-gray-500">Prazo: {formatDate(step.due_date)}</p>
-                      </div>
-                    ))}
-                  </div>
+                  {matter.tasks && matter.tasks.length > 0 ? (
+                    <div className="space-y-3">
+                      {matter.tasks
+                        .filter((t: Record<string, unknown>) => t.status !== 'completed' && t.status !== 'cancelled')
+                        .slice(0, 3)
+                        .map((task: Record<string, unknown>) => (
+                          <div key={task.id as string} className="border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-sm font-medium text-gray-900">{task.title as string}</h4>
+                              {getPriorityIcon((task.priority as string) || 'normal')}
+                            </div>
+                            {task.description && (
+                              <p className="text-sm text-gray-600 mb-2">{task.description as string}</p>
+                            )}
+                            {task.due_date && (
+                              <p className="text-xs text-gray-500">Prazo: {formatDate(task.due_date as string)}</p>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">Nenhuma atividade pendente.</p>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Timeline Tab */}
-          {activeTab === 'timeline' && (
+          {/* Tasks/Timeline Tab */}
+          {activeTab === 'tasks' && (
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-6">Cronologia do Processo</h3>
-              <div className="flow-root">
-                <ul className="-mb-8">
-                  {matter.timeline.map((event: any, index: number) => (
-                    <li key={event.id}>
-                      <div className="relative pb-8">
-                        {index !== matter.timeline.length - 1 && (
-                          <span
-                            className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-200"
-                            aria-hidden="true"
-                          />
-                        )}
-                        <div className="relative flex items-start space-x-3">
-                          <div className={`relative px-1 h-10 w-10 rounded-full flex items-center justify-center ${getTimelineColor(event.type)}`}>
-                            {getTimelineIcon(event.type)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-6">Atividades do Processo</h3>
+              {matter.tasks && matter.tasks.length > 0 ? (
+                <div className="flow-root">
+                  <ul className="-mb-8">
+                    {matter.tasks.map((task: Record<string, unknown>, index: number) => (
+                      <li key={task.id as string}>
+                        <div className="relative pb-8">
+                          {index !== matter.tasks.length - 1 && (
+                            <span
+                              className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-200"
+                              aria-hidden="true"
+                            />
+                          )}
+                          <div className="relative flex items-start space-x-3">
+                            <div className={`relative px-1 h-10 w-10 rounded-full flex items-center justify-center ${
+                              task.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'
+                            }`}>
+                              {task.status === 'completed'
+                                ? <CheckCircleIcon className="h-5 w-5 text-white" />
+                                : <ClockIcon className="h-5 w-5 text-white" />
+                              }
+                            </div>
+                            <div className="flex-1 min-w-0">
                               <div className="text-sm">
-                                <span className="font-medium text-gray-900">{event.title}</span>
+                                <span className="font-medium text-gray-900">{task.title as string}</span>
                               </div>
-                              <p className="mt-1 text-sm text-gray-600">{event.description}</p>
-                              {event.lawyer_notes && (
-                                <p className="mt-1 text-xs text-gray-500 italic">
-                                  Observação: {event.lawyer_notes}
-                                </p>
+                              {task.description && (
+                                <p className="mt-1 text-sm text-gray-600">{task.description as string}</p>
                               )}
-                              <p className="mt-2 text-xs text-gray-500">{formatDate(event.date)}</p>
+                              <div className="mt-2 flex items-center space-x-3 text-xs text-gray-500">
+                                {task.due_date && <span>Prazo: {formatDate(task.due_date as string)}</span>}
+                                <span className={`px-2 py-0.5 rounded-full ${
+                                  task.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                  task.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {task.status === 'completed' ? 'Concluído' :
+                                   task.status === 'in_progress' ? 'Em andamento' : 'Pendente'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">Nenhuma atividade registrada.</p>
+              )}
             </div>
           )}
 
@@ -664,42 +477,30 @@ export default function ClientMatterDetailPage() {
                   Enviar Documento
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {matter.documents
-                  .filter((doc: any) => doc.visible_to_client)
-                  .map((document: any) => (
-                    <div key={document.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+              {matter.documents && matter.documents.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {matter.documents.map((doc: Record<string, unknown>) => (
+                    <div key={doc.id as string} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center">
                           <PaperClipIcon className="h-5 w-5 text-gray-400 mr-2" />
-                          <h4 className="text-sm font-medium text-gray-900">{document.title}</h4>
-                        </div>
-                        <div className="flex space-x-1">
-                          <button
-                            onClick={() => handleDocumentView(document)}
-                            className="text-gray-400 hover:text-gray-600 transition-colors"
-                            title="Visualizar"
-                          >
-                            <EyeIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDocumentDownload(document)}
-                            className="text-gray-400 hover:text-blue-600 transition-colors"
-                            title="Download"
-                          >
-                            <DownloadIcon className="h-4 w-4" />
-                          </button>
+                          <h4 className="text-sm font-medium text-gray-900">{doc.name as string}</h4>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{document.description}</p>
+                      {doc.description && (
+                        <p className="text-sm text-gray-600 mb-2">{doc.description as string}</p>
+                      )}
                       <div className="text-xs text-gray-500 space-y-1">
-                        <p>Arquivo: {document.file_name}</p>
-                        <p>Tamanho: {document.file_size}</p>
-                        <p>Upload: {formatDate(document.upload_date)}</p>
+                        <p>Tipo: {(doc.file_type as string) || 'N/A'}</p>
+                        <p>Tamanho: {formatFileSize(doc.file_size as number | null)}</p>
+                        <p>Upload: {doc.created_at ? formatDate(doc.created_at as string) : 'N/A'}</p>
                       </div>
                     </div>
                   ))}
-              </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">Nenhum documento encontrado.</p>
+              )}
             </div>
           )}
 
@@ -708,51 +509,50 @@ export default function ClientMatterDetailPage() {
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-6">Informações de Contato</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">Advogado Responsável</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center">
-                      <UserIcon className="h-5 w-5 text-gray-400 mr-3" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{matter.assigned_lawyer.name}</p>
-                        <p className="text-xs text-gray-500">{matter.assigned_lawyer.oab}</p>
+                {lawyer && (
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4">Advogado Responsável</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center">
+                        <UserIcon className="h-5 w-5 text-gray-400 mr-3" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{lawyer.full_name as string}</p>
+                          {lawyer.oab_number && (
+                            <p className="text-xs text-gray-500">{lawyer.oab_number as string}</p>
+                          )}
+                        </div>
                       </div>
+                      {lawyer.email && (
+                        <div className="flex items-center">
+                          <ChatBubbleLeftRightIcon className="h-5 w-5 text-gray-400 mr-3" />
+                          <p className="text-sm text-gray-900">{lawyer.email as string}</p>
+                        </div>
+                      )}
+                      {lawyer.phone && (
+                        <div className="flex items-center">
+                          <CalendarIcon className="h-5 w-5 text-gray-400 mr-3" />
+                          <p className="text-sm text-gray-900">{lawyer.phone as string}</p>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center">
-                      <ChatBubbleLeftRightIcon className="h-5 w-5 text-gray-400 mr-3" />
-                      <p className="text-sm text-gray-900">{matter.assigned_lawyer.email}</p>
-                    </div>
-                    <div className="flex items-center">
-                      <CalendarIcon className="h-5 w-5 text-gray-400 mr-3" />
-                      <p className="text-sm text-gray-900">{matter.assigned_lawyer.phone}</p>
+                    <div className="mt-6">
+                      <Link
+                        href="/portal/client/messages"
+                        className="w-full flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                      >
+                        <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
+                        Enviar Mensagem
+                      </Link>
                     </div>
                   </div>
-                  <div className="mt-6">
-                    <Link
-                      href="/portal/client/messages"
-                      className="w-full flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                    >
-                      <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
-                      Enviar Mensagem
-                    </Link>
-                  </div>
-                </div>
+                )}
 
                 <div className="bg-gray-50 rounded-lg p-6">
                   <h4 className="text-lg font-medium text-gray-900 mb-4">Escritório</h4>
                   <div className="space-y-3">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Dávila Reis Advocacia</p>
+                      <p className="text-sm font-medium text-gray-900">D&apos;Ávila Reis Advocacia</p>
                       <p className="text-xs text-gray-500">Especialistas em Direito Trabalhista e Civil</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Rua Augusta, 123 - Sala 456</p>
-                      <p className="text-sm text-gray-600">Consolação, São Paulo - SP</p>
-                      <p className="text-sm text-gray-600">CEP: 01305-000</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Tel: (11) 3456-7890</p>
-                      <p className="text-sm text-gray-600">contato@davilareislaw.com</p>
                     </div>
                   </div>
                 </div>
@@ -775,7 +575,7 @@ export default function ClientMatterDetailPage() {
                 <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
-            
+
             <form onSubmit={handleFileUpload}>
               <div className="space-y-4">
                 <div>
@@ -806,13 +606,13 @@ export default function ClientMatterDetailPage() {
 
                 {isUploading && (
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full transition-all duration-300" 
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     ></div>
                   </div>
                 )}
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Descrição do Documento
@@ -825,14 +625,14 @@ export default function ClientMatterDetailPage() {
                     required
                   />
                 </div>
-                
+
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <strong>Importante:</strong> Todos os documentos enviados serão analisados pela equipe jurídica. 
+                    <strong>Importante:</strong> Todos os documentos enviados serão analisados pela equipe jurídica.
                     Você receberá uma notificação quando o documento for processado e disponibilizado no processo.
                   </p>
                 </div>
-                
+
                 <div className="flex justify-end space-x-3 pt-4 border-t">
                   <button
                     type="button"

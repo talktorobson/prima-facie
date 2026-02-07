@@ -266,7 +266,9 @@ ORDER BY total_events DESC;
 - [Database Schema](../migrations/datajud-schema.sql)
 
 ### API Documentation
-- CNJ DataJud API: https://datajud-api.cnj.jus.br/docs
+- CNJ DataJud Public API: https://datajud-wiki.cnj.jus.br/api-publica/acesso
+- API Base URL: `https://api-publica.datajud.cnj.jus.br/api_publica_{court}/_search`
+- Auth: `APIKey cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==` (public)
 - Prima Facie API: `/api/datajud/*` endpoints
 
 ### Support

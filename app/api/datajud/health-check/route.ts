@@ -8,6 +8,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { Database } from '@/types/database'
 import { createMonitoringService } from '@/lib/integrations/datajud/monitoring'
+import { getDataJudApi } from '@/lib/integrations/datajud/api'
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,21 +39,18 @@ export async function GET(request: NextRequest) {
     let apiError = null
 
     try {
-      // Simulate DataJud API test call
-      const apiStartTime = Date.now()
-      
-      // In a real implementation, this would call the actual DataJud API
-      // For now, we'll simulate a successful API call
-      await new Promise(resolve => setTimeout(resolve, 100)) // Simulate network delay
-      
-      apiResponseTime = Date.now() - apiStartTime
-      
-      // Check if response time is acceptable
-      if (apiResponseTime > 5000) {
+      const dataJudApi = getDataJudApi()
+      const connectionTest = await dataJudApi.testConnection()
+
+      apiResponseTime = connectionTest.responseTimeMs
+
+      if (!connectionTest.success) {
+        apiStatus = 'down'
+        apiError = connectionTest.message
+      } else if (apiResponseTime > 5000) {
         apiStatus = 'degraded'
         apiError = `Slow response time: ${apiResponseTime}ms`
       }
-      
     } catch (error) {
       apiStatus = 'down'
       apiError = error instanceof Error ? error.message : 'Unknown API error'
@@ -167,7 +165,8 @@ export async function GET(request: NextRequest) {
       metrics: metrics,
       environment: {
         node_env: process.env.NODE_ENV || 'unknown',
-        datajud_api_configured: !!process.env.DATAJUD_API_KEY
+        datajud_api_configured: true, // Public API key is built-in
+        datajud_api_key_override: !!process.env.DATAJUD_API_KEY
       }
     }
 

@@ -1,25 +1,48 @@
 // =====================================================
-// DataJud CNJ API Service
+// DataJud CNJ Public API Service
 // Brazilian National Judiciary Database Integration
+// Uses the real CNJ public Elasticsearch API
+// Docs: https://datajud-wiki.cnj.jus.br/api-publica/acesso
 // =====================================================
 
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios'
+import axios, { AxiosInstance } from 'axios'
 
 // Rate limiting configuration
 interface RateLimitConfig {
   requests_per_minute: number
   current_requests: number
   window_start: number
-  queue: Array<() => void>
 }
 
-// DataJud API response types
+// --- Court mapping tables ---
+
+// Court number → state abbreviation (for segment 8, Justiça Estadual)
+const COURT_TO_STATE: Record<string, string> = {
+  '01': 'ac', '02': 'al', '03': 'ap', '04': 'am', '05': 'ba',
+  '06': 'ce', '07': 'df', '08': 'es', '09': 'go', '10': 'ma',
+  '11': 'mt', '12': 'ms', '13': 'mg', '14': 'pa', '15': 'pb',
+  '16': 'pe', '17': 'pi', '18': 'pr', '19': 'rj', '20': 'rn',
+  '21': 'rs', '22': 'ro', '23': 'rr', '24': 'sc', '25': 'se',
+  '26': 'sp', '27': 'to',
+}
+
+// Superior courts by court number
+const SUPERIOR_COURTS: Record<string, string> = {
+  '90': 'stj', '91': 'tst', '92': 'tse', '93': 'stm',
+}
+
+// --- DataJud API response types (field names match _source) ---
+
 export interface DataJudMovement {
-  id: string
-  dataHora: string
   codigo: number
   nome: string
+  dataHora: string
   complemento?: string
+  complementosTabelados?: Array<{
+    codigo: number
+    nome: string
+    descricao?: string
+  }>
   tipoResponsavelMovimento?: {
     codigo: number
     nome: string
@@ -33,7 +56,7 @@ export interface DataJudMovement {
 export interface DataJudAssunto {
   codigo: number
   nome: string
-  principal: boolean
+  principal?: boolean
 }
 
 export interface DataJudClasse {
@@ -64,19 +87,20 @@ export interface DataJudParticipante {
   pessoa: {
     nome: string
     cpfCnpj?: string
-    tipo: 'F' | 'J' // Física ou Jurídica
+    tipo: 'F' | 'J'
   }
   polo: 'ativo' | 'passivo'
   participacao?: string
 }
 
 export interface DataJudProcesso {
-  id: string
+  id?: string
   numeroProcesso: string
   tribunal: string
-  grau: number
+  grau: string
   dataAjuizamento?: string
-  dataUltimaAtualizacao?: string
+  dataHoraUltimaAtualizacao?: string
+  nivelSigilo: number
   orgaoJulgador: DataJudOrgaoJulgador
   classe: DataJudClasse
   sistema: DataJudSistema
@@ -85,60 +109,111 @@ export interface DataJudProcesso {
   participantes?: DataJudParticipante[]
   movimentos?: DataJudMovement[]
   valorCausa?: number
-  segredoJustica: boolean
 }
 
-export interface DataJudApiResponse {
-  processos: DataJudProcesso[]
-  paginacao?: {
-    total: number
-    pagina: number
-    tamanhoPagina: number
-    totalPaginas: number
+// Elasticsearch response wrapper
+interface ElasticsearchHit {
+  _index: string
+  _id: string
+  _score: number
+  _source: DataJudProcesso
+}
+
+interface ElasticsearchResponse {
+  took: number
+  timed_out: boolean
+  _shards: { total: number; successful: number; skipped: number; failed: number }
+  hits: {
+    total: { value: number; relation: string }
+    max_score: number | null
+    hits: ElasticsearchHit[]
   }
 }
 
-export interface DataJudSearchParams {
-  numeroProcesso?: string
-  tribunal?: string
-  dataInicio?: string
-  dataFim?: string
-  classe?: number[]
-  assunto?: number[]
-  orgaoJulgador?: number[]
-  pagina?: number
-  tamanhoPagina?: number
+// Public API key (published on CNJ wiki, same for everyone)
+const DEFAULT_API_KEY = 'cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw=='
+const BASE_URL = 'https://api-publica.datajud.cnj.jus.br'
+
+/**
+ * Extract digits from a CNJ number string, stripping all formatting.
+ * CNJ format: NNNNNNN-DD.AAAA.J.TR.OOOO → 20 raw digits
+ */
+function stripCnjFormatting(cnj: string): string {
+  return cnj.replace(/\D/g, '')
+}
+
+/**
+ * Resolve the court endpoint code from a CNJ process number.
+ *
+ * CNJ format: NNNNNNN-DD.AAAA.J.TR.OOOO (20 digits)
+ *   Position 13 (0-indexed) = J (segment/justiça)
+ *   Positions 14-15 = TR (court/tribunal)
+ *
+ * Returns the endpoint suffix, e.g. "tjsp", "trt1", "stj"
+ */
+export function resolveCourtEndpoint(cnj: string): string {
+  const digits = stripCnjFormatting(cnj)
+
+  if (digits.length !== 20) {
+    throw new Error(`Invalid CNJ number: expected 20 digits, got ${digits.length} from "${cnj}"`)
+  }
+
+  const segment = digits[13]    // J — type of justice
+  const courtCode = digits.substring(14, 16)  // TR — court number
+
+  // Superior courts (segment 9 or specific court codes)
+  if (SUPERIOR_COURTS[courtCode]) {
+    return SUPERIOR_COURTS[courtCode]
+  }
+
+  switch (segment) {
+    case '8': { // Justiça Estadual
+      const state = COURT_TO_STATE[courtCode]
+      if (!state) throw new Error(`Unknown state court code: ${courtCode}`)
+      return `tj${state}`
+    }
+    case '5': // Justiça do Trabalho
+      return `trt${parseInt(courtCode, 10)}`
+    case '4': // Justiça Federal
+      return `trf${parseInt(courtCode, 10)}`
+    case '6': { // Justiça Eleitoral
+      const state = COURT_TO_STATE[courtCode]
+      if (!state) throw new Error(`Unknown electoral court code: ${courtCode}`)
+      return `tre-${state}`
+    }
+    case '7': { // Justiça Militar Estadual
+      const state = COURT_TO_STATE[courtCode]
+      if (!state) throw new Error(`Unknown military court code: ${courtCode}`)
+      return `tjm${state}`
+    }
+    default:
+      throw new Error(`Unsupported justice segment: ${segment} (court ${courtCode})`)
+  }
 }
 
 class DataJudApiService {
   private client: AxiosInstance
-  private baseUrl: string
-  private apiKey: string
   private rateLimit: RateLimitConfig
 
-  constructor(apiKey: string, baseUrl?: string) {
-    this.apiKey = apiKey
-    this.baseUrl = baseUrl || 'https://datajud-api.cnj.jus.br'
-    
-    // Initialize rate limiting (120 requests per minute as per CNJ documentation)
+  constructor(apiKey?: string) {
+    const key = apiKey || DEFAULT_API_KEY
+
     this.rateLimit = {
       requests_per_minute: 120,
       current_requests: 0,
       window_start: Date.now(),
-      queue: []
     }
 
     this.client = axios.create({
-      baseURL: this.baseUrl,
+      baseURL: BASE_URL,
       timeout: 30000,
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        'Authorization': `APIKey ${key}`,
         'Content-Type': 'application/json',
-        'User-Agent': 'Prima-Facie-Legal-System/1.0'
-      }
+      },
     })
 
-    // Request interceptor for rate limiting
+    // Rate limiting interceptor
     this.client.interceptors.request.use(
       async (config) => {
         await this.enforceRateLimit()
@@ -147,7 +222,7 @@ class DataJudApiService {
       (error) => Promise.reject(error)
     )
 
-    // Response interceptor for error handling
+    // Error logging interceptor
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -155,38 +230,27 @@ class DataJudApiService {
           status: error.response?.status,
           statusText: error.response?.statusText,
           data: error.response?.data,
-          config: {
-            url: error.config?.url,
-            method: error.config?.method,
-            params: error.config?.params
-          }
+          url: error.config?.url,
+          method: error.config?.method,
         })
         return Promise.reject(error)
       }
     )
   }
 
-  /**
-   * Enforce rate limiting (120 requests per minute)
-   */
   private async enforceRateLimit(): Promise<void> {
     const now = Date.now()
-    const windowDuration = 60 * 1000 // 1 minute in milliseconds
+    const windowDuration = 60_000
 
-    // Reset window if needed
     if (now - this.rateLimit.window_start >= windowDuration) {
       this.rateLimit.current_requests = 0
       this.rateLimit.window_start = now
     }
 
-    // Check if we're at the limit
     if (this.rateLimit.current_requests >= this.rateLimit.requests_per_minute) {
       const waitTime = windowDuration - (now - this.rateLimit.window_start)
       console.warn(`DataJud API rate limit reached. Waiting ${waitTime}ms`)
-      
       await new Promise(resolve => setTimeout(resolve, waitTime))
-      
-      // Reset after waiting
       this.rateLimit.current_requests = 0
       this.rateLimit.window_start = Date.now()
     }
@@ -195,21 +259,29 @@ class DataJudApiService {
   }
 
   /**
-   * Search for processes by case number
+   * Search for a process by its CNJ number.
+   * Automatically resolves the court endpoint from the number.
+   *
+   * Returns all matching DataJudProcesso entries (movements included).
    */
-  async searchByProcessNumber(numeroProcesso: string, tribunal?: string): Promise<DataJudProcesso[]> {
+  async searchByProcessNumber(numeroProcesso: string): Promise<DataJudProcesso[]> {
+    const digits = stripCnjFormatting(numeroProcesso)
+    const courtEndpoint = resolveCourtEndpoint(numeroProcesso)
+    const url = `/api_publica_${courtEndpoint}/_search`
+
     try {
-      const params: DataJudSearchParams = {
-        numeroProcesso: this.sanitizeProcessNumber(numeroProcesso)
-      }
+      const response = await this.client.post<ElasticsearchResponse>(url, {
+        query: {
+          match: {
+            numeroProcesso: digits,
+          },
+        },
+      })
 
-      if (tribunal) {
-        params.tribunal = tribunal
-      }
-
-      const response = await this.client.get<DataJudApiResponse>('/api/v1/processos', { params })
-      
-      return response.data.processos || []
+      return response.data.hits.hits.map(hit => ({
+        ...hit._source,
+        id: hit._id,
+      }))
     } catch (error) {
       console.error('Error searching by process number:', error)
       throw new Error(`Failed to search DataJud for process ${numeroProcesso}`)
@@ -217,169 +289,59 @@ class DataJudApiService {
   }
 
   /**
-   * Get detailed process information including movements
+   * Test API connectivity by performing a lightweight search against STJ.
    */
-  async getProcessDetails(processId: string, includeMovements: boolean = true): Promise<DataJudProcesso | null> {
+  async testConnection(): Promise<{ success: boolean; message: string; responseTimeMs: number }> {
+    const startTime = Date.now()
+
     try {
-      const url = `/api/v1/processos/${processId}`
-      const params = includeMovements ? { incluirMovimentos: true } : {}
-
-      const response = await this.client.get<DataJudProcesso>(url, { params })
-      
-      return response.data
-    } catch (error) {
-      console.error('Error getting process details:', error)
-      return null
-    }
-  }
-
-  /**
-   * Get process movements (timeline events)
-   */
-  async getProcessMovements(processId: string, dataInicio?: string, dataFim?: string): Promise<DataJudMovement[]> {
-    try {
-      const params: any = {}
-      
-      if (dataInicio) params.dataInicio = dataInicio
-      if (dataFim) params.dataFim = dataFim
-
-      const response = await this.client.get<{ movimentos: DataJudMovement[] }>(
-        `/api/v1/processos/${processId}/movimentos`,
-        { params }
+      const response = await this.client.post<ElasticsearchResponse>(
+        '/api_publica_stj/_search',
+        {
+          query: { match_all: {} },
+          size: 1,
+        }
       )
-      
-      return response.data.movimentos || []
-    } catch (error) {
-      console.error('Error getting process movements:', error)
-      return []
-    }
-  }
 
-  /**
-   * Search processes by multiple criteria
-   */
-  async searchProcesses(params: DataJudSearchParams): Promise<DataJudApiResponse> {
-    try {
-      // Sanitize process number if provided
-      if (params.numeroProcesso) {
-        params.numeroProcesso = this.sanitizeProcessNumber(params.numeroProcesso)
-      }
+      const responseTimeMs = Date.now() - startTime
+      const hitCount = response.data.hits.total.value
 
-      const response = await this.client.get<DataJudApiResponse>('/api/v1/processos', { params })
-      
-      return response.data
-    } catch (error) {
-      console.error('Error searching processes:', error)
-      throw new Error('Failed to search DataJud processes')
-    }
-  }
-
-  /**
-   * Get available tribunals
-   */
-  async getTribunals(): Promise<Array<{ codigo: string; nome: string; sigla: string }>> {
-    try {
-      const response = await this.client.get('/api/v1/tribunais')
-      return response.data.tribunais || []
-    } catch (error) {
-      console.error('Error getting tribunals:', error)
-      return []
-    }
-  }
-
-  /**
-   * Get process classes (tipos de processo)
-   */
-  async getProcessClasses(): Promise<DataJudClasse[]> {
-    try {
-      const response = await this.client.get('/api/v1/classes')
-      return response.data.classes || []
-    } catch (error) {
-      console.error('Error getting process classes:', error)
-      return []
-    }
-  }
-
-  /**
-   * Get legal subjects (assuntos jurídicos)
-   */
-  async getLegalSubjects(): Promise<DataJudAssunto[]> {
-    try {
-      const response = await this.client.get('/api/v1/assuntos')
-      return response.data.assuntos || []
-    } catch (error) {
-      console.error('Error getting legal subjects:', error)
-      return []
-    }
-  }
-
-  /**
-   * Test API connectivity and authentication
-   */
-  async testConnection(): Promise<{ success: boolean; message: string; rateLimit?: RateLimitConfig }> {
-    try {
-      const response = await this.client.get('/api/v1/status')
-      
       return {
         success: true,
-        message: 'DataJud API connection successful',
-        rateLimit: this.rateLimit
+        message: `DataJud API reachable. STJ index has ${hitCount} records. Response in ${responseTimeMs}ms.`,
+        responseTimeMs,
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const responseTimeMs = Date.now() - startTime
+      const message = error instanceof Error ? error.message : 'Unknown error'
+
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to connect to DataJud API',
-        rateLimit: this.rateLimit
+        message: `Failed to connect to DataJud API: ${message}`,
+        responseTimeMs,
       }
     }
   }
 
-  /**
-   * Sanitize CNJ process number format
-   */
-  private sanitizeProcessNumber(processNumber: string): string {
-    // Remove all non-numeric characters
-    const cleaned = processNumber.replace(/\D/g, '')
-    
-    // CNJ format: NNNNNNN-DD.AAAA.J.TR.OOOO (20 digits)
-    if (cleaned.length === 20) {
-      return `${cleaned.substring(0, 7)}-${cleaned.substring(7, 9)}.${cleaned.substring(9, 13)}.${cleaned.substring(13, 14)}.${cleaned.substring(14, 16)}.${cleaned.substring(16, 20)}`
-    }
-    
-    // Return as-is if not standard format
-    return processNumber
-  }
-
-  /**
-   * Get current rate limit status
-   */
   getRateLimitStatus(): RateLimitConfig {
     return { ...this.rateLimit }
   }
 
-  /**
-   * Reset rate limit (for testing purposes)
-   */
   resetRateLimit(): void {
     this.rateLimit.current_requests = 0
     this.rateLimit.window_start = Date.now()
-    this.rateLimit.queue = []
   }
 }
 
-// Export singleton instance
+// Singleton
 let dataJudApiInstance: DataJudApiService | null = null
 
 export const getDataJudApi = (): DataJudApiService => {
   if (!dataJudApiInstance) {
-    const apiKey = process.env.DATAJUD_API_KEY
-    if (!apiKey) {
-      throw new Error('DATAJUD_API_KEY environment variable is required')
-    }
-    
+    // Use env var as optional override; the public key is the default
+    const apiKey = process.env.DATAJUD_API_KEY || undefined
     dataJudApiInstance = new DataJudApiService(apiKey)
   }
-  
   return dataJudApiInstance
 }
 

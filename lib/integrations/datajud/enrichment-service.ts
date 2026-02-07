@@ -210,7 +210,7 @@ class DataJudEnrichmentService {
     const enrichmentData = {
       law_firm_id: lawFirmId,
       matter_id: caseId,
-      datajud_case_id: dataJudProcess.id,
+      datajud_case_id: dataJudProcess.id || '',
       numero_processo_cnj: dataJudProcess.numeroProcesso,
       tribunal_alias: dataJudProcess.tribunal,
       court_instance: dataJudProcess.grau,
@@ -227,9 +227,9 @@ class DataJudEnrichmentService {
       court_system_code: dataJudProcess.sistema.codigo,
       court_system_name: dataJudProcess.sistema.nome,
       filing_date: dataJudProcess.dataAjuizamento ? new Date(dataJudProcess.dataAjuizamento).toISOString() : null,
-      last_update_date: dataJudProcess.dataUltimaAtualizacao ? new Date(dataJudProcess.dataUltimaAtualizacao).toISOString() : null,
+      last_update_date: dataJudProcess.dataHoraUltimaAtualizacao ? new Date(dataJudProcess.dataHoraUltimaAtualizacao).toISOString() : null,
       case_value: dataJudProcess.valorCausa || null,
-      is_confidential: dataJudProcess.segredoJustica || false,
+      is_confidential: (dataJudProcess.nivelSigilo ?? 0) > 0,
       enrichment_status: 'completed',
       enrichment_confidence: 0.85, // Will be calculated
       last_enrichment_at: new Date().toISOString()
@@ -340,12 +340,7 @@ class DataJudEnrichmentService {
 
     try {
       if (!dataJudProcess.movimentos || dataJudProcess.movimentos.length === 0) {
-        // Try to fetch movements separately
-        const movements = await this.dataJudApi.getProcessMovements(dataJudProcess.id)
-        if (movements.length === 0) {
-          return result
-        }
-        dataJudProcess.movimentos = movements
+        return result
       }
 
       // Get existing events to avoid duplicates
@@ -358,14 +353,17 @@ class DataJudEnrichmentService {
 
       // Process movements
       for (const movement of dataJudProcess.movimentos) {
-        if (existingMovementIds.has(movement.id)) {
+        // Generate a stable ID from movement code + datetime (real API has no per-movement ID)
+        const movementId = `${movement.codigo}_${movement.dataHora}`
+
+        if (existingMovementIds.has(movementId)) {
           continue // Skip existing events
         }
 
         const eventData = {
           law_firm_id: lawFirmId,
           datajud_case_detail_id: caseDetailId,
-          movement_id: movement.id,
+          movement_id: movementId,
           movement_code: movement.codigo,
           movement_name: movement.nome,
           movement_complement: movement.complemento || null,
@@ -386,7 +384,7 @@ class DataJudEnrichmentService {
           .insert(eventData)
 
         if (error) {
-          result.errors.push(`Failed to insert timeline event ${movement.id}: ${error.message}`)
+          result.errors.push(`Failed to insert timeline event ${movementId}: ${error.message}`)
         } else {
           result.events_added++
         }

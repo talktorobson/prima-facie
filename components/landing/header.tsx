@@ -9,10 +9,11 @@ interface HeaderProps {
 }
 
 const navLinks = [
-  { href: '/about', label: 'Sobre' },
-  { href: '/#servicos', label: 'Servicos' },
-  { href: '/saas', label: 'Plataforma' },
-  { href: '/contact', label: 'Contato' },
+  { href: '/atuacao', label: 'Atuacao' },
+  { href: '/conteudos', label: 'Conteudos' },
+  { href: '/equipe', label: 'Equipe' },
+  { href: '/sobre', label: 'Sobre' },
+  { href: '/contato', label: 'Contato' },
 ]
 
 export default function Header({ variant = 'solid' }: HeaderProps) {
@@ -62,11 +63,22 @@ export default function Header({ variant = 'solid' }: HeaderProps) {
             </Link>
           ))}
           <Link
-            href="/login"
+            href="/contato"
             className="text-sm font-medium px-5 py-2.5 border transition-colors tracking-wide
               bg-landing-gold border-landing-gold text-white hover:bg-landing-gold-light"
           >
-            Acessar
+            Agendar reuniao inicial
+          </Link>
+          <Link
+            href="/login"
+            target="_blank"
+            className={`text-sm font-medium px-5 py-2.5 border transition-colors tracking-wide ${
+              isTransparent
+                ? 'border-white/40 text-white hover:bg-white/10'
+                : 'border-landing-ink text-landing-ink hover:bg-landing-ink hover:text-white'
+            }`}
+          >
+            Portal do Cliente
           </Link>
         </nav>
 
@@ -96,11 +108,19 @@ export default function Header({ variant = 'solid' }: HeaderProps) {
               </Link>
             ))}
             <Link
-              href="/login"
+              href="/contato"
               onClick={() => setMobileOpen(false)}
               className="text-center text-sm font-medium px-5 py-3 bg-landing-gold text-white mt-2"
             >
-              Acessar
+              Agendar reuniao inicial
+            </Link>
+            <Link
+              href="/login"
+              target="_blank"
+              onClick={() => setMobileOpen(false)}
+              className="text-center text-sm font-medium px-5 py-3 border border-landing-ink text-landing-ink"
+            >
+              Portal do Cliente
             </Link>
           </nav>
         </div>

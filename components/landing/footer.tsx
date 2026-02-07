@@ -24,10 +24,10 @@ export default function Footer() {
             </h4>
             <ul className="space-y-3">
               {[
-                { href: '/about', label: 'Sobre o Escritorio' },
-                { href: '/#servicos', label: 'Areas de Atuacao' },
-                { href: '/saas', label: 'Plataforma Prima Facie' },
-                { href: '/contact', label: 'Contato' },
+                { href: '/sobre', label: 'Sobre o Escritorio' },
+                { href: '/atuacao', label: 'Areas de Atuacao' },
+                { href: '/conteudos', label: 'Conteudos' },
+                { href: '/contato', label: 'Contato' },
                 { href: '/login', label: 'Portal do Cliente' },
               ].map((link) => (
                 <li key={link.href}>
@@ -77,9 +77,19 @@ export default function Footer() {
           <p className="text-xs text-gray-500">
             &copy; 2026 D&apos;Avila Reis Advogados. Todos os direitos reservados.
           </p>
-          <p className="text-xs text-gray-500">
-            OAB/SP — Registro ativo
-          </p>
+          <div className="flex items-center gap-4 text-xs text-gray-500">
+            <Link href="/politica-de-privacidade" className="hover:text-gray-300 transition-colors">
+              Politica de Privacidade
+            </Link>
+            <span>|</span>
+            <Link href="/cookies" className="hover:text-gray-300 transition-colors">
+              Cookies
+            </Link>
+            <span>|</span>
+            <Link href="/aviso-legal" className="hover:text-gray-300 transition-colors">
+              Aviso Legal
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

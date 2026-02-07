@@ -26,6 +26,12 @@ jest.mock('@/lib/providers/auth-provider', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="auth-provider">{children}</div>
   ),
+  useAuthContext: () => ({
+    profile: null,
+    session: null,
+    loading: false,
+    signOut: jest.fn(),
+  }),
 }))
 
 jest.mock('@/components/ui/toast-provider', () => ({

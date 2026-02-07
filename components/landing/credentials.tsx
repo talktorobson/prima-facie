@@ -2,10 +2,10 @@ import { Scale, Shield, TrendingUp, Award } from 'lucide-react'
 import ScrollReveal from '@/components/landing/scroll-reveal'
 
 const credentials = [
+  { icon: Award, metric: '20+', label: 'Anos de Experiencia' },
   { icon: TrendingUp, metric: '2.500+', label: 'Processos Gerenciados' },
-  { icon: Shield, metric: '200+', label: 'Empresas Protegidas' },
-  { icon: Scale, metric: '98%', label: 'Taxa de Sucesso' },
-  { icon: Award, metric: 'OAB/SP', label: 'Registro Ativo' },
+  { icon: Shield, metric: '200+', label: 'Empresas Atendidas' },
+  { icon: Scale, metric: 'OAB/SP', label: 'Registro Ativo' },
 ]
 
 export default function Credentials() {
@@ -14,7 +14,7 @@ export default function Credentials() {
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-landing-ink gold-line mx-auto inline-block">
-            Confianca Construida em Duas Decadas
+            Experiencia e Registro
           </h2>
         </div>
 

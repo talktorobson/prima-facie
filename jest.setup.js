@@ -1,5 +1,17 @@
 import '@testing-library/jest-dom'
 
+// Polyfill IntersectionObserver for jsdom (used by ScrollReveal component)
+if (typeof globalThis.IntersectionObserver === 'undefined') {
+  globalThis.IntersectionObserver = class IntersectionObserver {
+    constructor(callback) {
+      this.callback = callback
+    }
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+}
+
 // Polyfill Web APIs not available in jsdom (Node.js 22 has them natively)
 if (typeof globalThis.Request === 'undefined') {
   // Node.js 22 provides these natively but jsdom may not expose them

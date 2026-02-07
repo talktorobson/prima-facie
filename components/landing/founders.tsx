@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import ScrollReveal from '@/components/landing/scroll-reveal'
 
 const founders = [
@@ -5,13 +6,13 @@ const founders = [
     name: 'Dr. Ruy D\'Avila Reis',
     title: 'Socio Fundador',
     oab: 'OAB/SP',
-    bio: 'Especialista em direito empresarial e trabalhista preventivo com mais de duas decadas de atuacao. Dedicado a protecao patrimonial de empresarios e a construcao de estrategias juridicas que antecipam riscos antes que se tornem litigios.',
+    bio: 'Socio fundador com mais de 20 anos de experiencia na defesa de empresas em demandas trabalhistas. Especialista em blindagem patrimonial e estrategia processual para o empregador.',
   },
   {
     name: 'Dra. Larissa D\'Avila Reis',
     title: 'Socia Fundadora',
     oab: 'OAB/SP · OAB/MG · OAB/PR · Ordem dos Advogados de Portugal',
-    bio: 'Advogada com atuacao multijurisdicional, inscrita em tres estados brasileiros e em Portugal. Sua experiencia internacional amplia a capacidade do escritorio em casos com dimensao transfronteiriça e operacoes empresariais entre Brasil e Europa.',
+    bio: 'Socia fundadora com inscricao ativa na OAB/SP, OAB/MG, OAB/PR e na Ordem dos Advogados de Portugal (OAP). Experiencia em direito empresarial com dimensao transfronteirica entre Brasil e Europa.',
   },
 ]
 
@@ -48,6 +49,17 @@ export default function Founders() {
             </ScrollReveal>
           ))}
         </div>
+
+        <ScrollReveal delay="300ms">
+          <div className="text-center mt-14">
+            <Link
+              href="/equipe"
+              className="inline-flex items-center justify-center px-8 py-4 border border-white/40 text-white font-medium text-base tracking-wide hover:bg-white/10 transition-colors"
+            >
+              Conhecer a equipe
+            </Link>
+          </div>
+        </ScrollReveal>
       </div>
     </section>
   )

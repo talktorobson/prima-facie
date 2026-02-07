@@ -5,19 +5,19 @@ const values = [
     number: '01',
     title: 'Etica',
     description:
-      'Atuacao pautada pela integridade profissional e transparencia absoluta. Cada decisao reflete nosso compromisso com a conduta etica.',
+      'Atuacao pautada pela integridade, transparencia e respeito ao cliente e a profissao.',
   },
   {
     number: '02',
     title: 'Excelencia',
     description:
-      'Atualizacao constante, profundidade tecnica e dedicacao a entregar resultados que superem expectativas em cada caso.',
+      'Profundidade tecnica, atualizacao constante e dedicacao maxima a cada caso.',
   },
   {
     number: '03',
     title: 'Compromisso',
     description:
-      'Dedicacao total a protecao dos interesses do cliente. Tratamos cada caso como se fosse o unico — porque para o cliente, ele e.',
+      'Cada cliente recebe atencao integral — tratamos seu caso como se fosse o unico.',
   },
 ]
 

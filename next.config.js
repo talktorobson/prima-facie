@@ -17,6 +17,14 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      { source: '/about', destination: '/sobre', permanent: true },
+      { source: '/contact', destination: '/contato', permanent: true },
+      { source: '/privacy', destination: '/politica-de-privacidade', permanent: true },
+      { source: '/terms', destination: '/aviso-legal', permanent: true },
+    ]
+  },
 }
 
 module.exports = nextConfig

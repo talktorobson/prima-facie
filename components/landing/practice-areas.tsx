@@ -1,30 +1,31 @@
+import Link from 'next/link'
 import { Scale, Shield, FileText, Gavel, ArrowRight } from 'lucide-react'
 import ScrollReveal from '@/components/landing/scroll-reveal'
 
 const areas = [
   {
     icon: Scale,
-    title: 'Direito Trabalhista Empresarial',
+    title: 'Direito Trabalhista Empresarial (Patronal)',
     description:
-      'Defesa especializada em reclamacoes trabalhistas, auditorias preventivas e estrategias para reducao de passivos. Protecao do patrimonio pessoal dos socios.',
+      'Defesa completa do empregador em reclamacoes trabalhistas. Audiencias, recursos, execucao. Estrategia para reduzir passivo e proteger patrimonio dos socios.',
   },
   {
     icon: Shield,
-    title: 'Consultoria Preventiva',
+    title: 'Consultoria Preventiva Trabalhista',
     description:
-      'Analise de riscos juridicos, elaboracao de politicas internas, treinamento de equipes e compliance trabalhista para evitar litigios antes que acontecam.',
+      'Auditorias trabalhistas, elaboracao de politicas internas, treinamento de gestores e adequacao de contratos para evitar acoes judiciais.',
   },
   {
     icon: FileText,
-    title: 'Compliance & Governanca',
+    title: 'Contratos Empresariais',
     description:
-      'Implementacao de programas de integridade, adequacao a LGPD, politicas anticorrupcao e governanca corporativa alinhada as melhores praticas do mercado.',
+      'Elaboracao, revisao e negociacao de contratos comerciais, de prestacao de servicos, societarios e de locacao. Protecao juridica para operacoes do dia a dia.',
   },
   {
     icon: Gavel,
-    title: 'Contencioso Estrategico',
+    title: 'Cobranca e Recuperacao de Credito',
     description:
-      'Representacao judicial em causas complexas com foco em resultados. Estrategia processual personalizada para cada caso, da primeira instancia aos tribunais superiores.',
+      'Cobranca extrajudicial e judicial de titulos, duplicatas e contratos inadimplidos. Execucoes fiscais e acoes monitorias com foco em resultado.',
   },
 ]
 
@@ -43,24 +44,37 @@ export default function PracticeAreas() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           {areas.map((area, index) => (
             <ScrollReveal key={area.title} delay={`${index * 100}ms`}>
-              <div className="border border-white/10 p-8 md:p-10 hover:-translate-y-1 transition-transform group">
-                <div className="flex items-center gap-4 mb-6">
-                  <area.icon className="h-6 w-6 text-landing-gold flex-shrink-0" />
-                  <h3 className="text-xl md:text-2xl font-serif font-semibold text-white">
-                    {area.title}
-                  </h3>
+              <Link href="/atuacao" className="block">
+                <div className="border border-white/10 p-8 md:p-10 hover:-translate-y-1 transition-transform group">
+                  <div className="flex items-center gap-4 mb-6">
+                    <area.icon className="h-6 w-6 text-landing-gold flex-shrink-0" />
+                    <h3 className="text-xl md:text-2xl font-serif font-semibold text-white">
+                      {area.title}
+                    </h3>
+                  </div>
+                  <p className="text-gray-400 leading-relaxed mb-6">
+                    {area.description}
+                  </p>
+                  <div className="flex items-center gap-2 text-landing-gold text-sm font-medium group-hover:gap-3 transition-all">
+                    Saiba mais
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
                 </div>
-                <p className="text-gray-400 leading-relaxed mb-6">
-                  {area.description}
-                </p>
-                <div className="flex items-center gap-2 text-landing-gold text-sm font-medium group-hover:gap-3 transition-all">
-                  Saiba mais
-                  <ArrowRight className="h-4 w-4" />
-                </div>
-              </div>
+              </Link>
             </ScrollReveal>
           ))}
         </div>
+
+        <ScrollReveal delay="400ms">
+          <div className="text-center mt-14">
+            <Link
+              href="/atuacao"
+              className="inline-flex items-center justify-center px-8 py-4 bg-landing-gold text-white font-medium text-base tracking-wide hover:bg-landing-gold-light transition-colors"
+            >
+              Ver detalhes da atuacao
+            </Link>
+          </div>
+        </ScrollReveal>
       </div>
     </section>
   )

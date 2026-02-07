@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import Header from '@/components/landing/header'
+import Topbar from '@/components/landing/topbar'
 
 export default function Hero() {
   return (
     <section className="relative min-h-screen bg-landing-ivory grain">
+      <Topbar />
       <Header variant="transparent" />
 
       {/* Hero content */}
@@ -22,25 +24,38 @@ export default function Hero() {
             <div className="w-16 h-[2px] bg-landing-gold mb-8" />
 
             <p className="text-lg md:text-xl text-landing-stone leading-relaxed max-w-lg mb-10">
-              20 anos de advocacia empresarial e trabalhista preventiva.
-              Defendemos empresarios contra processos que podem atingir seu patrimonio pessoal.
+              Ha mais de 20 anos atuamos na defesa de empresas em demandas trabalhistas (lado patronal),
+              elaboracao e revisao de contratos empresariais e cobranca e recuperacao de credito.
             </p>
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
-                href="/contact"
+                href="/contato"
                 className="inline-flex items-center justify-center px-8 py-4 bg-landing-gold text-white font-medium text-base tracking-wide hover:bg-landing-gold-light transition-colors"
               >
-                Agendar Consultoria
+                Agendar reuniao inicial
+              </Link>
+              <Link
+                href="https://wa.me/551533844013?text=Ola%2C%20gostaria%20de%20agendar%20uma%20reuniao."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center px-8 py-4 border border-landing-ink text-landing-ink font-medium text-base tracking-wide hover:bg-landing-ink hover:text-white transition-colors"
+              >
+                Falar com a equipe
               </Link>
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center px-8 py-4 border border-landing-ink text-landing-ink font-medium text-base tracking-wide hover:bg-landing-ink hover:text-white transition-colors"
+                className="inline-flex items-center justify-center px-8 py-4 text-landing-ink font-medium text-base tracking-wide hover:text-landing-gold transition-colors"
               >
-                Acessar Portal
+                Portal do Cliente
               </Link>
             </div>
+
+            {/* Microcopy */}
+            <p className="text-xs text-landing-stone mt-4">
+              Atendemos exclusivamente pessoas juridicas (empresas).
+            </p>
           </div>
 
           {/* Right: architectural image */}

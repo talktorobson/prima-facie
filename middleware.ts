@@ -146,7 +146,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Route definitions
-  const publicPaths = ['/', '/pricing', '/about', '/contact']
+  const publicPaths = ['/', '/saas', '/about', '/contact']
   const authPaths = ['/login', '/register', '/forgot-password', '/reset-password']
   const dashboardPaths = ['/dashboard', '/matters', '/clients', '/billing', '/calendar', '/tasks', '/documents', '/reports', '/settings']
   const adminPaths = ['/admin']

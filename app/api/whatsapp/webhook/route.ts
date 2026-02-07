@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { WhatsAppService, whatsappUtils } from '@/lib/whatsapp/api'
 import { createClient } from '@/lib/supabase/client'
-import { chatService } from '@/lib/supabase/realtime'
 
 const supabase = createClient()
 

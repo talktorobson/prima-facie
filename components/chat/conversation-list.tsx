@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { 
+import { useState } from 'react'
+import {
   ChatBubbleLeftRightIcon,
   MagnifyingGlassIcon,
   UserIcon,
@@ -12,50 +12,43 @@ import {
   TagIcon,
   FunnelIcon
 } from '@heroicons/react/24/outline'
-import { CheckIcon } from '@heroicons/react/24/solid'
-import { chatService, Conversation, formatMessageTime } from '@/lib/supabase/realtime'
+import { useConversations } from '@/lib/queries/useMessages'
+import { useConversationListRealtime, formatMessageTime } from '@/lib/supabase/realtime'
+import type { Conversation } from '@/types/database'
 import NewConversationModal from './new-conversation-modal'
 
 interface ConversationListProps {
+  lawFirmId: string
   currentUserId: string
   isClient?: boolean
   onSelectConversation: (conversation: Conversation) => void
   selectedConversationId?: string
 }
 
-interface ConversationTopic {
-  id: string
-  name: string
-  color: string
-  icon: string
+const TOPIC_COLORS: Record<string, string> = {
+  'Geral': '#0066CC',
+  'Consulta Juridica': '#10B981',
+  'Documentos': '#F59E0B',
+  'Audiencias': '#EF4444',
+  'Urgente': '#DC2626',
 }
-
-const CONVERSATION_TOPICS: ConversationTopic[] = [
-  { id: '1', name: 'Geral', color: '#0066CC', icon: 'ChatBubbleLeftRightIcon' },
-  { id: '2', name: 'Consulta Jurídica', color: '#10B981', icon: 'DocumentTextIcon' },
-  { id: '3', name: 'Documentos', color: '#F59E0B', icon: 'PaperClipIcon' },
-  { id: '4', name: 'Audiências', color: '#EF4444', icon: 'CalendarIcon' },
-  { id: '5', name: 'Urgente', color: '#DC2626', icon: 'ExclamationTriangleIcon' }
-]
 
 interface ConversationItemProps {
   conversation: Conversation
   isSelected: boolean
   onClick: () => void
-  isClient?: boolean
 }
 
-const ConversationItem = ({ conversation, isSelected, onClick, isClient = false }: ConversationItemProps) => {
-  const getLastMessagePreview = () => {
-    return conversation.description || 'Nenhuma mensagem ainda'
-  }
-
-  const getUnreadCount = () => {
-    return 0
-  }
-
-  const getStatusIcon = () => {
-    return <CheckIcon className="h-3 w-3 text-gray-400" />
+const ConversationItem = ({ conversation, isSelected, onClick }: ConversationItemProps) => {
+  const getConversationTypeIcon = () => {
+    switch (conversation.conversation_type) {
+      case 'whatsapp':
+        return '📱'
+      case 'internal':
+        return '🔒'
+      default:
+        return '💬'
+    }
   }
 
   const getPriorityIndicator = () => {
@@ -67,22 +60,6 @@ const ConversationItem = ({ conversation, isSelected, onClick, isClient = false 
     return null
   }
 
-  const getConversationTypeIcon = () => {
-    switch (conversation.conversation_type) {
-      case 'whatsapp':
-        return '📱'
-      case 'urgent':
-        return '🔴'
-      case 'consultation':
-        return '💬'
-      case 'matter_specific':
-        return '📂'
-      default:
-        return '💬'
-    }
-  }
-
-  const unreadCount = getUnreadCount()
   const lastMessageTime = conversation.last_message_at || conversation.created_at
 
   return (
@@ -93,24 +70,17 @@ const ConversationItem = ({ conversation, isSelected, onClick, isClient = false 
       }`}
     >
       <div className="flex items-start space-x-3">
-        {/* Avatar */}
         <div className="flex-shrink-0">
-          <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center relative">
+          <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
             <UserIcon className="h-7 w-7 text-gray-600" />
-            {conversation.is_whatsapp_enabled && (
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs">📱</span>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Conversation Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <h3 className="text-sm font-medium text-gray-900 truncate">
-                {conversation.title || 'Conversa sem título'}
+                {conversation.title || 'Conversa sem titulo'}
               </h3>
               <span className="text-xs">{getConversationTypeIcon()}</span>
               {getPriorityIndicator()}
@@ -119,25 +89,22 @@ const ConversationItem = ({ conversation, isSelected, onClick, isClient = false 
               <span className="text-xs text-gray-500">
                 {formatMessageTime(lastMessageTime)}
               </span>
-              {!isClient && getStatusIcon()}
             </div>
           </div>
 
-          {/* Last Message Preview */}
           <div className="flex items-center justify-between mt-1">
             <p className="text-sm text-gray-600 truncate">
-              {getLastMessagePreview()}
+              {conversation.last_message_preview || 'Nenhuma mensagem ainda'}
             </p>
-            {unreadCount > 0 && (
-              <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
-                {unreadCount}
-              </span>
-            )}
           </div>
 
-          {/* Conversation Details */}
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center space-x-2 text-xs text-gray-500">
+              {conversation.topic && (
+                <span className="bg-gray-100 px-2 py-1 rounded">
+                  {conversation.topic}
+                </span>
+              )}
               {conversation.matter_id && (
                 <span className="bg-gray-100 px-2 py-1 rounded">
                   📂 Processo
@@ -147,13 +114,6 @@ const ConversationItem = ({ conversation, isSelected, onClick, isClient = false 
                 {conversation.status}
               </span>
             </div>
-            
-            {conversation.is_whatsapp_enabled && (
-              <div className="flex items-center space-x-1">
-                <PhoneIcon className="h-3 w-3 text-green-500" />
-                <span className="text-xs text-green-600">WhatsApp</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -161,128 +121,45 @@ const ConversationItem = ({ conversation, isSelected, onClick, isClient = false 
   )
 }
 
-export default function ConversationList({ 
-  currentUserId, 
-  isClient = false, 
+export default function ConversationList({
+  lawFirmId,
+  currentUserId,
+  isClient = false,
   onSelectConversation,
-  selectedConversationId 
+  selectedConversationId
 }: ConversationListProps) {
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterType, setFilterType] = useState<'all' | 'unread' | 'urgent'>('all')
-  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null)
+  const [filterType, setFilterType] = useState<'all' | 'urgent'>('all')
   const [showNewConversationModal, setShowNewConversationModal] = useState(false)
   const [showTopicFilter, setShowTopicFilter] = useState(false)
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
 
-  // Load conversations
-  useEffect(() => {
-    const loadConversations = async () => {
-      setIsLoading(true)
-      try {
-        const userConversations = await chatService.getUserConversations(currentUserId, isClient)
-        setConversations(userConversations)
-      } catch (error) {
-        console.error('Error loading conversations:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+  // React Query for conversations
+  const { data: conversations = [], isLoading } = useConversations(lawFirmId, currentUserId)
 
-    loadConversations()
-
-    // Simple polling for cross-user sync (every 3 seconds)
-    const pollInterval = setInterval(async () => {
-      try {
-        const latestConversations = await chatService.getUserConversations(currentUserId, isClient)
-        setConversations(prevConversations => {
-          // Only update if there are new conversations
-          if (latestConversations.length !== prevConversations.length) {
-            console.log('Conversations synced - found new conversations')
-            return latestConversations
-          }
-          return prevConversations
-        })
-      } catch (error) {
-        console.error('Error polling conversations:', error)
-      }
-    }, 3000)
-
-    return () => {
-      clearInterval(pollInterval)
-    }
-  }, [currentUserId, isClient])
-
-  const handleCreateConversation = async (data: {
-    clientId: string
-    topicId: string
-    title: string
-    conversationType: 'internal' | 'client' | 'whatsapp'
-    priority: 'low' | 'normal' | 'high' | 'urgent'
-  }) => {
-    const conversationType = data.conversationType === 'whatsapp' ? 'whatsapp' :
-                             data.conversationType === 'internal' ? 'consultation' : 'general' as const
-
-    try {
-      const newConversation = await chatService.createConversation({
-        law_firm_id: 'default-firm-id',
-        topic_id: data.topicId,
-        client_id: data.clientId,
-        title: data.title,
-        conversation_type: conversationType,
-        priority: data.priority,
-        status: 'active',
-      })
-
-      setConversations(prev => [newConversation, ...prev])
-      onSelectConversation(newConversation)
-    } catch (error) {
-      console.error('Error creating conversation via Supabase, using fallback:', error)
-      const fallbackConversation: Conversation = {
-        id: `local-${Date.now()}`,
-        law_firm_id: 'default-firm-id',
-        topic_id: data.topicId,
-        client_id: data.clientId,
-        title: data.title,
-        conversation_type: conversationType,
-        priority: data.priority,
-        status: 'active',
-        is_whatsapp_enabled: data.conversationType === 'whatsapp',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-      chatService.addMockConversation(fallbackConversation)
-      setConversations(prev => [fallbackConversation, ...prev])
-      onSelectConversation(fallbackConversation)
-    }
-  }
+  // Real-time subscription for conversation list updates
+  useConversationListRealtime(lawFirmId)
 
   // Filter conversations
   const filteredConversations = conversations.filter(conversation => {
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       const title = conversation.title?.toLowerCase() || ''
-      const description = conversation.description?.toLowerCase() || ''
-      if (!title.includes(query) && !description.includes(query)) {
+      const preview = conversation.last_message_preview?.toLowerCase() || ''
+      if (!title.includes(query) && !preview.includes(query)) {
         return false
       }
     }
 
-    // Topic filter
-    if (selectedTopicId && conversation.topic_id !== selectedTopicId) {
+    if (selectedTopic && conversation.topic !== selectedTopic) {
       return false
     }
 
-    // Type filter
-    switch (filterType) {
-      case 'unread':
-        return false
-      case 'urgent':
-        return conversation.priority === 'urgent'
-      default:
-        return true
+    if (filterType === 'urgent') {
+      return conversation.priority === 'urgent'
     }
+
+    return true
   })
 
   if (isLoading) {
@@ -307,13 +184,13 @@ export default function ConversationList({
           <div className="flex items-center space-x-2">
             {!isClient && (
               <>
-                <button 
+                <button
                   onClick={() => setShowTopicFilter(!showTopicFilter)}
                   className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
                 >
                   <FunnelIcon className="h-5 w-5" />
                 </button>
-                <button 
+                <button
                   onClick={() => setShowNewConversationModal(true)}
                   className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
                 >
@@ -336,14 +213,9 @@ export default function ConversationList({
           />
         </div>
 
-        {/* Sync indicator */}
-        <div className="mb-2 text-xs text-gray-500 text-center">
-          🔄 Sincronização automática ativa
-        </div>
-
         {/* Status Filters */}
         <div className="flex space-x-2 mb-3">
-          {(['all', 'unread', 'urgent'] as const).map((filter) => (
+          {(['all', 'urgent'] as const).map((filter) => (
             <button
               key={filter}
               onClick={() => setFilterType(filter)}
@@ -354,7 +226,6 @@ export default function ConversationList({
               }`}
             >
               {filter === 'all' && 'Todas'}
-              {filter === 'unread' && 'Não lidas'}
               {filter === 'urgent' && 'Urgentes'}
             </button>
           ))}
@@ -365,37 +236,37 @@ export default function ConversationList({
           <div className="mb-3">
             <div className="flex items-center mb-2">
               <TagIcon className="h-4 w-4 text-gray-500 mr-2" />
-              <span className="text-sm font-medium text-gray-700">Filtrar por tópico:</span>
+              <span className="text-sm font-medium text-gray-700">Filtrar por topico:</span>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setSelectedTopicId(null)}
+                onClick={() => setSelectedTopic(null)}
                 className={`px-2 py-1 text-xs rounded-full transition-colors ${
-                  selectedTopicId === null
+                  selectedTopic === null
                     ? 'bg-primary text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 Todos
               </button>
-              {CONVERSATION_TOPICS.map((topic) => (
+              {Object.entries(TOPIC_COLORS).map(([topic, color]) => (
                 <button
-                  key={topic.id}
-                  onClick={() => setSelectedTopicId(topic.id)}
+                  key={topic}
+                  onClick={() => setSelectedTopic(topic)}
                   className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center space-x-1 ${
-                    selectedTopicId === topic.id
+                    selectedTopic === topic
                       ? 'text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                   style={{
-                    backgroundColor: selectedTopicId === topic.id ? topic.color : undefined
+                    backgroundColor: selectedTopic === topic ? color : undefined
                   }}
                 >
-                  <span 
-                    className="w-2 h-2 rounded-full" 
-                    style={{ backgroundColor: selectedTopicId === topic.id ? 'white' : topic.color }}
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: selectedTopic === topic ? 'white' : color }}
                   />
-                  <span>{topic.name}</span>
+                  <span>{topic}</span>
                 </button>
               ))}
             </div>
@@ -412,15 +283,15 @@ export default function ConversationList({
               {searchQuery ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa ainda'}
             </h3>
             <p className="text-gray-500 mb-4">
-              {searchQuery 
+              {searchQuery
                 ? 'Tente ajustar sua busca ou filtros'
-                : isClient 
-                  ? 'Suas conversas com o escritório aparecerão aqui'
+                : isClient
+                  ? 'Suas conversas com o escritorio aparecerao aqui'
                   : 'Inicie uma nova conversa com um cliente'
               }
             </p>
             {!isClient && !searchQuery && (
-              <button 
+              <button
                 onClick={() => setShowNewConversationModal(true)}
                 className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
               >
@@ -436,7 +307,6 @@ export default function ConversationList({
               conversation={conversation}
               isSelected={selectedConversationId === conversation.id}
               onClick={() => onSelectConversation(conversation)}
-              isClient={isClient}
             />
           ))
         )}
@@ -452,7 +322,7 @@ export default function ConversationList({
             </button>
             <button className="flex-1 flex items-center justify-center py-2 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
               <VideoCameraIcon className="h-4 w-4 mr-2" />
-              Vídeo
+              Video
             </button>
             <button className="flex-1 flex items-center justify-center py-2 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
               <EllipsisVerticalIcon className="h-4 w-4 mr-2" />
@@ -464,9 +334,14 @@ export default function ConversationList({
 
       {/* New Conversation Modal */}
       <NewConversationModal
+        lawFirmId={lawFirmId}
+        currentUserId={currentUserId}
         isOpen={showNewConversationModal}
         onClose={() => setShowNewConversationModal(false)}
-        onCreateConversation={handleCreateConversation}
+        onConversationCreated={(conversation) => {
+          setShowNewConversationModal(false)
+          onSelectConversation(conversation)
+        }}
       />
     </div>
   )

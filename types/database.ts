@@ -81,6 +81,16 @@ export type Database = {
         Insert: ActivityLogInsert
         Update: ActivityLogUpdate
       }
+      conversations: {
+        Row: Conversation
+        Insert: ConversationInsert
+        Update: ConversationUpdate
+      }
+      conversation_participants: {
+        Row: ConversationParticipant
+        Insert: ConversationParticipantInsert
+        Update: ConversationParticipantUpdate
+      }
       website_content: {
         Row: WebsiteContentRow
         Insert: WebsiteContentInsert
@@ -116,6 +126,10 @@ export type Database = {
       message_status: 'sent' | 'delivered' | 'read' | 'failed'
       pipeline_stage_type: 'intake' | 'onboarding' | 'not_hired'
       plan_type: 'trial' | 'basic' | 'professional' | 'enterprise'
+      conversation_type: 'internal' | 'client' | 'whatsapp'
+      conversation_status: 'active' | 'archived' | 'closed'
+      conversation_priority: 'low' | 'normal' | 'high' | 'urgent'
+      conversation_participant_role: 'owner' | 'moderator' | 'participant'
     }
   }
 }
@@ -559,28 +573,29 @@ export type InvoiceLineItemUpdate = Partial<InvoiceLineItemInsert>
 export interface Message extends LawFirmEntity {
   matter_id?: string
   contact_id?: string
-  
+  conversation_id?: string
+
   // Message Details
   content: string
   message_type?: Database['public']['Enums']['message_type']
-  
+
   // Sender/Receiver
   sender_id?: string
   sender_type?: Database['public']['Enums']['sender_type']
   receiver_id?: string
   receiver_type?: Database['public']['Enums']['sender_type']
-  
+
   // External Integration
   external_message_id?: string
   external_platform?: string
-  
+
   // Status
   status?: Database['public']['Enums']['message_status']
   read_at?: string
-  
+
   // Attachments
   attachments?: Record<string, any>[]
-  
+
   // Threading
   parent_message_id?: string
   thread_id?: string
@@ -588,6 +603,49 @@ export interface Message extends LawFirmEntity {
 
 export type MessageInsert = Omit<Message, 'id' | 'created_at' | 'updated_at'>
 export type MessageUpdate = Partial<MessageInsert>
+
+// =====================================================
+// CONVERSATIONS
+// =====================================================
+
+export type ConversationType = 'internal' | 'client' | 'whatsapp'
+export type ConversationStatus = 'active' | 'archived' | 'closed'
+export type ConversationPriority = 'low' | 'normal' | 'high' | 'urgent'
+export type ConversationParticipantRole = 'owner' | 'moderator' | 'participant'
+
+export interface Conversation extends LawFirmEntity {
+  matter_id?: string
+  contact_id?: string
+  title?: string
+  description?: string
+  conversation_type?: ConversationType
+  status?: ConversationStatus
+  priority?: ConversationPriority
+  topic?: string
+  last_message_at?: string
+  last_message_preview?: string
+}
+
+export type ConversationInsert = Omit<Conversation, 'id' | 'created_at' | 'updated_at'>
+export type ConversationUpdate = Partial<ConversationInsert>
+
+// =====================================================
+// CONVERSATION PARTICIPANTS
+// =====================================================
+
+export interface ConversationParticipant {
+  id: string
+  conversation_id: string
+  user_id?: string
+  contact_id?: string
+  role?: ConversationParticipantRole
+  is_active?: boolean
+  last_read_at?: string
+  joined_at?: string
+}
+
+export type ConversationParticipantInsert = Omit<ConversationParticipant, 'id'>
+export type ConversationParticipantUpdate = Partial<ConversationParticipantInsert>
 
 // =====================================================
 // PIPELINE STAGES
@@ -739,6 +797,10 @@ export interface UserWithRelations extends User {
   assigned_matters?: Matter[]
   time_entries?: TimeEntry[]
   tasks?: Task[]
+}
+
+export interface ConversationWithParticipants extends Conversation {
+  participants?: (ConversationParticipant & { user?: User; contact?: Contact })[]
 }
 
 // =====================================================

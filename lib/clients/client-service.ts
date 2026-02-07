@@ -63,6 +63,8 @@ export interface Client {
   portal_enabled: boolean
   created_at: string
   updated_at: string
+  active_matters?: number
+  total_matters?: number
 }
 
 export interface ClientFormData {
@@ -104,7 +106,7 @@ export class ClientService {
         .from('contacts')
         .select(`
           *,
-          matter_contacts!inner(
+          matter_contacts(
             matters(id, status)
           )
         `)
@@ -117,10 +119,43 @@ export class ClientService {
         throw new Error('Failed to fetch clients')
       }
 
-      return data || []
+      return (data || []).map((contact: Record<string, unknown>) => this.mapContactToClient(contact))
     } catch (error) {
       console.error('Error fetching clients:', error)
       throw error
+    }
+  }
+
+  private mapContactToClient(contact: Record<string, unknown>): Client {
+    const matters = ((contact.matter_contacts as Array<Record<string, unknown>>) || [])
+      .map((mc) => mc.matters as Record<string, unknown> | null)
+      .filter(Boolean)
+    const activeMatterCount = matters.filter((m) => m && (m.status === 'active' || m.status === 'ativo')).length
+
+    return {
+      id: contact.id as string,
+      law_firm_id: contact.law_firm_id as string,
+      client_number: (contact.client_number as string) || '',
+      name: (contact.full_name as string) || (contact.company_name as string) || '',
+      type: mapTypeToPortuguese(contact.contact_type as string) as Client['type'],
+      cpf: contact.cpf as string | undefined,
+      cnpj: contact.cnpj as string | undefined,
+      email: (contact.email as string) || '',
+      phone: contact.phone as string | undefined,
+      mobile: contact.mobile as string | undefined,
+      status: mapStatusToPortuguese(contact.client_status as string) as Client['status'],
+      client_since: (contact.created_at as string) || '',
+      address_street: contact.address_street as string | undefined,
+      address_number: contact.address_number as string | undefined,
+      address_city: contact.address_city as string | undefined,
+      address_state: contact.address_state as string | undefined,
+      address_zipcode: contact.address_zipcode as string | undefined,
+      notes: contact.notes as string | undefined,
+      portal_enabled: (contact.portal_enabled as boolean) || false,
+      created_at: contact.created_at as string,
+      updated_at: contact.updated_at as string,
+      active_matters: activeMatterCount,
+      total_matters: matters.length,
     }
   }
 
@@ -295,18 +330,40 @@ export class ClientService {
    */
   async getClientStats(lawFirmId: string): Promise<ClientStats> {
     try {
-      const { data, error } = await this.supabase
-        .from('client_stats_view')
-        .select('*')
+      const { data: contacts, error } = await this.supabase
+        .from('contacts')
+        .select('id, client_status, matter_contacts(matters(id, status))')
         .eq('law_firm_id', lawFirmId)
-        .single()
+        .in('contact_type', ['individual', 'company'])
 
       if (error) {
         console.error('Error getting client stats:', error)
         throw new Error('Failed to get client statistics')
       }
 
-      return data
+      const all = contacts || []
+      let totalMatters = 0
+      let activeMatters = 0
+
+      all.forEach((c: Record<string, unknown>) => {
+        const mcs = (c.matter_contacts as Array<Record<string, unknown>>) || []
+        mcs.forEach((mc) => {
+          const m = mc.matters as Record<string, unknown> | null
+          if (m) {
+            totalMatters++
+            if (m.status === 'active' || m.status === 'ativo') activeMatters++
+          }
+        })
+      })
+
+      return {
+        total_clients: all.length,
+        active_clients: all.filter((c: Record<string, unknown>) => c.client_status === 'active').length,
+        inactive_clients: all.filter((c: Record<string, unknown>) => c.client_status === 'inactive' || c.client_status === 'former').length,
+        prospects: all.filter((c: Record<string, unknown>) => c.client_status === 'prospect').length,
+        total_matters: totalMatters,
+        active_matters: activeMatters,
+      }
     } catch (error) {
       console.error('Error getting client stats:', error)
       throw error
@@ -324,7 +381,7 @@ export class ClientService {
         .eq('law_firm_id', lawFirmId)
         .in('contact_type', ['individual', 'company'])
         .or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,cpf.ilike.%${searchTerm}%,cnpj.ilike.%${searchTerm}%`)
-        .order('name')
+        .order('full_name')
 
       if (error) {
         console.error('Error searching clients:', error)

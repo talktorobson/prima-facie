@@ -17,17 +17,36 @@ import {
   PAYMENT_FREQUENCY_OPTIONS
 } from './payment-plan-types'
 
+import { createClient } from '@/lib/supabase/client'
+
 export class PaymentPlanService {
-  
+  private supabase = createClient()
+
   // ===== PAYMENT PLAN MANAGEMENT =====
-  
+
   async getPaymentPlans(lawFirmId: string): Promise<PaymentPlan[]> {
-    // Mock implementation - replace with Supabase in production
-    return this.mockPaymentPlans.filter(plan => plan.law_firm_id === lawFirmId)
+    const { data, error } = await this.supabase
+      .from('payment_plans')
+      .select('*')
+      .eq('law_firm_id', lawFirmId)
+
+    if (error) {
+      console.error('Error fetching payment plans:', error)
+      return []
+    }
+
+    return (data || []) as PaymentPlan[]
   }
 
   async getPaymentPlan(planId: string): Promise<PaymentPlan | null> {
-    return this.mockPaymentPlans.find(plan => plan.id === planId) || null
+    const { data, error } = await this.supabase
+      .from('payment_plans')
+      .select('*')
+      .eq('id', planId)
+      .single()
+
+    if (error || !data) return null
+    return data as PaymentPlan
   }
 
   async createPaymentPlan(
@@ -38,40 +57,40 @@ export class PaymentPlanService {
     try {
       // Validate form data
       this.validatePaymentPlanData(formData)
-      
+
       // Calculate installment details
       const calculation = this.calculatePaymentPlan(formData)
-      
+
       // Create payment plan
-      const newPlan: PaymentPlan = {
-        id: `plan-${Date.now()}`,
-        matter_id: formData.matter_id,
-        client_id: clientId,
-        law_firm_id: lawFirmId,
-        plan_name: formData.plan_name,
-        total_amount: formData.total_amount,
-        installment_count: formData.installment_count,
-        installment_amount: calculation.monthly_payment,
-        down_payment: formData.down_payment,
-        payment_frequency: formData.payment_frequency,
-        start_date: formData.start_date,
-        end_date: calculation.final_payment_date,
-        status: 'draft',
-        auto_charge: formData.auto_charge,
-        late_fee_percentage: formData.late_fee_percentage,
-        grace_period_days: formData.grace_period_days,
-        notes: formData.notes,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+      const { data, error } = await this.supabase
+        .from('payment_plans')
+        .insert({
+          matter_id: formData.matter_id || null,
+          client_id: clientId,
+          law_firm_id: lawFirmId,
+          plan_name: formData.plan_name,
+          total_amount: formData.total_amount,
+          installment_count: formData.installment_count,
+          installment_amount: calculation.monthly_payment,
+          down_payment: formData.down_payment,
+          payment_frequency: formData.payment_frequency,
+          start_date: formData.start_date,
+          end_date: calculation.final_payment_date,
+          status: 'draft',
+          auto_charge: formData.auto_charge,
+          late_fee_percentage: formData.late_fee_percentage,
+          grace_period_days: formData.grace_period_days,
+          notes: formData.notes || null
+        })
+        .select()
+        .single()
+
+      if (error) throw error
 
       // Create installments
-      await this.createPaymentInstallments(newPlan.id, calculation.installments)
-      
-      console.log('Creating payment plan:', newPlan)
-      this.mockPaymentPlans.push(newPlan)
-      
-      return newPlan
+      await this.createPaymentInstallments(data.id, calculation.installments)
+
+      return data as PaymentPlan
     } catch (error) {
       console.error('Error creating payment plan:', error)
       throw error
@@ -82,21 +101,18 @@ export class PaymentPlanService {
     planId: string,
     updates: Partial<PaymentPlanFormData>
   ): Promise<PaymentPlan> {
-    const planIndex = this.mockPaymentPlans.findIndex(plan => plan.id === planId)
-    if (planIndex === -1) {
-      throw new Error('Payment plan not found')
-    }
+    const { data, error } = await this.supabase
+      .from('payment_plans')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', planId)
+      .select()
+      .single()
 
-    const updatedPlan = {
-      ...this.mockPaymentPlans[planIndex],
-      ...updates,
-      updated_at: new Date().toISOString()
-    }
-
-    console.log('Updating payment plan:', updatedPlan)
-    this.mockPaymentPlans[planIndex] = updatedPlan
-    
-    return updatedPlan
+    if (error) throw new Error('Payment plan not found')
+    return data as PaymentPlan
   }
 
   async activatePaymentPlan(planId: string): Promise<PaymentPlan> {
@@ -105,7 +121,7 @@ export class PaymentPlanService {
 
   async cancelPaymentPlan(planId: string, reason?: string): Promise<PaymentPlan> {
     const plan = await this.updatePaymentPlanStatus(planId, 'cancelled')
-    
+
     // Cancel all pending installments
     const installments = await this.getPaymentInstallments(planId)
     for (const installment of installments) {
@@ -113,39 +129,52 @@ export class PaymentPlanService {
         await this.updateInstallmentStatus(installment.id, 'cancelled')
       }
     }
-    
-    console.log('Payment plan cancelled:', { planId, reason })
+
     return plan
   }
 
   // ===== INSTALLMENT MANAGEMENT =====
 
   async getPaymentInstallments(planId: string): Promise<PaymentInstallment[]> {
-    return this.mockInstallments.filter(inst => inst.payment_plan_id === planId)
-      .sort((a, b) => a.installment_number - b.installment_number)
+    const { data, error } = await this.supabase
+      .from('payment_installments')
+      .select('*')
+      .eq('payment_plan_id', planId)
+      .order('installment_number', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching installments:', error)
+      return []
+    }
+
+    return (data || []) as PaymentInstallment[]
   }
 
   async createPaymentInstallments(
     planId: string,
     calculations: InstallmentCalculation[]
   ): Promise<PaymentInstallment[]> {
-    const installments: PaymentInstallment[] = calculations.map((calc, index) => ({
-      id: `inst-${planId}-${index + 1}`,
+    const rows = calculations.map(calc => ({
       payment_plan_id: planId,
       installment_number: calc.installment_number,
       due_date: calc.due_date,
       amount: calc.amount,
       paid_amount: 0,
       status: 'pending',
-      late_fee_applied: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      late_fee_applied: 0
     }))
 
-    this.mockInstallments.push(...installments)
-    console.log(`Created ${installments.length} installments for plan ${planId}`)
-    
-    return installments
+    const { data, error } = await this.supabase
+      .from('payment_installments')
+      .insert(rows)
+      .select()
+
+    if (error) {
+      console.error('Error creating installments:', error)
+      return []
+    }
+
+    return (data || []) as PaymentInstallment[]
   }
 
   async recordPayment(
@@ -154,65 +183,70 @@ export class PaymentPlanService {
     paymentMethod: string,
     transactionId?: string
   ): Promise<PaymentInstallment> {
-    const instIndex = this.mockInstallments.findIndex(inst => inst.id === installmentId)
-    if (instIndex === -1) {
+    // Fetch current installment
+    const { data: installment, error: fetchError } = await this.supabase
+      .from('payment_installments')
+      .select('*')
+      .eq('id', installmentId)
+      .single()
+
+    if (fetchError || !installment) {
       throw new Error('Installment not found')
     }
 
-    const installment = this.mockInstallments[instIndex]
-    const updatedInstallment = {
-      ...installment,
-      paid_amount: installment.paid_amount + amount,
-      paid_date: new Date().toISOString(),
-      status: (installment.paid_amount + amount >= installment.amount) ? 'paid' : 'pending',
-      payment_method: paymentMethod,
-      transaction_id: transactionId,
-      updated_at: new Date().toISOString()
-    } as PaymentInstallment
+    const newPaidAmount = installment.paid_amount + amount
+    const newStatus = newPaidAmount >= installment.amount ? 'paid' : 'pending'
 
-    this.mockInstallments[instIndex] = updatedInstallment
-    
-    console.log('Payment recorded:', { installmentId, amount, paymentMethod })
-    
+    const { data, error } = await this.supabase
+      .from('payment_installments')
+      .update({
+        paid_amount: newPaidAmount,
+        paid_date: new Date().toISOString(),
+        status: newStatus,
+        payment_method: paymentMethod,
+        transaction_id: transactionId || null
+      })
+      .eq('id', installmentId)
+      .select()
+      .single()
+
+    if (error) throw error
+
     // Check if plan is completed
     await this.checkPlanCompletion(installment.payment_plan_id)
-    
-    return updatedInstallment
+
+    return data as PaymentInstallment
   }
 
   async updateInstallmentStatus(
     installmentId: string,
     status: InstallmentStatus
   ): Promise<PaymentInstallment> {
-    const instIndex = this.mockInstallments.findIndex(inst => inst.id === installmentId)
-    if (instIndex === -1) {
-      throw new Error('Installment not found')
-    }
+    const { data, error } = await this.supabase
+      .from('payment_installments')
+      .update({ status })
+      .eq('id', installmentId)
+      .select()
+      .single()
 
-    const updatedInstallment = {
-      ...this.mockInstallments[instIndex],
-      status,
-      updated_at: new Date().toISOString()
-    }
-
-    this.mockInstallments[instIndex] = updatedInstallment
-    return updatedInstallment
+    if (error) throw new Error('Installment not found')
+    return data as PaymentInstallment
   }
 
   // ===== CALCULATIONS =====
 
   calculatePaymentPlan(formData: PaymentPlanFormData): PaymentPlanCalculation {
     const { total_amount, installment_count, down_payment, payment_frequency, start_date } = formData
-    
+
     const remainingAmount = total_amount - down_payment
     const installmentAmount = Math.round((remainingAmount / installment_count) * 100) / 100
-    
+
     const frequency = PAYMENT_FREQUENCY_OPTIONS.find(f => f.value === payment_frequency)
     const frequencyDays = frequency?.days || 30
-    
+
     const installments: InstallmentCalculation[] = []
     const startDateTime = new Date(start_date)
-    
+
     // Add down payment if specified
     if (down_payment > 0) {
       installments.push({
@@ -222,12 +256,12 @@ export class PaymentPlanService {
         is_down_payment: true
       })
     }
-    
+
     // Add regular installments
     for (let i = 1; i <= installment_count; i++) {
       const dueDate = new Date(startDateTime)
       dueDate.setDate(dueDate.getDate() + (i * frequencyDays))
-      
+
       installments.push({
         installment_number: i,
         due_date: dueDate.toISOString().split('T')[0],
@@ -235,9 +269,9 @@ export class PaymentPlanService {
         is_down_payment: false
       })
     }
-    
+
     const finalPaymentDate = installments[installments.length - 1].due_date
-    
+
     return {
       installments,
       total_amount,
@@ -252,19 +286,19 @@ export class PaymentPlanService {
   async getPaymentPlanSummary(planId: string): Promise<PaymentPlanSummary | null> {
     const plan = await this.getPaymentPlan(planId)
     if (!plan) return null
-    
+
     const installments = await this.getPaymentInstallments(planId)
     const totalPaid = installments.reduce((sum, inst) => sum + inst.paid_amount, 0)
     const totalRemaining = plan.total_amount - totalPaid
-    
+
     const pendingInstallments = installments.filter(inst => inst.status === 'pending')
     const nextDueDate = pendingInstallments.length > 0 ? pendingInstallments[0].due_date : undefined
-    
-    const overdueInstallments = installments.filter(inst => 
-      inst.status === 'overdue' || 
+
+    const overdueInstallments = installments.filter(inst =>
+      inst.status === 'overdue' ||
       (inst.status === 'pending' && new Date(inst.due_date) < new Date())
     )
-    
+
     return {
       payment_plan: plan,
       installments,
@@ -278,38 +312,38 @@ export class PaymentPlanService {
 
   async getPaymentPlanMetrics(lawFirmId: string): Promise<PaymentPlanMetrics> {
     const plans = await this.getPaymentPlans(lawFirmId)
-    
+
     const totalPlans = plans.length
     const activePlans = plans.filter(p => p.status === 'active').length
     const completedPlans = plans.filter(p => p.status === 'completed').length
     const defaultedPlans = plans.filter(p => p.status === 'defaulted').length
-    
+
     const totalContractedValue = plans.reduce((sum, p) => sum + p.total_amount, 0)
-    
+
     // Calculate total collected from all installments
     let totalCollected = 0
     let overdueAmount = 0
     let next30DaysDue = 0
-    
+
     for (const plan of plans) {
       const installments = await this.getPaymentInstallments(plan.id)
       totalCollected += installments.reduce((sum, inst) => sum + inst.paid_amount, 0)
-      
-      const overdueInsts = installments.filter(inst => 
-        inst.status === 'overdue' || 
+
+      const overdueInsts = installments.filter(inst =>
+        inst.status === 'overdue' ||
         (inst.status === 'pending' && new Date(inst.due_date) < new Date())
       )
       overdueAmount += overdueInsts.reduce((sum, inst) => sum + (inst.amount - inst.paid_amount), 0)
-      
+
       const next30Days = new Date()
       next30Days.setDate(next30Days.getDate() + 30)
-      const upcomingInsts = installments.filter(inst => 
-        inst.status === 'pending' && 
+      const upcomingInsts = installments.filter(inst =>
+        inst.status === 'pending' &&
         new Date(inst.due_date) <= next30Days
       )
       next30DaysDue += upcomingInsts.reduce((sum, inst) => sum + inst.amount, 0)
     }
-    
+
     return {
       law_firm_id: lawFirmId,
       total_plans: totalPlans,
@@ -356,124 +390,28 @@ export class PaymentPlanService {
     planId: string,
     status: PaymentPlanStatus
   ): Promise<PaymentPlan> {
-    const planIndex = this.mockPaymentPlans.findIndex(plan => plan.id === planId)
-    if (planIndex === -1) {
-      throw new Error('Payment plan not found')
-    }
+    const { data, error } = await this.supabase
+      .from('payment_plans')
+      .update({ status })
+      .eq('id', planId)
+      .select()
+      .single()
 
-    const updatedPlan = {
-      ...this.mockPaymentPlans[planIndex],
-      status,
-      updated_at: new Date().toISOString()
-    }
-
-    this.mockPaymentPlans[planIndex] = updatedPlan
-    return updatedPlan
+    if (error) throw new Error('Payment plan not found')
+    return data as PaymentPlan
   }
 
   private async checkPlanCompletion(planId: string): Promise<void> {
     const plan = await this.getPaymentPlan(planId)
     if (!plan) return
-    
+
     const installments = await this.getPaymentInstallments(planId)
     const totalPaid = installments.reduce((sum, inst) => sum + inst.paid_amount, 0)
-    
+
     if (totalPaid >= plan.total_amount && plan.status === 'active') {
       await this.updatePaymentPlanStatus(planId, 'completed')
-      console.log('Payment plan completed:', planId)
     }
   }
-
-  // ===== MOCK DATA =====
-
-  private mockPaymentPlans: PaymentPlan[] = [
-    {
-      id: '1',
-      matter_id: 'matter-1',
-      client_id: 'client-1',
-      law_firm_id: 'firm-1',
-      plan_name: 'Processo Trabalhista - João Silva',
-      total_amount: 15000.00,
-      installment_count: 10,
-      installment_amount: 1350.00,
-      down_payment: 1500.00,
-      payment_frequency: 'monthly',
-      start_date: '2024-01-15',
-      end_date: '2024-11-15',
-      status: 'active',
-      auto_charge: true,
-      late_fee_percentage: 2.0,
-      grace_period_days: 5,
-      notes: 'Parcelamento para processo trabalhista',
-      created_at: '2024-01-10T10:00:00Z',
-      updated_at: '2024-01-10T10:00:00Z'
-    },
-    {
-      id: '2',
-      matter_id: 'matter-2',
-      client_id: 'client-2',
-      law_firm_id: 'firm-1',
-      plan_name: 'Consultoria Empresarial - Tech Corp',
-      total_amount: 25000.00,
-      installment_count: 5,
-      installment_amount: 4500.00,
-      down_payment: 2500.00,
-      payment_frequency: 'quarterly',
-      start_date: '2024-02-01',
-      end_date: '2025-05-01',
-      status: 'active',
-      auto_charge: false,
-      late_fee_percentage: 1.5,
-      grace_period_days: 10,
-      created_at: '2024-01-25T14:30:00Z',
-      updated_at: '2024-01-25T14:30:00Z'
-    }
-  ]
-
-  private mockInstallments: PaymentInstallment[] = [
-    {
-      id: 'inst-1-0',
-      payment_plan_id: '1',
-      installment_number: 0,
-      due_date: '2024-01-15',
-      amount: 1500.00,
-      paid_amount: 1500.00,
-      paid_date: '2024-01-15T09:00:00Z',
-      status: 'paid',
-      late_fee_applied: 0,
-      payment_method: 'credit_card',
-      transaction_id: 'txn-123456',
-      created_at: '2024-01-10T10:00:00Z',
-      updated_at: '2024-01-15T09:00:00Z'
-    },
-    {
-      id: 'inst-1-1',
-      payment_plan_id: '1',
-      installment_number: 1,
-      due_date: '2024-02-15',
-      amount: 1350.00,
-      paid_amount: 1350.00,
-      paid_date: '2024-02-14T16:30:00Z',
-      status: 'paid',
-      late_fee_applied: 0,
-      payment_method: 'bank_transfer',
-      transaction_id: 'txn-123457',
-      created_at: '2024-01-10T10:00:00Z',
-      updated_at: '2024-02-14T16:30:00Z'
-    },
-    {
-      id: 'inst-1-2',
-      payment_plan_id: '1',
-      installment_number: 2,
-      due_date: '2024-03-15',
-      amount: 1350.00,
-      paid_amount: 0,
-      status: 'pending',
-      late_fee_applied: 0,
-      created_at: '2024-01-10T10:00:00Z',
-      updated_at: '2024-01-10T10:00:00Z'
-    }
-  ]
 }
 
 // Export singleton instance

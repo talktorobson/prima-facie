@@ -5,6 +5,7 @@ import { createContext, useContext, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { AuthProvider } from '@/lib/providers/auth-provider'
+import { ToastProvider } from '@/components/ui/toast-provider'
 import ClientOnly from './client-only'
 
 const SupabaseContext = createContext<SupabaseClient | undefined>(undefined)
@@ -44,7 +45,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
           </div>
         }>
           <AuthProvider>
-            {children}
+            <ToastProvider>
+              {children}
+            </ToastProvider>
           </AuthProvider>
         </ClientOnly>
       </QueryClientProvider>

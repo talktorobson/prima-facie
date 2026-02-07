@@ -20,18 +20,37 @@ import {
   PRESET_DISCOUNT_RULES
 } from './discount-types'
 
+import { createClient } from '@/lib/supabase/client'
+
 export class DiscountService {
-  
+  private supabase = createClient()
+
   // ===== DISCOUNT RULE MANAGEMENT =====
-  
+
   async getDiscountRules(lawFirmId: string): Promise<DiscountRule[]> {
-    // Mock implementation - replace with Supabase in production
-    return this.mockDiscountRules.filter(rule => rule.law_firm_id === lawFirmId)
-      .sort((a, b) => b.priority - a.priority)
+    const { data, error } = await this.supabase
+      .from('discount_rules')
+      .select('*')
+      .eq('law_firm_id', lawFirmId)
+      .order('priority', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching discount rules:', error)
+      return []
+    }
+
+    return (data || []).map(row => this.mapRowToDiscountRule(row))
   }
 
   async getDiscountRule(ruleId: string): Promise<DiscountRule | null> {
-    return this.mockDiscountRules.find(rule => rule.id === ruleId) || null
+    const { data, error } = await this.supabase
+      .from('discount_rules')
+      .select('*')
+      .eq('id', ruleId)
+      .single()
+
+    if (error || !data) return null
+    return this.mapRowToDiscountRule(data)
   }
 
   async createDiscountRule(
@@ -39,34 +58,33 @@ export class DiscountService {
     formData: DiscountRuleFormData
   ): Promise<DiscountRule> {
     try {
-      // Validate rule data
       this.validateDiscountRuleData(formData)
-      
-      // Create new rule
-      const newRule: DiscountRule = {
-        id: `rule-${Date.now()}`,
-        law_firm_id: lawFirmId,
-        rule_name: formData.rule_name,
-        rule_type: formData.rule_type,
-        is_active: formData.is_active,
-        priority: formData.priority,
-        conditions: formData.conditions.map((condition, index) => ({
-          id: `cond-${Date.now()}-${index}`,
-          ...condition
-        })),
-        discount_config: formData.discount_config,
-        valid_from: formData.valid_from,
-        valid_until: formData.valid_until,
-        max_uses: formData.max_uses,
-        current_uses: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
 
-      console.log('Creating discount rule:', newRule)
-      this.mockDiscountRules.push(newRule)
-      
-      return newRule
+      const conditions = formData.conditions.map((condition, index) => ({
+        id: `cond-${Date.now()}-${index}`,
+        ...condition
+      }))
+
+      const { data, error } = await this.supabase
+        .from('discount_rules')
+        .insert({
+          law_firm_id: lawFirmId,
+          rule_name: formData.rule_name,
+          rule_type: formData.rule_type,
+          is_active: formData.is_active,
+          priority: formData.priority,
+          conditions: conditions,
+          discount_config: formData.discount_config,
+          valid_from: formData.valid_from,
+          valid_until: formData.valid_until || null,
+          max_uses: formData.max_uses || null,
+          current_uses: 0
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+      return this.mapRowToDiscountRule(data)
     } catch (error) {
       console.error('Error creating discount rule:', error)
       throw error
@@ -77,21 +95,18 @@ export class DiscountService {
     ruleId: string,
     updates: Partial<DiscountRuleFormData>
   ): Promise<DiscountRule> {
-    const ruleIndex = this.mockDiscountRules.findIndex(rule => rule.id === ruleId)
-    if (ruleIndex === -1) {
-      throw new Error('Discount rule not found')
-    }
+    const { data, error } = await this.supabase
+      .from('discount_rules')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', ruleId)
+      .select()
+      .single()
 
-    const updatedRule = {
-      ...this.mockDiscountRules[ruleIndex],
-      ...updates,
-      updated_at: new Date().toISOString()
-    }
-
-    console.log('Updating discount rule:', updatedRule)
-    this.mockDiscountRules[ruleIndex] = updatedRule
-    
-    return updatedRule
+    if (error) throw new Error('Discount rule not found')
+    return this.mapRowToDiscountRule(data)
   }
 
   async toggleDiscountRule(ruleId: string): Promise<DiscountRule> {
@@ -100,17 +115,24 @@ export class DiscountService {
       throw new Error('Discount rule not found')
     }
 
-    return this.updateDiscountRule(ruleId, { is_active: !rule.is_active })
+    const { data, error } = await this.supabase
+      .from('discount_rules')
+      .update({ is_active: !rule.is_active })
+      .eq('id', ruleId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return this.mapRowToDiscountRule(data)
   }
 
   async deleteDiscountRule(ruleId: string): Promise<void> {
-    const ruleIndex = this.mockDiscountRules.findIndex(rule => rule.id === ruleId)
-    if (ruleIndex === -1) {
-      throw new Error('Discount rule not found')
-    }
+    const { error } = await this.supabase
+      .from('discount_rules')
+      .update({ is_active: false })
+      .eq('id', ruleId)
 
-    this.mockDiscountRules.splice(ruleIndex, 1)
-    console.log('Deleted discount rule:', ruleId)
+    if (error) throw new Error('Discount rule not found')
   }
 
   // ===== DISCOUNT CALCULATION ENGINE =====
@@ -122,22 +144,22 @@ export class DiscountService {
     try {
       // Get all active rules for the law firm
       const rules = await this.getDiscountRules(lawFirmId)
-      const activeRules = rules.filter(rule => 
-        rule.is_active && 
+      const activeRules = rules.filter(rule =>
+        rule.is_active &&
         this.isRuleValid(rule) &&
         this.hasUsesRemaining(rule)
       )
 
       // Get client context for rule evaluation
       const clientContext = await this.getClientContext(input.client_id)
-      
+
       // Evaluate each rule against the input
       const applicableRules: AppliedDiscountRule[] = []
-      
+
       for (const rule of activeRules) {
         if (await this.evaluateRule(rule, input, clientContext)) {
           const discountAmount = this.calculateRuleDiscount(rule, input)
-          
+
           if (discountAmount > 0) {
             applicableRules.push({
               rule_id: rule.id,
@@ -153,16 +175,9 @@ export class DiscountService {
 
       // Sort by priority and apply compound rules
       applicableRules.sort((a, b) => b.priority - a.priority)
-      
+
       // Calculate total discount
       const result = this.calculateTotalDiscount(input, applicableRules)
-      
-      console.log('Discount calculation result:', {
-        clientId: input.client_id,
-        caseValue: input.case_value,
-        applicableRules: applicableRules.length,
-        totalDiscount: result.total_discount_amount
-      })
 
       return result
     } catch (error) {
@@ -177,7 +192,7 @@ export class DiscountService {
     caseType: string
   ): Promise<CrossSellingOpportunity> {
     const clientContext = await this.getClientContext(clientId)
-    
+
     // If client already has subscription, calculate current discount
     if (clientContext.subscription_status === 'active') {
       const input: DiscountCalculationInput = {
@@ -187,9 +202,9 @@ export class DiscountService {
         billing_type: 'percentage',
         percentage_rate: 20
       }
-      
+
       const eligibility = await this.calculateDiscount(clientContext.law_firm_id, input)
-      
+
       return {
         client_id: clientId,
         subscription_plan: clientContext.subscription_plan,
@@ -204,7 +219,7 @@ export class DiscountService {
     // For non-subscribers, calculate potential savings with subscription plans
     const recommendedPlan = this.getRecommendedSubscriptionPlan(estimatedCaseValue, caseType)
     const projectedDiscount = this.calculateProjectedDiscount(estimatedCaseValue, recommendedPlan)
-    
+
     return {
       client_id: clientId,
       potential_discount_percentage: projectedDiscount.percentage,
@@ -219,7 +234,7 @@ export class DiscountService {
 
   async createPresetRules(lawFirmId: string): Promise<DiscountRule[]> {
     const createdRules: DiscountRule[] = []
-    
+
     for (const preset of PRESET_DISCOUNT_RULES) {
       try {
         const ruleData: DiscountRuleFormData = {
@@ -237,15 +252,14 @@ export class DiscountService {
           valid_from: new Date().toISOString().split('T')[0],
           is_active: true
         }
-        
+
         const rule = await this.createDiscountRule(lawFirmId, ruleData)
         createdRules.push(rule)
       } catch (error) {
         console.error('Error creating preset rule:', preset.rule_name, error)
       }
     }
-    
-    console.log(`Created ${createdRules.length} preset discount rules`)
+
     return createdRules
   }
 
@@ -256,33 +270,33 @@ export class DiscountService {
     periodStart: string,
     periodEnd: string
   ): Promise<DiscountAnalytics> {
-    // Mock analytics implementation
     const rules = await this.getDiscountRules(lawFirmId)
     const totalRules = rules.length
     const activeRules = rules.filter(r => r.is_active).length
-    
+
+    // TODO: Query real analytics data from invoices/transactions when available
     return {
       law_firm_id: lawFirmId,
       period_start: periodStart,
       period_end: periodEnd,
-      total_discounts_applied: 45,
-      total_discount_amount: 87500.00,
-      average_discount_percentage: 12.5,
-      most_used_rule: 'Desconto Assinante Premium - Trabalhista',
-      cross_selling_conversions: 8,
+      total_discounts_applied: 0,
+      total_discount_amount: 0,
+      average_discount_percentage: 0,
+      most_used_rule: rules.length > 0 ? rules[0].rule_name : 'N/A',
+      cross_selling_conversions: 0,
       revenue_impact: {
-        gross_revenue: 750000.00,
-        discount_amount: 87500.00,
-        net_revenue: 662500.00,
-        estimated_revenue_without_discounts: 580000.00 // Lower without cross-selling
+        gross_revenue: 0,
+        discount_amount: 0,
+        net_revenue: 0,
+        estimated_revenue_without_discounts: 0
       },
       rule_performance: rules.map(rule => ({
         rule_id: rule.id,
         rule_name: rule.rule_name,
         uses: rule.current_uses,
-        total_discount: rule.current_uses * 1500,
-        avg_discount: 1500,
-        conversion_rate: rule.current_uses > 0 ? 0.85 : 0
+        total_discount: 0,
+        avg_discount: 0,
+        conversion_rate: 0
       }))
     }
   }
@@ -301,6 +315,25 @@ export class DiscountService {
   }
 
   // ===== PRIVATE METHODS =====
+
+  private mapRowToDiscountRule(row: Record<string, unknown>): DiscountRule {
+    return {
+      id: row.id as string,
+      law_firm_id: row.law_firm_id as string,
+      rule_name: row.rule_name as string,
+      rule_type: row.rule_type as string,
+      is_active: row.is_active as boolean,
+      priority: row.priority as number,
+      conditions: (row.conditions || []) as DiscountCondition[],
+      discount_config: (row.discount_config || {}) as DiscountConfig,
+      valid_from: row.valid_from as string,
+      valid_until: row.valid_until as string | undefined,
+      max_uses: row.max_uses as number | undefined,
+      current_uses: (row.current_uses || 0) as number,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string
+    }
+  }
 
   private validateDiscountRuleData(data: DiscountRuleFormData): void {
     if (!data.rule_name || data.rule_name.length < 3) {
@@ -324,7 +357,7 @@ export class DiscountService {
     const now = new Date()
     const validFrom = new Date(rule.valid_from)
     const validUntil = rule.valid_until ? new Date(rule.valid_until) : null
-    
+
     return now >= validFrom && (!validUntil || now <= validUntil)
   }
 
@@ -332,49 +365,52 @@ export class DiscountService {
     return !rule.max_uses || rule.current_uses < rule.max_uses
   }
 
-  private async getClientContext(clientId: string): Promise<any> {
-    // Mock client context - replace with actual client data in production
-    const baseContext = {
-      law_firm_id: 'firm-1',
-      client_tenure_months: 18,
-      payment_history: 'excellent',
-      total_cases: 5,
-      total_paid: 125000.00
+  private async getClientContext(clientId: string): Promise<Record<string, unknown>> {
+    // Try to fetch real client data from contacts table
+    try {
+      const { data: contact } = await this.supabase
+        .from('contacts')
+        .select('*, law_firm_id')
+        .eq('id', clientId)
+        .single()
+
+      if (contact) {
+        return {
+          law_firm_id: contact.law_firm_id,
+          client_tenure_months: this.calculateTenureMonths(contact.created_at),
+          payment_history: 'good',
+          total_cases: 0,
+          total_paid: contact.total_paid || 0,
+          subscription_status: 'inactive',
+          subscription_plan: null
+        }
+      }
+    } catch {
+      // Fallback if contacts table query fails
     }
 
-    // Different contexts based on client ID for testing
-    if (clientId.includes('non-subscriber') || clientId.includes('potential-subscriber')) {
-      return {
-        ...baseContext,
-        subscription_status: 'inactive',
-        subscription_plan: null,
-        client_tenure_months: 6,
-        total_cases: 1
-      }
-    } else if (clientId.includes('ineligible')) {
-      return {
-        ...baseContext,
-        subscription_status: 'inactive',
-        subscription_plan: null,
-        client_tenure_months: 2,
-        payment_history: 'poor',
-        total_cases: 1,
-        total_paid: 5000.00
-      }
-    } else {
-      // Default to active subscriber for test clients
-      return {
-        ...baseContext,
-        subscription_status: 'active',
-        subscription_plan: 'premium'
-      }
+    // Default context for unknown clients
+    return {
+      law_firm_id: '',
+      client_tenure_months: 0,
+      payment_history: 'unknown',
+      total_cases: 0,
+      total_paid: 0,
+      subscription_status: 'inactive',
+      subscription_plan: null
     }
+  }
+
+  private calculateTenureMonths(createdAt: string): number {
+    const created = new Date(createdAt)
+    const now = new Date()
+    return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24 * 30))
   }
 
   private async evaluateRule(
     rule: DiscountRule,
     input: DiscountCalculationInput,
-    clientContext: any
+    clientContext: Record<string, unknown>
   ): Promise<boolean> {
     // Evaluate all conditions
     for (const condition of rule.conditions) {
@@ -382,30 +418,30 @@ export class DiscountService {
         return false // All conditions must be true
       }
     }
-    
+
     // Check if discount applies to this billing type
     const appliesTo = rule.discount_config.applies_to
-    const billingTypeMapping = {
+    const billingTypeMapping: Record<string, string> = {
       'hourly': 'hourly_fees',
       'percentage': 'percentage_fees',
       'fixed': 'fixed_fees'
     }
-    
+
     const targetAppliesTo = billingTypeMapping[input.billing_type]
     if (!appliesTo.includes(targetAppliesTo as AppliesTo) && !appliesTo.includes('total_case_value')) {
       return false
     }
-    
+
     return true
   }
 
   private evaluateCondition(
     condition: DiscountCondition,
     input: DiscountCalculationInput,
-    clientContext: any
+    clientContext: Record<string, unknown>
   ): boolean {
-    let fieldValue: any
-    
+    let fieldValue: unknown
+
     // Get the field value based on condition type
     switch (condition.condition_type) {
       case 'subscription_status':
@@ -432,7 +468,7 @@ export class DiscountService {
       default:
         return false
     }
-    
+
     // Evaluate the condition
     switch (condition.operator) {
       case 'equals':
@@ -460,7 +496,7 @@ export class DiscountService {
   private calculateRuleDiscount(rule: DiscountRule, input: DiscountCalculationInput): number {
     const config = rule.discount_config
     let baseAmount = 0
-    
+
     // Calculate base amount to apply discount to
     switch (input.billing_type) {
       case 'hourly':
@@ -473,14 +509,14 @@ export class DiscountService {
         baseAmount = input.fixed_amount || 0
         break
     }
-    
+
     // Check minimum case value requirement
     if (config.min_case_value && input.case_value < config.min_case_value) {
       return 0
     }
-    
+
     let discountAmount = 0
-    
+
     // Calculate discount based on type
     switch (config.discount_type) {
       case 'percentage':
@@ -496,12 +532,12 @@ export class DiscountService {
         discountAmount = baseAmount * (config.value / 100) * (1 + tierMultiplier)
         break
     }
-    
+
     // Apply maximum discount limit
     if (config.max_discount_amount && discountAmount > config.max_discount_amount) {
       discountAmount = config.max_discount_amount
     }
-    
+
     return Math.round(discountAmount * 100) / 100
   }
 
@@ -512,10 +548,10 @@ export class DiscountService {
     if (applicableRules.length === 0) {
       return this.getNoDiscountResult(input)
     }
-    
+
     let totalDiscountAmount = 0
     let originalAmount = 0
-    
+
     // Calculate original amount
     switch (input.billing_type) {
       case 'hourly':
@@ -528,23 +564,23 @@ export class DiscountService {
         originalAmount = input.fixed_amount || 0
         break
     }
-    
+
     // Apply discounts (compound or highest)
     const primaryRule = applicableRules[0]
     totalDiscountAmount = primaryRule.discount_amount
-    
+
     // For compound discounts, add additional rules with diminishing returns
     for (let i = 1; i < applicableRules.length; i++) {
       const rule = applicableRules[i]
       // Apply 50% efficiency to subsequent rules to prevent over-discounting
       totalDiscountAmount += rule.discount_amount * 0.5
     }
-    
+
     // Ensure we don't discount more than the original amount
     totalDiscountAmount = Math.min(totalDiscountAmount, originalAmount)
-    
+
     const discountPercentage = originalAmount > 0 ? (totalDiscountAmount / originalAmount) * 100 : 0
-    
+
     return {
       eligible: true,
       discount_percentage: discountPercentage,
@@ -553,7 +589,7 @@ export class DiscountService {
       total_discount_amount: totalDiscountAmount,
       original_amount: originalAmount,
       discounted_amount: originalAmount - totalDiscountAmount,
-      eligibility_reasons: applicableRules.map(rule => 
+      eligibility_reasons: applicableRules.map(rule =>
         `${rule.rule_name}: ${this.formatCurrency(rule.discount_amount)}`
       ),
       warnings: []
@@ -562,7 +598,7 @@ export class DiscountService {
 
   private getNoDiscountResult(input: DiscountCalculationInput): DiscountEligibility {
     let originalAmount = 0
-    
+
     switch (input.billing_type) {
       case 'hourly':
         originalAmount = (input.hourly_rate || 0) * (input.estimated_hours || 0)
@@ -574,7 +610,7 @@ export class DiscountService {
         originalAmount = input.fixed_amount || 0
         break
     }
-    
+
     return {
       eligible: false,
       discount_percentage: 0,
@@ -588,7 +624,7 @@ export class DiscountService {
     }
   }
 
-  private getRecommendedSubscriptionPlan(caseValue: number, caseType: string): any {
+  private getRecommendedSubscriptionPlan(caseValue: number, caseType: string): Record<string, unknown> {
     if (caseValue > 50000) {
       return { name: 'Premium', monthly_fee: 599, projected_discount: 15 }
     } else if (caseValue > 20000) {
@@ -598,88 +634,15 @@ export class DiscountService {
     }
   }
 
-  private calculateProjectedDiscount(caseValue: number, plan: any): any {
-    const discountAmount = caseValue * (plan.projected_discount / 100)
+  private calculateProjectedDiscount(caseValue: number, plan: Record<string, unknown>): Record<string, unknown> {
+    const projectedDiscount = plan.projected_discount as number
+    const discountAmount = caseValue * (projectedDiscount / 100)
     return {
-      percentage: plan.projected_discount,
+      percentage: projectedDiscount,
       amount: discountAmount,
       confidence: 0.88
     }
   }
-
-  // ===== MOCK DATA =====
-
-  private mockDiscountRules: DiscountRule[] = [
-    {
-      id: '1',
-      law_firm_id: 'firm-1',
-      rule_name: 'Desconto Assinante Premium',
-      rule_type: 'subscription_based',
-      is_active: true,
-      priority: 9,
-      conditions: [
-        {
-          id: 'cond-1',
-          condition_type: 'subscription_status',
-          field_name: 'subscription_status',
-          operator: 'equals',
-          value: 'active',
-          is_required: true
-        },
-        {
-          id: 'cond-2',
-          condition_type: 'subscription_plan',
-          field_name: 'subscription_plan',
-          operator: 'in_list',
-          value: 'premium,enterprise',
-          is_required: true
-        }
-      ],
-      discount_config: {
-        discount_type: 'percentage',
-        value: 15,
-        max_discount_amount: 5000,
-        min_case_value: 10000,
-        applies_to: ['hourly_fees', 'fixed_fees'],
-        compound_with_other_discounts: true
-      },
-      valid_from: '2024-01-01',
-      max_uses: undefined,
-      current_uses: 23,
-      created_at: '2024-01-01T10:00:00Z',
-      updated_at: '2024-01-01T10:00:00Z'
-    },
-    {
-      id: '2',
-      law_firm_id: 'firm-1',
-      rule_name: 'Desconto Fidelidade Cliente',
-      rule_type: 'loyalty_based',
-      is_active: true,
-      priority: 7,
-      conditions: [
-        {
-          id: 'cond-3',
-          condition_type: 'client_tenure',
-          field_name: 'client_tenure',
-          operator: 'greater_equal',
-          value: 12,
-          is_required: true
-        }
-      ],
-      discount_config: {
-        discount_type: 'percentage',
-        value: 10,
-        max_discount_amount: 3000,
-        applies_to: ['hourly_fees', 'percentage_fees'],
-        compound_with_other_discounts: false
-      },
-      valid_from: '2024-01-01',
-      max_uses: undefined,
-      current_uses: 15,
-      created_at: '2024-01-01T10:00:00Z',
-      updated_at: '2024-01-01T10:00:00Z'
-    }
-  ]
 }
 
 // Export singleton instance

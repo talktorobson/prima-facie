@@ -36,7 +36,7 @@
   "author": "Robson Benevenuto D'Avila Reis",
   "license": "ISC",
   "dependencies": {
-    "@ai-sdk/google": "^3.0.22",
+    "@ai-sdk/google-vertex": "^4.0.45",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.3.4",
     "@radix-ui/react-label": "^2.1.7",

@@ -1,9 +1,18 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createVertex } from '@ai-sdk/google-vertex'
 
 export function createGeminiProvider() {
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
-  if (!apiKey) {
-    throw new Error('GOOGLE_GENERATIVE_AI_API_KEY não configurada')
+  const b64Credentials = process.env.VERTEX_CREDENTIALS
+  if (!b64Credentials) {
+    throw new Error('VERTEX_CREDENTIALS não configurada')
   }
-  return createGoogleGenerativeAI({ apiKey })
+
+  const credentials = JSON.parse(
+    Buffer.from(b64Credentials, 'base64').toString('utf-8')
+  )
+
+  return createVertex({
+    project: process.env.GOOGLE_VERTEX_PROJECT || credentials.project_id,
+    location: process.env.GOOGLE_VERTEX_LOCATION || 'us-central1',
+    googleAuthOptions: { credentials },
+  })
 }

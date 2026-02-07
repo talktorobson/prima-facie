@@ -38,6 +38,15 @@ export const userManagementSchema = z.object({
   status: z.enum(['active', 'inactive', 'suspended', 'pending']).optional(),
 })
 
+export const userCreateSchema = userManagementSchema.extend({
+  password: z.string().min(8, 'Senha deve ter no minimo 8 caracteres'),
+  password_confirmation: z.string().optional(),
+}).refine(
+  (data) => !data.password_confirmation || data.password === data.password_confirmation,
+  { message: 'As senhas nao coincidem', path: ['password_confirmation'] }
+)
+
 export type LawFirmFormData = z.infer<typeof lawFirmSchema>
 export type MatterTypeFormData = z.infer<typeof matterTypeSchema>
 export type UserManagementFormData = z.infer<typeof userManagementSchema>
+export type UserCreateFormData = z.infer<typeof userCreateSchema>

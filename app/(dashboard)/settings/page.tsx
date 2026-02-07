@@ -1,9 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
-import { useLawFirm, useUpdateLawFirm } from '@/lib/queries/useSettings'
+import {
+  useLawFirm,
+  useUpdateLawFirm,
+  useUserPreferences,
+  useUpdateUserPreferences,
+  useFirmFeatures,
+  useUpdateFirmFeatures,
+} from '@/lib/queries/useSettings'
 import { useToast } from '@/components/ui/toast-provider'
 import {
   BuildingOfficeIcon,
@@ -39,12 +46,96 @@ const tabs: TabDef[] = [
   { id: 'appearance', name: 'Aparencia', description: 'Personalizacoes de interface e tema', icon: PaintBrushIcon, allowedRoles: ['admin', 'lawyer', 'staff', 'client'] },
 ]
 
+interface NotificationPrefs {
+  emailNotif: boolean
+  deadlineAlerts: boolean
+  clientMessages: boolean
+  paymentNotif: boolean
+  taskReminders: boolean
+  notifFrequency: string
+}
+
+interface SecurityPrefs {
+  twoFactorAuth: boolean
+  sessionTimeout: number
+  loginNotif: boolean
+  dataEncryption: boolean
+  auditLog: boolean
+}
+
+interface AppearancePrefs {
+  theme: string
+  language: string
+  sidebarCollapsed: boolean
+  animations: boolean
+}
+
+interface BillingFeatures {
+  defaultRate: number
+  invoicePrefix: string
+  paymentTerms: number
+  lateFee: number
+  autoReminders: boolean
+  paymentMethods: string
+}
+
+interface IntegrationFeatures {
+  whatsappInt: boolean
+  googleCalendar: boolean
+  driveBackup: boolean
+  apiAccess: boolean
+}
+
+const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
+  emailNotif: true,
+  deadlineAlerts: true,
+  clientMessages: true,
+  paymentNotif: true,
+  taskReminders: false,
+  notifFrequency: 'immediate',
+}
+
+const DEFAULT_SECURITY_PREFS: SecurityPrefs = {
+  twoFactorAuth: false,
+  sessionTimeout: 60,
+  loginNotif: true,
+  dataEncryption: true,
+  auditLog: true,
+}
+
+const DEFAULT_APPEARANCE_PREFS: AppearancePrefs = {
+  theme: 'light',
+  language: 'pt-BR',
+  sidebarCollapsed: false,
+  animations: true,
+}
+
+const DEFAULT_BILLING_FEATURES: BillingFeatures = {
+  defaultRate: 350,
+  invoicePrefix: 'FAT',
+  paymentTerms: 30,
+  lateFee: 2,
+  autoReminders: true,
+  paymentMethods: 'all',
+}
+
+const DEFAULT_INTEGRATION_FEATURES: IntegrationFeatures = {
+  whatsappInt: false,
+  googleCalendar: true,
+  driveBackup: false,
+  apiAccess: false,
+}
+
 export default function SettingsPage() {
   const { profile } = useAuthContext()
   const effectiveLawFirmId = useEffectiveLawFirmId()
   const toast = useToast()
-  const { data: lawFirm, isLoading } = useLawFirm(effectiveLawFirmId ?? undefined)
+  const { data: lawFirm, isLoading: firmLoading } = useLawFirm(effectiveLawFirmId ?? undefined)
+  const { data: userPrefs, isLoading: prefsLoading } = useUserPreferences()
+  const { data: firmFeatures, isLoading: featuresLoading } = useFirmFeatures(effectiveLawFirmId ?? undefined)
   const updateLawFirm = useUpdateLawFirm()
+  const updateUserPreferences = useUpdateUserPreferences()
+  const updateFirmFeatures = useUpdateFirmFeatures()
 
   const [activeTab, setActiveTab] = useState<TabId>('firm')
   const [showPassword, setShowPassword] = useState(false)
@@ -59,43 +150,28 @@ export default function SettingsPage() {
   const [firmAddress, setFirmAddress] = useState('')
   const [firmDirty, setFirmDirty] = useState(false)
 
-  // Notification preferences (local state)
-  const [emailNotif, setEmailNotif] = useState(true)
-  const [deadlineAlerts, setDeadlineAlerts] = useState(true)
-  const [clientMessages, setClientMessages] = useState(true)
-  const [paymentNotif, setPaymentNotif] = useState(true)
-  const [taskReminders, setTaskReminders] = useState(false)
-  const [notifFrequency, setNotifFrequency] = useState('immediate')
+  // Notification preferences
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>(DEFAULT_NOTIFICATION_PREFS)
+  const [notifDirty, setNotifDirty] = useState(false)
 
-  // Security preferences (local state)
-  const [twoFactorAuth, setTwoFactorAuth] = useState(false)
-  const [sessionTimeout, setSessionTimeout] = useState(60)
-  const [loginNotif, setLoginNotif] = useState(true)
-  const [dataEncryption, setDataEncryption] = useState(true)
-  const [auditLog, setAuditLog] = useState(true)
+  // Security preferences
+  const [secPrefs, setSecPrefs] = useState<SecurityPrefs>(DEFAULT_SECURITY_PREFS)
+  const [secDirty, setSecDirty] = useState(false)
 
-  // Billing preferences (local state)
-  const [defaultRate, setDefaultRate] = useState(350)
-  const [invoicePrefix, setInvoicePrefix] = useState('FAT')
-  const [paymentTerms, setPaymentTerms] = useState(30)
-  const [lateFee, setLateFee] = useState(2)
-  const [autoReminders, setAutoReminders] = useState(true)
-  const [paymentMethods, setPaymentMethods] = useState('all')
+  // Appearance preferences
+  const [appPrefs, setAppPrefs] = useState<AppearancePrefs>(DEFAULT_APPEARANCE_PREFS)
+  const [appDirty, setAppDirty] = useState(false)
 
-  // Integrations (local state)
-  const [whatsappInt, setWhatsappInt] = useState(false)
-  const [googleCalendar, setGoogleCalendar] = useState(true)
-  const [driveBackup, setDriveBackup] = useState(false)
-  const [apiAccess, setApiAccess] = useState(false)
+  // Billing features (firm-level)
+  const [billingPrefs, setBillingPrefs] = useState<BillingFeatures>(DEFAULT_BILLING_FEATURES)
+  const [billingDirty, setBillingDirty] = useState(false)
 
-  // Appearance (local state)
-  const [theme, setTheme] = useState('light')
-  const [language, setLanguage] = useState('pt-BR')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [animations, setAnimations] = useState(true)
+  // Integration features (firm-level)
+  const [intPrefs, setIntPrefs] = useState<IntegrationFeatures>(DEFAULT_INTEGRATION_FEATURES)
+  const [intDirty, setIntDirty] = useState(false)
 
   // Populate firm fields when data loads
-  const populateFirmFields = () => {
+  const populateFirmFields = useCallback(() => {
     if (lawFirm) {
       setFirmName(lawFirm.name || '')
       setFirmCnpj(lawFirm.cnpj || '')
@@ -108,15 +184,46 @@ export default function SettingsPage() {
       setFirmAddress(addr)
       setFirmDirty(false)
     }
-  }
+  }, [lawFirm])
 
-  // Populate firm fields when lawFirm data loads
   useEffect(() => {
     if (lawFirm && !firmDirty) {
       populateFirmFields()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lawFirm])
+
+  // Populate user preferences from DB
+  useEffect(() => {
+    if (userPrefs) {
+      const n = userPrefs.notifications as Partial<NotificationPrefs> | undefined
+      if (n) {
+        setNotifPrefs({ ...DEFAULT_NOTIFICATION_PREFS, ...n })
+      }
+      const s = userPrefs.security as Partial<SecurityPrefs> | undefined
+      if (s) {
+        setSecPrefs({ ...DEFAULT_SECURITY_PREFS, ...s })
+      }
+      const a = userPrefs.appearance as Partial<AppearancePrefs> | undefined
+      if (a) {
+        setAppPrefs({ ...DEFAULT_APPEARANCE_PREFS, ...a })
+      }
+    }
+  }, [userPrefs])
+
+  // Populate firm features from DB
+  useEffect(() => {
+    if (firmFeatures) {
+      const b = firmFeatures.billing as Partial<BillingFeatures> | undefined
+      if (b) {
+        setBillingPrefs({ ...DEFAULT_BILLING_FEATURES, ...b })
+      }
+      const i = firmFeatures.integrations as Partial<IntegrationFeatures> | undefined
+      if (i) {
+        setIntPrefs({ ...DEFAULT_INTEGRATION_FEATURES, ...i })
+      }
+    }
+  }, [firmFeatures])
 
   const userRole = profile?.user_type || 'staff'
   const visibleTabs = tabs.filter(t => t.allowedRoles.includes(userRole))
@@ -149,12 +256,78 @@ export default function SettingsPage() {
     )
   }
 
+  const handleSaveNotifications = () => {
+    updateUserPreferences.mutate(
+      { notifications: notifPrefs },
+      {
+        onSuccess: () => { toast.success('Preferencias de notificacao salvas!'); setNotifDirty(false) },
+        onError: () => { toast.error('Erro ao salvar preferencias de notificacao.') },
+      }
+    )
+  }
+
+  const handleSaveSecurity = () => {
+    updateUserPreferences.mutate(
+      { security: secPrefs },
+      {
+        onSuccess: () => { toast.success('Configuracoes de seguranca salvas!'); setSecDirty(false) },
+        onError: () => { toast.error('Erro ao salvar configuracoes de seguranca.') },
+      }
+    )
+  }
+
+  const handleSaveAppearance = () => {
+    updateUserPreferences.mutate(
+      { appearance: appPrefs },
+      {
+        onSuccess: () => { toast.success('Preferencias de aparencia salvas!'); setAppDirty(false) },
+        onError: () => { toast.error('Erro ao salvar preferencias de aparencia.') },
+      }
+    )
+  }
+
+  const handleSaveBilling = () => {
+    if (!effectiveLawFirmId) return
+    updateFirmFeatures.mutate(
+      { id: effectiveLawFirmId!, features: { billing: billingPrefs } },
+      {
+        onSuccess: () => { toast.success('Configuracoes de faturamento salvas!'); setBillingDirty(false) },
+        onError: () => { toast.error('Erro ao salvar configuracoes de faturamento.') },
+      }
+    )
+  }
+
+  const handleSaveIntegrations = () => {
+    if (!effectiveLawFirmId) return
+    updateFirmFeatures.mutate(
+      { id: effectiveLawFirmId!, features: { integrations: intPrefs } },
+      {
+        onSuccess: () => { toast.success('Configuracoes de integracoes salvas!'); setIntDirty(false) },
+        onError: () => { toast.error('Erro ao salvar configuracoes de integracoes.') },
+      }
+    )
+  }
+
+  const isSaving = updateUserPreferences.isPending || updateFirmFeatures.isPending || updateLawFirm.isPending
+
   const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary'
   const checkboxCls = 'h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded'
 
+  const SaveBar = ({ dirty, onSave, onDiscard }: { dirty: boolean; onSave: () => void; onDiscard: () => void }) => {
+    if (!dirty) return null
+    return (
+      <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <button onClick={onDiscard} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Descartar</button>
+        <button onClick={onSave} disabled={isSaving} className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50">
+          {isSaving ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />Salvando...</> : <><CheckCircleIcon className="w-4 h-4 mr-2" />Salvar</>}
+        </button>
+      </div>
+    )
+  }
+
   const renderFirmTab = () => (
     <div className="space-y-6">
-      {isLoading ? (
+      {firmLoading ? (
         <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
       ) : (
         <>
@@ -187,14 +360,7 @@ export default function SettingsPage() {
             <textarea value={firmAddress} onChange={e => { setFirmAddress(e.target.value); setFirmDirty(true) }} rows={2} className={inputCls} />
             <p className="mt-1 text-sm text-gray-500">Endereco completo do escritorio</p>
           </div>
-          {firmDirty && (
-            <div className="flex justify-end space-x-3">
-              <button onClick={populateFirmFields} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Descartar</button>
-              <button onClick={handleSaveFirm} disabled={updateLawFirm.isPending} className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50">
-                {updateLawFirm.isPending ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />Salvando...</> : <><CheckCircleIcon className="w-4 h-4 mr-2" />Salvar</>}
-              </button>
-            </div>
-          )}
+          <SaveBar dirty={firmDirty} onSave={handleSaveFirm} onDiscard={populateFirmFields} />
         </>
       )}
     </div>
@@ -239,128 +405,228 @@ export default function SettingsPage() {
     </div>
   )
 
+  const updateNotifPref = <K extends keyof NotificationPrefs>(key: K, value: NotificationPrefs[K]) => {
+    setNotifPrefs(prev => ({ ...prev, [key]: value }))
+    setNotifDirty(true)
+  }
+
   const renderNotificationsTab = () => (
     <div className="space-y-6">
-      {[
-        { label: 'Notificacoes por Email', desc: 'Receber notificacoes importantes por email', value: emailNotif, set: setEmailNotif },
-        { label: 'Alertas de Prazos', desc: 'Notificacoes de prazos processuais proximos', value: deadlineAlerts, set: setDeadlineAlerts },
-        { label: 'Mensagens de Clientes', desc: 'Notificacoes de novas mensagens de clientes', value: clientMessages, set: setClientMessages },
-        { label: 'Notificacoes de Pagamento', desc: 'Alertas sobre pagamentos e cobrancas', value: paymentNotif, set: setPaymentNotif },
-        { label: 'Lembretes de Tarefas', desc: 'Notificacoes de tarefas pendentes', value: taskReminders, set: setTaskReminders },
-      ].map(item => (
-        <div key={item.label} className="flex items-center">
-          <input type="checkbox" checked={item.value} onChange={e => item.set(e.target.checked)} className={checkboxCls} />
-          <label className="ml-2 text-sm text-gray-700">{item.desc}</label>
-        </div>
-      ))}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Frequencia</label>
-        <select value={notifFrequency} onChange={e => setNotifFrequency(e.target.value)} className={inputCls}>
-          <option value="immediate">Imediato</option>
-          <option value="hourly">A cada hora</option>
-          <option value="daily">Diario</option>
-          <option value="weekly">Semanal</option>
-        </select>
-      </div>
+      {prefsLoading ? (
+        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
+      ) : (
+        <>
+          {[
+            { label: 'Notificacoes por Email', desc: 'Receber notificacoes importantes por email', key: 'emailNotif' as const },
+            { label: 'Alertas de Prazos', desc: 'Notificacoes de prazos processuais proximos', key: 'deadlineAlerts' as const },
+            { label: 'Mensagens de Clientes', desc: 'Notificacoes de novas mensagens de clientes', key: 'clientMessages' as const },
+            { label: 'Notificacoes de Pagamento', desc: 'Alertas sobre pagamentos e cobrancas', key: 'paymentNotif' as const },
+            { label: 'Lembretes de Tarefas', desc: 'Notificacoes de tarefas pendentes', key: 'taskReminders' as const },
+          ].map(item => (
+            <div key={item.key} className="flex items-center">
+              <input type="checkbox" checked={notifPrefs[item.key] as boolean} onChange={e => updateNotifPref(item.key, e.target.checked)} className={checkboxCls} />
+              <label className="ml-2 text-sm text-gray-700">{item.desc}</label>
+            </div>
+          ))}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Frequencia</label>
+            <select value={notifPrefs.notifFrequency} onChange={e => updateNotifPref('notifFrequency', e.target.value)} className={inputCls}>
+              <option value="immediate">Imediato</option>
+              <option value="hourly">A cada hora</option>
+              <option value="daily">Diario</option>
+              <option value="weekly">Semanal</option>
+            </select>
+          </div>
+          <SaveBar
+            dirty={notifDirty}
+            onSave={handleSaveNotifications}
+            onDiscard={() => {
+              const n = userPrefs?.notifications as Partial<NotificationPrefs> | undefined
+              setNotifPrefs({ ...DEFAULT_NOTIFICATION_PREFS, ...n })
+              setNotifDirty(false)
+            }}
+          />
+        </>
+      )}
     </div>
   )
+
+  const updateSecPref = <K extends keyof SecurityPrefs>(key: K, value: SecurityPrefs[K]) => {
+    setSecPrefs(prev => ({ ...prev, [key]: value }))
+    setSecDirty(true)
+  }
 
   const renderSecurityTab = () => (
     <div className="space-y-6">
-      {[
-        { label: 'Autenticacao de Dois Fatores', desc: 'Ativar 2FA para maior seguranca', value: twoFactorAuth, set: setTwoFactorAuth },
-        { label: 'Notificacoes de Login', desc: 'Receber alertas sobre novos logins', value: loginNotif, set: setLoginNotif },
-        { label: 'Criptografia de Dados', desc: 'Criptografar dados sensiveis', value: dataEncryption, set: setDataEncryption },
-        { label: 'Log de Auditoria', desc: 'Manter registro de atividades do sistema', value: auditLog, set: setAuditLog },
-      ].map(item => (
-        <div key={item.label} className="flex items-center">
-          <input type="checkbox" checked={item.value} onChange={e => item.set(e.target.checked)} className={checkboxCls} />
-          <label className="ml-2 text-sm text-gray-700">{item.desc}</label>
-        </div>
-      ))}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Timeout de Sessao (minutos)</label>
-        <input type="number" value={sessionTimeout} onChange={e => setSessionTimeout(Number(e.target.value))} className={inputCls} />
-      </div>
+      {prefsLoading ? (
+        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
+      ) : (
+        <>
+          {[
+            { label: 'Autenticacao de Dois Fatores', desc: 'Ativar 2FA para maior seguranca', key: 'twoFactorAuth' as const },
+            { label: 'Notificacoes de Login', desc: 'Receber alertas sobre novos logins', key: 'loginNotif' as const },
+            { label: 'Criptografia de Dados', desc: 'Criptografar dados sensiveis', key: 'dataEncryption' as const },
+            { label: 'Log de Auditoria', desc: 'Manter registro de atividades do sistema', key: 'auditLog' as const },
+          ].map(item => (
+            <div key={item.key} className="flex items-center">
+              <input type="checkbox" checked={secPrefs[item.key] as boolean} onChange={e => updateSecPref(item.key, e.target.checked)} className={checkboxCls} />
+              <label className="ml-2 text-sm text-gray-700">{item.desc}</label>
+            </div>
+          ))}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Timeout de Sessao (minutos)</label>
+            <input type="number" value={secPrefs.sessionTimeout} onChange={e => updateSecPref('sessionTimeout', Number(e.target.value))} className={inputCls} />
+          </div>
+          <SaveBar
+            dirty={secDirty}
+            onSave={handleSaveSecurity}
+            onDiscard={() => {
+              const s = userPrefs?.security as Partial<SecurityPrefs> | undefined
+              setSecPrefs({ ...DEFAULT_SECURITY_PREFS, ...s })
+              setSecDirty(false)
+            }}
+          />
+        </>
+      )}
     </div>
   )
+
+  const updateBillingPref = <K extends keyof BillingFeatures>(key: K, value: BillingFeatures[K]) => {
+    setBillingPrefs(prev => ({ ...prev, [key]: value }))
+    setBillingDirty(true)
+  }
 
   const renderBillingTab = () => (
     <div className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Valor Hora Padrao (R$)</label>
-        <input type="number" value={defaultRate} onChange={e => setDefaultRate(Number(e.target.value))} className={inputCls} />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Prefixo da Fatura</label>
-        <input type="text" value={invoicePrefix} onChange={e => setInvoicePrefix(e.target.value)} className={inputCls} />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Prazo de Pagamento (dias)</label>
-        <input type="number" value={paymentTerms} onChange={e => setPaymentTerms(Number(e.target.value))} className={inputCls} />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Taxa de Atraso (%)</label>
-        <input type="number" value={lateFee} onChange={e => setLateFee(Number(e.target.value))} className={inputCls} />
-      </div>
-      <div className="flex items-center">
-        <input type="checkbox" checked={autoReminders} onChange={e => setAutoReminders(e.target.checked)} className={checkboxCls} />
-        <label className="ml-2 text-sm text-gray-700">Enviar lembretes de pagamento automaticamente</label>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Metodos de Pagamento</label>
-        <select value={paymentMethods} onChange={e => setPaymentMethods(e.target.value)} className={inputCls}>
-          <option value="all">Todos (PIX, Cartao, Boleto)</option>
-          <option value="pix_card">PIX e Cartao</option>
-          <option value="pix_only">Apenas PIX</option>
-          <option value="card_only">Apenas Cartao</option>
-        </select>
-      </div>
+      {featuresLoading ? (
+        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
+      ) : (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Valor Hora Padrao (R$)</label>
+            <input type="number" value={billingPrefs.defaultRate} onChange={e => updateBillingPref('defaultRate', Number(e.target.value))} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Prefixo da Fatura</label>
+            <input type="text" value={billingPrefs.invoicePrefix} onChange={e => updateBillingPref('invoicePrefix', e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Prazo de Pagamento (dias)</label>
+            <input type="number" value={billingPrefs.paymentTerms} onChange={e => updateBillingPref('paymentTerms', Number(e.target.value))} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Taxa de Atraso (%)</label>
+            <input type="number" value={billingPrefs.lateFee} onChange={e => updateBillingPref('lateFee', Number(e.target.value))} className={inputCls} />
+          </div>
+          <div className="flex items-center">
+            <input type="checkbox" checked={billingPrefs.autoReminders} onChange={e => updateBillingPref('autoReminders', e.target.checked)} className={checkboxCls} />
+            <label className="ml-2 text-sm text-gray-700">Enviar lembretes de pagamento automaticamente</label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Metodos de Pagamento</label>
+            <select value={billingPrefs.paymentMethods} onChange={e => updateBillingPref('paymentMethods', e.target.value)} className={inputCls}>
+              <option value="all">Todos (PIX, Cartao, Boleto)</option>
+              <option value="pix_card">PIX e Cartao</option>
+              <option value="pix_only">Apenas PIX</option>
+              <option value="card_only">Apenas Cartao</option>
+            </select>
+          </div>
+          <SaveBar
+            dirty={billingDirty}
+            onSave={handleSaveBilling}
+            onDiscard={() => {
+              const b = firmFeatures?.billing as Partial<BillingFeatures> | undefined
+              setBillingPrefs({ ...DEFAULT_BILLING_FEATURES, ...b })
+              setBillingDirty(false)
+            }}
+          />
+        </>
+      )}
     </div>
   )
+
+  const updateIntPref = <K extends keyof IntegrationFeatures>(key: K, value: IntegrationFeatures[K]) => {
+    setIntPrefs(prev => ({ ...prev, [key]: value }))
+    setIntDirty(true)
+  }
 
   const renderIntegrationsTab = () => (
     <div className="space-y-6">
-      {[
-        { label: 'Integracao WhatsApp', desc: 'Conectar conta do WhatsApp Business', value: whatsappInt, set: setWhatsappInt },
-        { label: 'Google Calendar', desc: 'Sincronizar com Google Calendar', value: googleCalendar, set: setGoogleCalendar },
-        { label: 'Backup Google Drive', desc: 'Backup automatico no Google Drive', value: driveBackup, set: setDriveBackup },
-        { label: 'Acesso a API', desc: 'Permitir acesso via API externa', value: apiAccess, set: setApiAccess },
-      ].map(item => (
-        <div key={item.label} className="flex items-center">
-          <input type="checkbox" checked={item.value} onChange={e => item.set(e.target.checked)} className={checkboxCls} />
-          <label className="ml-2 text-sm text-gray-700">{item.desc}</label>
-        </div>
-      ))}
+      {featuresLoading ? (
+        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
+      ) : (
+        <>
+          {[
+            { label: 'Integracao WhatsApp', desc: 'Conectar conta do WhatsApp Business', key: 'whatsappInt' as const },
+            { label: 'Google Calendar', desc: 'Sincronizar com Google Calendar', key: 'googleCalendar' as const },
+            { label: 'Backup Google Drive', desc: 'Backup automatico no Google Drive', key: 'driveBackup' as const },
+            { label: 'Acesso a API', desc: 'Permitir acesso via API externa', key: 'apiAccess' as const },
+          ].map(item => (
+            <div key={item.key} className="flex items-center">
+              <input type="checkbox" checked={intPrefs[item.key]} onChange={e => updateIntPref(item.key, e.target.checked)} className={checkboxCls} />
+              <label className="ml-2 text-sm text-gray-700">{item.desc}</label>
+            </div>
+          ))}
+          <SaveBar
+            dirty={intDirty}
+            onSave={handleSaveIntegrations}
+            onDiscard={() => {
+              const i = firmFeatures?.integrations as Partial<IntegrationFeatures> | undefined
+              setIntPrefs({ ...DEFAULT_INTEGRATION_FEATURES, ...i })
+              setIntDirty(false)
+            }}
+          />
+        </>
+      )}
     </div>
   )
 
+  const updateAppPref = <K extends keyof AppearancePrefs>(key: K, value: AppearancePrefs[K]) => {
+    setAppPrefs(prev => ({ ...prev, [key]: value }))
+    setAppDirty(true)
+  }
+
   const renderAppearanceTab = () => (
     <div className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Tema</label>
-        <select value={theme} onChange={e => setTheme(e.target.value)} className={inputCls}>
-          <option value="light">Claro</option>
-          <option value="dark">Escuro</option>
-          <option value="auto">Automatico</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Idioma</label>
-        <select value={language} onChange={e => setLanguage(e.target.value)} className={inputCls}>
-          <option value="pt-BR">Portugues (Brasil)</option>
-          <option value="en-US">English (US)</option>
-          <option value="es-ES">Espanol</option>
-        </select>
-      </div>
-      <div className="flex items-center">
-        <input type="checkbox" checked={sidebarCollapsed} onChange={e => setSidebarCollapsed(e.target.checked)} className={checkboxCls} />
-        <label className="ml-2 text-sm text-gray-700">Manter menu lateral compacto por padrao</label>
-      </div>
-      <div className="flex items-center">
-        <input type="checkbox" checked={animations} onChange={e => setAnimations(e.target.checked)} className={checkboxCls} />
-        <label className="ml-2 text-sm text-gray-700">Habilitar animacoes na interface</label>
-      </div>
+      {prefsLoading ? (
+        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
+      ) : (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tema</label>
+            <select value={appPrefs.theme} onChange={e => updateAppPref('theme', e.target.value)} className={inputCls}>
+              <option value="light">Claro</option>
+              <option value="dark">Escuro</option>
+              <option value="auto">Automatico</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Idioma</label>
+            <select value={appPrefs.language} onChange={e => updateAppPref('language', e.target.value)} className={inputCls}>
+              <option value="pt-BR">Portugues (Brasil)</option>
+              <option value="en-US">English (US)</option>
+              <option value="es-ES">Espanol</option>
+            </select>
+          </div>
+          <div className="flex items-center">
+            <input type="checkbox" checked={appPrefs.sidebarCollapsed} onChange={e => updateAppPref('sidebarCollapsed', e.target.checked)} className={checkboxCls} />
+            <label className="ml-2 text-sm text-gray-700">Manter menu lateral compacto por padrao</label>
+          </div>
+          <div className="flex items-center">
+            <input type="checkbox" checked={appPrefs.animations} onChange={e => updateAppPref('animations', e.target.checked)} className={checkboxCls} />
+            <label className="ml-2 text-sm text-gray-700">Habilitar animacoes na interface</label>
+          </div>
+          <SaveBar
+            dirty={appDirty}
+            onSave={handleSaveAppearance}
+            onDiscard={() => {
+              const a = userPrefs?.appearance as Partial<AppearancePrefs> | undefined
+              setAppPrefs({ ...DEFAULT_APPEARANCE_PREFS, ...a })
+              setAppDirty(false)
+            }}
+          />
+        </>
+      )}
     </div>
   )
 

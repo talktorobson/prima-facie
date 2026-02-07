@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySuperAdmin } from '@/lib/supabase/verify-super-admin'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { updateUser, deactivateUser } from '@/lib/services/user-management'
 
-const ALLOWED_FIELDS = [
-  'first_name', 'last_name', 'user_type', 'status',
-  'oab_number', 'position', 'phone', 'mobile', 'department',
-]
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function PATCH(
   request: NextRequest,
@@ -14,33 +11,24 @@ export async function PATCH(
   const auth = await verifySuperAdmin()
   if (auth.error) return auth.error
 
-  const body = await request.json()
-  const updates: Record<string, unknown> = {}
-
-  for (const key of ALLOWED_FIELDS) {
-    if (key in body) {
-      updates[key] = body[key]
-    }
+  if (!UUID_RE.test(params.id)) {
+    return NextResponse.json({ error: 'ID invalido' }, { status: 400 })
   }
 
-  if (Object.keys(updates).length === 0) {
-    return NextResponse.json({ error: 'Nenhum campo valido para atualizar' }, { status: 400 })
+  let body: Record<string, unknown>
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'JSON invalido' }, { status: 400 })
   }
 
-  const supabase = createAdminClient()
+  const result = await updateUser(params.id, body)
 
-  const { data, error } = await supabase
-    .from('users')
-    .update(updates)
-    .eq('id', params.id)
-    .select()
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (result.error) {
+    return NextResponse.json({ error: result.error }, { status: result.status })
   }
 
-  return NextResponse.json({ data })
+  return NextResponse.json({ data: result.data })
 }
 
 export async function DELETE(
@@ -50,18 +38,15 @@ export async function DELETE(
   const auth = await verifySuperAdmin()
   if (auth.error) return auth.error
 
-  const supabase = createAdminClient()
-
-  const { data, error } = await supabase
-    .from('users')
-    .update({ status: 'inactive' })
-    .eq('id', params.id)
-    .select()
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!UUID_RE.test(params.id)) {
+    return NextResponse.json({ error: 'ID invalido' }, { status: 400 })
   }
 
-  return NextResponse.json({ data })
+  const result = await deactivateUser(params.id)
+
+  if (result.error) {
+    return NextResponse.json({ error: result.error }, { status: result.status })
+  }
+
+  return NextResponse.json({ data: result.data })
 }

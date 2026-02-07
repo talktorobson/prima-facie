@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/supabase/verify-admin'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { updateUser, deactivateUser, verifyFirmOwnership } from '@/lib/services/user-management'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-const ALLOWED_FIELDS = [
-  'first_name', 'last_name', 'user_type', 'status',
-  'oab_number', 'position', 'phone', 'mobile', 'department',
-]
 
 export async function PATCH(
   request: NextRequest,
@@ -29,7 +25,6 @@ export async function PATCH(
     return NextResponse.json({ error: 'JSON invalido' }, { status: 400 })
   }
 
-  // Reject escalation to super_admin
   if (body.user_type === 'super_admin') {
     return NextResponse.json(
       { error: 'Nao e permitido definir tipo Super Admin' },
@@ -37,48 +32,21 @@ export async function PATCH(
     )
   }
 
-  const updates: Record<string, unknown> = {}
-  for (const key of ALLOWED_FIELDS) {
-    if (key in body) {
-      updates[key] = body[key]
-    }
-  }
-
-  if (Object.keys(updates).length === 0) {
-    return NextResponse.json({ error: 'Nenhum campo valido para atualizar' }, { status: 400 })
-  }
-
-  const supabase = createAdminClient()
-
-  // Verify target user belongs to caller's firm (admin only)
+  // Verify firm scoping (admin only)
   if (profile.user_type === 'admin') {
-    const { data: targetUser, error: targetError } = await supabase
-      .from('users')
-      .select('law_firm_id')
-      .eq('id', params.id)
-      .single()
-
-    if (targetError || !targetUser) {
-      return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 404 })
-    }
-
-    if (targetUser.law_firm_id !== profile.law_firm_id) {
-      return NextResponse.json({ error: 'Acesso negado: usuario de outro escritorio' }, { status: 403 })
+    const check = await verifyFirmOwnership(params.id, profile.law_firm_id!)
+    if ('error' in check) {
+      return NextResponse.json({ error: check.error }, { status: check.status })
     }
   }
 
-  const { data, error } = await supabase
-    .from('users')
-    .update(updates)
-    .eq('id', params.id)
-    .select()
-    .single()
+  const result = await updateUser(params.id, body)
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (result.error) {
+    return NextResponse.json({ error: result.error }, { status: result.status })
   }
 
-  return NextResponse.json({ data })
+  return NextResponse.json({ data: result.data })
 }
 
 export async function DELETE(
@@ -94,7 +62,6 @@ export async function DELETE(
     return NextResponse.json({ error: 'ID invalido' }, { status: 400 })
   }
 
-  // Prevent self-deactivation
   if (params.id === profile.id) {
     return NextResponse.json(
       { error: 'Nao e possivel desativar o proprio usuario' },
@@ -102,26 +69,15 @@ export async function DELETE(
     )
   }
 
-  const supabase = createAdminClient()
-
-  // Verify target user belongs to caller's firm (admin only)
+  // Verify firm scoping + last-admin guard (admin only)
   if (profile.user_type === 'admin') {
-    const { data: targetUser, error: targetError } = await supabase
-      .from('users')
-      .select('law_firm_id, user_type')
-      .eq('id', params.id)
-      .single()
-
-    if (targetError || !targetUser) {
-      return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 404 })
+    const check = await verifyFirmOwnership(params.id, profile.law_firm_id!, 'law_firm_id, user_type')
+    if ('error' in check) {
+      return NextResponse.json({ error: check.error }, { status: check.status })
     }
 
-    if (targetUser.law_firm_id !== profile.law_firm_id) {
-      return NextResponse.json({ error: 'Acesso negado: usuario de outro escritorio' }, { status: 403 })
-    }
-
-    // Prevent deactivating the last admin of a firm
-    if (targetUser.user_type === 'admin') {
+    if (check.data.user_type === 'admin') {
+      const supabase = createAdminClient()
       const { count } = await supabase
         .from('users')
         .select('id', { count: 'exact', head: true })
@@ -138,16 +94,11 @@ export async function DELETE(
     }
   }
 
-  const { data, error } = await supabase
-    .from('users')
-    .update({ status: 'inactive' })
-    .eq('id', params.id)
-    .select()
-    .single()
+  const result = await deactivateUser(params.id)
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (result.error) {
+    return NextResponse.json({ error: result.error }, { status: result.status })
   }
 
-  return NextResponse.json({ data })
+  return NextResponse.json({ data: result.data })
 }

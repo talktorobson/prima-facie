@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/supabase/verify-admin'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { resetUserPassword } from '@/lib/services/user-management'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -17,33 +18,28 @@ export async function POST(
     return NextResponse.json({ error: 'ID invalido' }, { status: 400 })
   }
 
-  const supabase = createAdminClient()
+  // For admin callers, verify firm scoping before reset
+  if (profile.user_type === 'admin') {
+    const supabase = createAdminClient()
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('law_firm_id')
+      .eq('id', params.id)
+      .single()
 
-  // Get user email from profile
-  const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('email, auth_user_id, law_firm_id')
-    .eq('id', params.id)
-    .single()
-
-  if (userError || !user?.email) {
-    return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 404 })
+    if (error || !user) {
+      return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 404 })
+    }
+    if (user.law_firm_id !== profile.law_firm_id) {
+      return NextResponse.json({ error: 'Acesso negado: usuario de outro escritorio' }, { status: 403 })
+    }
   }
 
-  // Verify firm scoping (admin only)
-  if (profile.user_type === 'admin' && user.law_firm_id !== profile.law_firm_id) {
-    return NextResponse.json({ error: 'Acesso negado: usuario de outro escritorio' }, { status: 403 })
+  const result = await resetUserPassword(params.id)
+
+  if (result.error) {
+    return NextResponse.json({ error: result.error }, { status: result.status })
   }
 
-  // Generate recovery link
-  const { error: linkError } = await supabase.auth.admin.generateLink({
-    type: 'recovery',
-    email: user.email,
-  })
-
-  if (linkError) {
-    return NextResponse.json({ error: linkError.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ message: 'Link de recuperacao enviado para ' + user.email })
+  return NextResponse.json({ message: result.message })
 }

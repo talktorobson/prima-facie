@@ -405,6 +405,14 @@ describe('PATCH /api/admin/users/[id]', () => {
 
   it('returns 400 when no valid fields provided', async () => {
     mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
+    // verifyFirmOwnership needs a successful firm check before updateUser runs
+    mockFrom.mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          single: () => Promise.resolve({ data: { law_firm_id: 'firm-1' }, error: null }),
+        }),
+      }),
+    })
     const PATCH = await getHandler()
     const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_1, {
       method: 'PATCH',

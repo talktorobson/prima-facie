@@ -12,6 +12,17 @@
 BEGIN;
 
 -- =============================================
+-- CLEAN EXISTING DATA
+-- Child tables cascade-delete from datajud_case_details
+-- =============================================
+
+DELETE FROM datajud_case_details
+WHERE law_firm_id = '123e4567-e89b-12d3-a456-426614174000';
+
+DELETE FROM datajud_sync_log
+WHERE law_firm_id = '123e4567-e89b-12d3-a456-426614174000';
+
+-- =============================================
 -- DATAJUD CASE DETAILS
 -- Enriched case information from CNJ public API
 -- =============================================

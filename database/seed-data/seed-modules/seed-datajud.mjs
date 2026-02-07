@@ -14,7 +14,7 @@
 import {
   FIRM_A_ID, FIRM_B_ID,
   dateOnly, daysAgo, timestampAt,
-  upsertRows, log,
+  upsertRows, replaceRows, log,
 } from './_shared.mjs';
 
 export async function seed(supabase, ctx) {
@@ -197,7 +197,9 @@ export async function seed(supabase, ctx) {
         created_by: B.admin,
       },
     ];
-    let r = await upsertRows(supabase, 'datajud_case_details', caseDetails);
+    // Use replaceRows: delete existing data for both firms first, then insert.
+    // Child tables (legal_subjects, participants, timeline_events) cascade-delete.
+    let r = await replaceRows(supabase, 'datajud_case_details', 'law_firm_id', [FIRM_A_ID, FIRM_B_ID], caseDetails);
     if (r.error) throw new Error(`datajud_case_details: ${r.error.message}`);
     total += r.count;
     log(`datajud_case_details: ${r.count} rows`);
@@ -431,7 +433,7 @@ export async function seed(supabase, ctx) {
         initiated_by: B.admin,
       },
     ];
-    r = await upsertRows(supabase, 'datajud_sync_log', syncLogs);
+    r = await replaceRows(supabase, 'datajud_sync_log', 'law_firm_id', [FIRM_A_ID, FIRM_B_ID], syncLogs);
     if (r.error) throw new Error(`datajud_sync_log: ${r.error.message}`);
     total += r.count;
     log(`datajud_sync_log: ${r.count} rows`);

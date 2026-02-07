@@ -692,7 +692,7 @@ export default function SubscriptionPlansPage() {
                             />
                           </div>
 
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700">Valor Mensal (R$)</label>
                               <input
@@ -741,7 +741,7 @@ export default function SubscriptionPlansPage() {
 
                         {/* Service Configuration */}
                         <div className="space-y-6">
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700">Horas Mensais Incluídas</label>
                               <input

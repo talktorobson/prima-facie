@@ -32,7 +32,7 @@ const areas = [
 export default function PracticeAreas() {
   return (
     <section id="servicos" className="py-24 bg-landing-charcoal">
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto px-4 sm:px-6">
         <ScrollReveal>
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-white gold-line mx-auto inline-block">

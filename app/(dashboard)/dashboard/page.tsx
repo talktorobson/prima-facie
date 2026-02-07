@@ -423,7 +423,7 @@ export default function DashboardPage() {
       {/* Quick Task Modal */}
       {showTaskModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-full sm:w-96 mx-4 sm:mx-auto shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Nova Tarefa</h3>
               <form onSubmit={(e) => {

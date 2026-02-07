@@ -91,7 +91,7 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <p className="text-sm font-medium text-gray-600">Total de Casos</p>
             <p className="text-3xl font-bold text-gray-900">{(matters ?? []).length}</p>

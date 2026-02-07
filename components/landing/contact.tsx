@@ -45,7 +45,7 @@ export default function Contact() {
 
   return (
     <section id="contato" className="py-24 bg-landing-mist/40">
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto px-4 sm:px-6">
         <ScrollReveal>
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-landing-ink gold-line mx-auto inline-block">

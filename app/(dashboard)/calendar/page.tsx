@@ -150,7 +150,7 @@ export default function CalendarPage() {
     >
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Calendário</h1>
             <p className="mt-2 text-gray-600">
@@ -159,7 +159,7 @@ export default function CalendarPage() {
           </div>
 
           {/* Color Legend */}
-          <div className="flex items-center space-x-4 text-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-sm">
             {Object.entries(eventTypeLabels).map(([type, label]) => (
               <div key={type} className="flex items-center space-x-2">
                 <div className={`w-3 h-3 rounded ${eventTypeColors[type]}`}></div>
@@ -172,7 +172,7 @@ export default function CalendarPage() {
         {/* Calendar Navigation */}
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center space-x-4">
                 <button
                   onClick={() => navigateMonth('prev')}
@@ -207,7 +207,7 @@ export default function CalendarPage() {
             {/* Week headers */}
             <div className="grid grid-cols-7 gap-1 mb-4">
               {weekDays.map((day) => (
-                <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+                <div key={day} className="p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-gray-500">
                   {day}
                 </div>
               ))}
@@ -217,7 +217,7 @@ export default function CalendarPage() {
             <div className="grid grid-cols-7 gap-1">
               {days.map((date, index) => {
                 if (!date) {
-                  return <div key={`empty-${index}`} className="h-24 p-1"></div>
+                  return <div key={`empty-${index}`} className="h-16 sm:h-24 p-1"></div>
                 }
 
                 const dayEvents = getEventsForDate(date)
@@ -226,7 +226,7 @@ export default function CalendarPage() {
                 return (
                   <div
                     key={date.toISOString()}
-                    className={`h-24 p-2 border border-gray-200 ${
+                    className={`h-16 sm:h-24 p-1 sm:p-2 border border-gray-200 ${
                       isCurrentDay ? 'bg-blue-50 border-blue-300' : 'bg-white'
                     }`}
                   >
@@ -317,7 +317,7 @@ export default function CalendarPage() {
             onClick={() => setShowEventDetails(false)}
           >
             <div
-              className="relative top-20 mx-auto p-6 border w-96 shadow-lg rounded-md bg-white"
+              className="relative top-20 mx-auto p-6 border w-full sm:w-96 mx-4 sm:mx-auto shadow-lg rounded-md bg-white"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-start mb-4">

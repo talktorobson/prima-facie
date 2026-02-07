@@ -11,7 +11,7 @@ const credentials = [
 export default function Credentials() {
   return (
     <section className="py-24 bg-landing-ivory border-t border-landing-mist">
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto px-4 sm:px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-landing-ink gold-line mx-auto inline-block">
             Experiencia e Registro

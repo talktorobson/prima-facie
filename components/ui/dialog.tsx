@@ -30,7 +30,7 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
         onClick={() => onOpenChange?.(false)}
       />
       {/* Dialog */}
-      <div className="relative z-50 w-full max-w-lg mx-4">
+      <div className="relative z-50 w-full max-w-lg mx-3 sm:mx-4">
         {children}
       </div>
     </div>
@@ -52,7 +52,7 @@ const DialogContent = React.forwardRef<
     {onClose && (
       <button
         onClick={onClose}
-        className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 transition-opacity"
+        className="absolute right-3 top-3 sm:right-4 sm:top-4 rounded-sm opacity-70 hover:opacity-100 transition-opacity"
       >
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
@@ -68,7 +68,7 @@ const DialogHeader = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn('flex flex-col space-y-1.5 p-6', className)}
+    className={cn('flex flex-col space-y-1.5 p-4 sm:p-6', className)}
     {...props}
   />
 )
@@ -107,7 +107,7 @@ const DialogFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      'flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 p-6 pt-0',
+      'flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 p-4 sm:p-6 pt-0',
       className
     )}
     {...props}

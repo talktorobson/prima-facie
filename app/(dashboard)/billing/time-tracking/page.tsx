@@ -42,7 +42,7 @@ function TimeEntryFormFields({ form, matters }: { form: UseFormReturn<TimeEntryF
         <textarea {...register('description')} rows={3} className={inputCls} placeholder="Descreva a atividade realizada" />
         {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>}
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Data do Trabalho</label>
           <input {...register('work_date')} type="date" className={inputCls} />
@@ -53,7 +53,7 @@ function TimeEntryFormFields({ form, matters }: { form: UseFormReturn<TimeEntryF
           {errors.hours_worked && <p className="mt-1 text-sm text-red-600">{errors.hours_worked.message}</p>}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Taxa Horária (R$)</label>
           <input {...register('hourly_rate')} type="number" step="0.01" min="0" className={inputCls} placeholder="0,00" />

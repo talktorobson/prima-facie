@@ -148,7 +148,7 @@ export default function UsersManagementPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center">
               <UsersIcon className="h-8 w-8 text-blue-600" />
@@ -297,7 +297,7 @@ export default function UsersManagementPage() {
                   <input {...register('email')} type="email" disabled={!!editingUser} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50" />
                   {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
                     <input {...register('first_name')} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />

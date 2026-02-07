@@ -9,7 +9,7 @@ export default function Hero() {
       <Header variant="transparent" />
 
       {/* Hero content */}
-      <div className="container mx-auto px-6 pt-32 pb-20 lg:pt-40 lg:pb-28">
+      <div className="container mx-auto px-4 sm:px-6 pt-32 pb-20 lg:pt-40 lg:pb-28">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center min-h-[70vh]">
           {/* Left: text */}
           <div>

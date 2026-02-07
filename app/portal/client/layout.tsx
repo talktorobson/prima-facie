@@ -1,13 +1,17 @@
-import { ReactNode } from 'react'
+'use client'
+
+import { ReactNode, useState } from 'react'
 import Link from 'next/link'
-import { 
+import {
   HomeIcon,
   DocumentTextIcon,
   UserIcon,
   ChatBubbleLeftRightIcon,
   CurrencyDollarIcon,
   Cog6ToothIcon,
-  ArrowRightOnRectangleIcon
+  ArrowRightOnRectangleIcon,
+  Bars3Icon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 
 interface ClientPortalLayoutProps {
@@ -69,93 +73,148 @@ const secondaryNavigation = [
   }
 ]
 
-export default function ClientPortalLayout({ children }: ClientPortalLayoutProps) {
+function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
-        {/* Logo and Client Info */}
-        <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-white">PF</span>
-              </div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">Prima Facie</p>
-              <p className="text-xs text-gray-500">Portal do Cliente</p>
+    <>
+      {/* Logo and Client Info */}
+      <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-6">
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-sm font-medium text-white">PF</span>
             </div>
           </div>
-        </div>
-
-        {/* Client Information */}
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-white">
-                  {mockClientUser.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                </span>
-              </div>
-            </div>
-            <div className="ml-3 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {mockClientUser.name}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {mockClientUser.client_number}
-              </p>
-            </div>
+          <div className="ml-3">
+            <p className="text-sm font-medium text-gray-900">Prima Facie</p>
+            <p className="text-xs text-gray-500">Portal do Cliente</p>
           </div>
         </div>
+      </div>
 
-        {/* Navigation */}
-        <nav className="flex flex-1 flex-col px-3 py-4">
-          <ul role="list" className="flex flex-1 flex-col gap-y-1">
-            {navigation.map((item) => (
-              <li key={item.name}>
+      {/* Client Information */}
+      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <div className="h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center">
+              <span className="text-sm font-medium text-white">
+                {mockClientUser.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              </span>
+            </div>
+          </div>
+          <div className="ml-3 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {mockClientUser.name}
+            </p>
+            <p className="text-xs text-gray-500 truncate">
+              {mockClientUser.client_number}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex flex-1 flex-col px-3 py-4">
+        <ul role="list" className="flex flex-1 flex-col gap-y-1">
+          {navigation.map((item) => (
+            <li key={item.name}>
+              <Link
+                href={item.href}
+                onClick={onNavigate}
+                className="group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-semibold text-gray-700 hover:text-primary hover:bg-primary/5 transition-colors"
+              >
+                <item.icon className="h-5 w-5 shrink-0" />
+                <div className="flex flex-col">
+                  <span>{item.name}</span>
+                  <span className="text-xs text-gray-500 font-normal">
+                    {item.description}
+                  </span>
+                </div>
+              </Link>
+            </li>
+          ))}
+
+          {/* Separator */}
+          <li className="mt-auto">
+            <div className="border-t border-gray-200 pt-4">
+              {secondaryNavigation.map((item) => (
                 <Link
+                  key={item.name}
                   href={item.href}
-                  className="group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-semibold text-gray-700 hover:text-primary hover:bg-primary/5 transition-colors"
+                  onClick={onNavigate}
+                  className="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700 hover:text-primary hover:bg-primary/5 transition-colors"
                 >
                   <item.icon className="h-5 w-5 shrink-0" />
-                  <div className="flex flex-col">
-                    <span>{item.name}</span>
-                    <span className="text-xs text-gray-500 font-normal">
-                      {item.description}
-                    </span>
-                  </div>
+                  {item.name}
                 </Link>
-              </li>
-            ))}
-            
-            {/* Separator */}
-            <li className="mt-auto">
-              <div className="border-t border-gray-200 pt-4">
-                {secondaryNavigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700 hover:text-primary hover:bg-primary/5 transition-colors"
-                  >
-                    <item.icon className="h-5 w-5 shrink-0" />
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-            </li>
-          </ul>
-        </nav>
+              ))}
+            </div>
+          </li>
+        </ul>
+      </nav>
+    </>
+  )
+}
+
+export default function ClientPortalLayout({ children }: ClientPortalLayoutProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex lg:w-64 lg:flex-col bg-white shadow-lg">
+        <NavContent />
       </div>
+
+      {/* Mobile top bar */}
+      <div className="sticky top-0 z-40 flex items-center h-16 border-b border-gray-200 bg-white px-4 shadow-sm lg:hidden">
+        <button
+          type="button"
+          className="-m-2.5 p-2.5 text-gray-700"
+          onClick={() => setMobileMenuOpen(true)}
+        >
+          <span className="sr-only">Abrir menu</span>
+          <Bars3Icon className="h-6 w-6" />
+        </button>
+        <div className="ml-4 flex items-center">
+          <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
+            <span className="text-sm font-medium text-white">PF</span>
+          </div>
+          <span className="ml-2 text-sm font-medium text-gray-900">Prima Facie</span>
+        </div>
+      </div>
+
+      {/* Mobile slide-out drawer */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Drawer */}
+          <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
+            <div className="absolute right-2 top-2">
+              <button
+                type="button"
+                className="p-2 text-gray-500 hover:text-gray-700"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span className="sr-only">Fechar menu</span>
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <NavContent onNavigate={() => setMobileMenuOpen(false)} />
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-40 hidden lg:flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex flex-1"></div>
-            
+
             {/* Right side - Client actions */}
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               {/* Notifications */}

@@ -1,16 +1,42 @@
 import { render, screen } from '@testing-library/react'
 import { Providers } from '@/components/providers'
 
-// Mock the external dependencies
-jest.mock('@tanstack/react-query', () => ({
-  QueryClient: jest.fn().mockImplementation(() => ({
-    // Mock QueryClient methods if needed
+// Mock dependencies
+jest.mock('@supabase/ssr', () => ({
+  createBrowserClient: jest.fn(() => ({
+    auth: {
+      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+      getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
+      signInWithPassword: jest.fn(),
+      signUp: jest.fn(),
+      signOut: jest.fn(),
+    },
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          single: jest.fn().mockResolvedValue({ data: null, error: null }),
+        })),
+      })),
+    })),
   })),
-  QueryClientProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="query-provider">{children}</div>,
 }))
 
-jest.mock('@supabase/auth-helpers-react', () => ({
-  SessionContextProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="session-provider">{children}</div>,
+jest.mock('@/lib/providers/auth-provider', () => ({
+  AuthProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="auth-provider">{children}</div>
+  ),
+}))
+
+jest.mock('@/components/ui/toast-provider', () => ({
+  ToastProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="toast-provider">{children}</div>
+  ),
+}))
+
+jest.mock('@/components/client-only', () => ({
+  __esModule: true,
+  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
 describe('Providers Component', () => {
@@ -25,26 +51,6 @@ describe('Providers Component', () => {
     expect(screen.getByText('Test Content')).toBeInTheDocument()
   })
 
-  it('should wrap children with QueryClientProvider', () => {
-    render(
-      <Providers>
-        <div data-testid="test-child">Test Content</div>
-      </Providers>
-    )
-
-    expect(screen.getByTestId('query-provider')).toBeInTheDocument()
-  })
-
-  it('should wrap children with SessionContextProvider', () => {
-    render(
-      <Providers>
-        <div data-testid="test-child">Test Content</div>
-      </Providers>
-    )
-
-    expect(screen.getByTestId('session-provider')).toBeInTheDocument()
-  })
-
   it('should render multiple children correctly', () => {
     render(
       <Providers>
@@ -57,10 +63,14 @@ describe('Providers Component', () => {
     expect(screen.getByTestId('child-2')).toBeInTheDocument()
   })
 
-  it('should handle empty children', () => {
-    render(<Providers>{null}</Providers>)
+  it('should render auth and toast providers', () => {
+    render(
+      <Providers>
+        <div>Content</div>
+      </Providers>
+    )
 
-    expect(screen.getByTestId('query-provider')).toBeInTheDocument()
-    expect(screen.getByTestId('session-provider')).toBeInTheDocument()
+    expect(screen.getByTestId('auth-provider')).toBeInTheDocument()
+    expect(screen.getByTestId('toast-provider')).toBeInTheDocument()
   })
 })

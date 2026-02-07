@@ -184,7 +184,7 @@ const MockClientDashboard = ({ onActionClick }) => {
         <div data-testid="stat-outstanding-invoices" className="stat-card">
           <h3>Faturas</h3>
           <div className="number">{dashboardData.outstandingInvoices}</div>
-          <div className="subtitle">R$ {dashboardData.totalAmountDue.toLocaleString()}</div>
+          <div className="subtitle">R$ {dashboardData.totalAmountDue.toLocaleString('pt-BR')}</div>
         </div>
       </div>
 
@@ -247,7 +247,7 @@ const MockClientDashboard = ({ onActionClick }) => {
             {pendingInvoices.map(invoice => (
               <div key={invoice.id} data-testid={`invoice-${invoice.id}`} className="invoice-card">
                 <div data-testid="invoice-number">{invoice.invoice_number}</div>
-                <div data-testid="invoice-amount">R$ {invoice.amount.toLocaleString()}</div>
+                <div data-testid="invoice-amount">R$ {invoice.amount.toLocaleString('pt-BR')}</div>
                 <div data-testid="invoice-due-date">Venc: {invoice.due_date}</div>
                 <div data-testid="invoice-matter">{invoice.matter_title}</div>
                 <div data-testid="invoice-status" className={`status ${invoice.status}`}>
@@ -943,19 +943,19 @@ const MockInvoicePayment = ({ invoiceData, onPaymentSubmit }) => {
                 <tr key={item.id} data-testid={`line-item-${item.id}`}>
                   <td data-testid="item-description">{item.description}</td>
                   <td data-testid="item-quantity">{item.quantity}</td>
-                  <td data-testid="item-unit-price">R$ {item.unit_price.toLocaleString()}</td>
-                  <td data-testid="item-total">R$ {item.total.toLocaleString()}</td>
+                  <td data-testid="item-unit-price">R$ {item.unit_price.toLocaleString('pt-BR')}</td>
+                  <td data-testid="item-total">R$ {item.total.toLocaleString('pt-BR')}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr>
                 <td colSpan="3"><strong>Subtotal</strong></td>
-                <td data-testid="invoice-subtotal"><strong>R$ {subtotal.toLocaleString()}</strong></td>
+                <td data-testid="invoice-subtotal"><strong>R$ {subtotal.toLocaleString('pt-BR')}</strong></td>
               </tr>
               <tr>
                 <td colSpan="3"><strong>Total</strong></td>
-                <td data-testid="invoice-total"><strong>R$ {invoice.amount.toLocaleString()}</strong></td>
+                <td data-testid="invoice-total"><strong>R$ {invoice.amount.toLocaleString('pt-BR')}</strong></td>
               </tr>
             </tfoot>
           </table>
@@ -1004,7 +1004,7 @@ const MockInvoicePayment = ({ invoiceData, onPaymentSubmit }) => {
                   Chave PIX: 12.345.678/0001-90
                 </div>
                 <div data-testid="pix-amount">
-                  Valor: R$ {invoice.amount.toLocaleString()}
+                  Valor: R$ {invoice.amount.toLocaleString('pt-BR')}
                 </div>
                 <button
                   data-testid="copy-pix-key"
@@ -1025,7 +1025,7 @@ const MockInvoicePayment = ({ invoiceData, onPaymentSubmit }) => {
                 <div>Conta: 67890-1</div>
                 <div>CNPJ: 12.345.678/0001-90</div>
                 <div>Favorecido: Escritório de Advocacia Silva & Associados</div>
-                <div data-testid="transfer-amount">Valor: R$ {invoice.amount.toLocaleString()}</div>
+                <div data-testid="transfer-amount">Valor: R$ {invoice.amount.toLocaleString('pt-BR')}</div>
               </div>
             </div>
           )}
@@ -1692,9 +1692,11 @@ describe('Client Portal UI Tests', () => {
       expect(within(pixPayment).getByTestId('pix-amount')).toHaveTextContent('Valor: R$ 8.500')
 
       // Test copy PIX key
+      const writeTextSpy = jest.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined)
       const copyBtn = screen.getByTestId('copy-pix-key')
       await user.click(copyBtn)
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('12.345.678/0001-90')
+      expect(writeTextSpy).toHaveBeenCalledWith('12.345.678/0001-90')
+      writeTextSpy.mockRestore()
     })
 
     it('should handle bank transfer payment selection', async () => {

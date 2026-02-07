@@ -125,7 +125,7 @@ const MockUnifiedBillingDashboard = ({ onInvoiceCreate, onInvoiceStatusChange, o
   const handleCreateInvoice = () => {
     const newInvoice = {
       id: `inv-${Date.now()}`,
-      invoice_number: `${selectedInvoiceType.toUpperCase().slice(0,4)}-2024-${String(invoices.length + 1).padStart(6, '0')}`,
+      invoice_number: `${{ subscription: 'SUB', case_billing: 'CASE', payment_plan: 'PLAN' }[selectedInvoiceType] || selectedInvoiceType.toUpperCase().slice(0,4)}-2024-${String(invoices.length + 1).padStart(6, '0')}`,
       invoice_type: selectedInvoiceType,
       invoice_status: 'draft',
       total_amount: 1000,
@@ -191,7 +191,7 @@ const MockUnifiedBillingDashboard = ({ onInvoiceCreate, onInvoiceStatusChange, o
             <div data-testid="invoice-status" className={`status-${invoice.invoice_status}`}>
               {invoice.invoice_status}
             </div>
-            <div data-testid="invoice-amount">R$ {invoice.total_amount.toLocaleString()}</div>
+            <div data-testid="invoice-amount">R$ {invoice.total_amount.toLocaleString('pt-BR')}</div>
             <div data-testid="client-name">{invoice.client_name}</div>
             <div data-testid="due-date">{invoice.due_date}</div>
             
@@ -231,7 +231,7 @@ const MockUnifiedBillingDashboard = ({ onInvoiceCreate, onInvoiceStatusChange, o
           Pagas: {invoices.filter(inv => inv.invoice_status === 'paid').length}
         </div>
         <div data-testid="total-amount">
-          Valor Total: R$ {invoices.reduce((sum, inv) => sum + inv.total_amount, 0).toLocaleString()}
+          Valor Total: R$ {invoices.reduce((sum, inv) => sum + inv.total_amount, 0).toLocaleString('pt-BR')}
         </div>
       </div>
     </div>
@@ -327,7 +327,7 @@ const MockInvoiceLineItemsManager = ({ invoice, onLineItemsChange }) => {
               step="0.01"
             />
             <div data-testid={`item-total-${item.id}`}>
-              R$ {item.total.toLocaleString()}
+              R$ {item.total.toLocaleString('pt-BR')}
             </div>
             <button
               data-testid={`remove-item-${item.id}`}
@@ -352,7 +352,7 @@ const MockInvoiceLineItemsManager = ({ invoice, onLineItemsChange }) => {
           data-testid="new-item-quantity"
           type="number"
           value={newItem.quantity}
-          onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
+          onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 0 })}
           min="1"
         />
         <input
@@ -375,7 +375,7 @@ const MockInvoiceLineItemsManager = ({ invoice, onLineItemsChange }) => {
 
       {/* Totals */}
       <div data-testid="invoice-totals">
-        <div data-testid="subtotal">Subtotal: R$ {subtotal.toLocaleString()}</div>
+        <div data-testid="subtotal">Subtotal: R$ {subtotal.toLocaleString('pt-BR')}</div>
         <div data-testid="total-items">Total de Itens: {lineItems.length}</div>
       </div>
     </div>
@@ -877,12 +877,12 @@ describe('Invoice Management UI Tests', () => {
       ]
 
       for (const testCase of testCases) {
-        const createdInvoices = []
-        const onInvoiceCreate = (invoice) => {
+        const createdInvoices: any[] = []
+        const onInvoiceCreate = (invoice: any) => {
           createdInvoices.push(invoice)
         }
-        
-        render(
+
+        const { unmount } = render(
           <TestWrapper>
             <MockUnifiedBillingDashboard onInvoiceCreate={onInvoiceCreate} />
           </TestWrapper>
@@ -899,6 +899,8 @@ describe('Invoice Management UI Tests', () => {
             new RegExp(`^${testCase.expectedPrefix}-2024-\\d{6}$`)
           )
         })
+
+        unmount()
       }
     })
   })

@@ -122,20 +122,20 @@ const MockFinancialDashboard = ({ onDataUpdate }) => {
       <div data-testid="key-metrics" className="metrics-grid">
         <div data-testid="metric-receivables" className="metric-card">
           <h3>Recebíveis</h3>
-          <div className="amount">R$ {dashboardData.totalReceivables.toLocaleString()}</div>
+          <div className="amount">R$ {dashboardData.totalReceivables.toLocaleString('pt-BR')}</div>
           <div className="subtitle">Total a receber</div>
         </div>
         
         <div data-testid="metric-payables" className="metric-card">
           <h3>Pagáveis</h3>
-          <div className="amount">R$ {dashboardData.totalPayables.toLocaleString()}</div>
+          <div className="amount">R$ {dashboardData.totalPayables.toLocaleString('pt-BR')}</div>
           <div className="subtitle">Total a pagar</div>
         </div>
         
         <div data-testid="metric-cash-flow" className="metric-card">
           <h3>Fluxo de Caixa</h3>
           <div className={`amount ${dashboardData.cashFlow >= 0 ? 'positive' : 'negative'}`}>
-            R$ {dashboardData.cashFlow.toLocaleString()}
+            R$ {dashboardData.cashFlow.toLocaleString('pt-BR')}
           </div>
           <div className="subtitle">Saldo líquido</div>
         </div>
@@ -153,12 +153,12 @@ const MockFinancialDashboard = ({ onDataUpdate }) => {
         <div className="comparison-chart">
           <div data-testid="monthly-revenue" className="revenue-bar">
             <div className="label">Receitas</div>
-            <div className="amount">R$ {dashboardData.monthlyRevenue.toLocaleString()}</div>
+            <div className="amount">R$ {dashboardData.monthlyRevenue.toLocaleString('pt-BR')}</div>
             <div className="bar" style={{ width: '70%', backgroundColor: '#22c55e' }}></div>
           </div>
           <div data-testid="monthly-expenses" className="expenses-bar">
             <div className="label">Despesas</div>
-            <div className="amount">R$ {dashboardData.monthlyExpenses.toLocaleString()}</div>
+            <div className="amount">R$ {dashboardData.monthlyExpenses.toLocaleString('pt-BR')}</div>
             <div className="bar" style={{ width: '30%', backgroundColor: '#ef4444' }}></div>
           </div>
         </div>
@@ -383,7 +383,7 @@ const MockVendorManagement = ({ onVendorCreate, onVendorUpdate, onVendorDelete }
           Ativos: {vendors.filter(v => v.is_active).length}
         </div>
         <div data-testid="total-spent">
-          Gasto Total: R$ {vendors.reduce((sum, v) => sum + v.total_spent, 0).toLocaleString()}
+          Gasto Total: R$ {vendors.reduce((sum, v) => sum + v.total_spent, 0).toLocaleString('pt-BR')}
         </div>
       </div>
 
@@ -490,7 +490,7 @@ const MockVendorManagement = ({ onVendorCreate, onVendorUpdate, onVendorDelete }
                 Pagamento: {vendor.payment_terms.replace('_', ' ')}
               </div>
               <div data-testid="vendor-total-spent">
-                Gasto: R$ {vendor.total_spent.toLocaleString()}
+                Gasto: R$ {vendor.total_spent.toLocaleString('pt-BR')}
               </div>
               <div data-testid="vendor-status" className={vendor.is_active ? 'active' : 'inactive'}>
                 {vendor.is_active ? 'Ativo' : 'Inativo'}
@@ -664,17 +664,17 @@ const MockBillProcessing = ({ onBillCreate, onBillUpdate, onPaymentRecord }) => 
       <div data-testid="bill-stats" className="stats-section">
         <div data-testid="total-pending" className="stat-card pending">
           <h3>Pendentes</h3>
-          <div className="amount">R$ {totalPending.toLocaleString()}</div>
+          <div className="amount">R$ {totalPending.toLocaleString('pt-BR')}</div>
           <div className="count">{bills.filter(b => b.status === 'pending').length} contas</div>
         </div>
         <div data-testid="total-overdue" className="stat-card overdue">
           <h3>Em Atraso</h3>
-          <div className="amount">R$ {totalOverdue.toLocaleString()}</div>
+          <div className="amount">R$ {totalOverdue.toLocaleString('pt-BR')}</div>
           <div className="count">{bills.filter(b => b.status === 'overdue').length} contas</div>
         </div>
         <div data-testid="total-paid" className="stat-card paid">
           <h3>Pagas</h3>
-          <div className="amount">R$ {totalPaid.toLocaleString()}</div>
+          <div className="amount">R$ {totalPaid.toLocaleString('pt-BR')}</div>
           <div className="count">{bills.filter(b => b.status === 'paid').length} contas</div>
         </div>
       </div>
@@ -713,7 +713,7 @@ const MockBillProcessing = ({ onBillCreate, onBillUpdate, onPaymentRecord }) => 
               <div data-testid="bill-vendor">{bill.vendor_name}</div>
               <div data-testid="bill-description">{bill.description}</div>
               <div data-testid="bill-category">{bill.category}</div>
-              <div data-testid="bill-amount">R$ {bill.amount.toLocaleString()}</div>
+              <div data-testid="bill-amount">R$ {bill.amount.toLocaleString('pt-BR')}</div>
               <div data-testid="bill-due-date">Vencimento: {bill.due_date}</div>
               <div 
                 data-testid="bill-status" 
@@ -726,7 +726,7 @@ const MockBillProcessing = ({ onBillCreate, onBillUpdate, onPaymentRecord }) => 
               {bill.status === 'paid' && (
                 <div data-testid="payment-info">
                   <div>Pago em: {bill.paid_date}</div>
-                  <div>Valor pago: R$ {bill.paid_amount.toLocaleString()}</div>
+                  <div>Valor pago: R$ {bill.paid_amount.toLocaleString('pt-BR')}</div>
                   <div>Método: {bill.payment_method}</div>
                 </div>
               )}
@@ -771,7 +771,7 @@ const MockBillProcessing = ({ onBillCreate, onBillUpdate, onPaymentRecord }) => 
             <div data-testid="payment-bill-info">
               <p><strong>Conta:</strong> {selectedBill.bill_number}</p>
               <p><strong>Fornecedor:</strong> {selectedBill.vendor_name}</p>
-              <p><strong>Valor Original:</strong> R$ {selectedBill.amount.toLocaleString()}</p>
+              <p><strong>Valor Original:</strong> R$ {selectedBill.amount.toLocaleString('pt-BR')}</p>
             </div>
             
             <div data-testid="payment-form" className="payment-form">

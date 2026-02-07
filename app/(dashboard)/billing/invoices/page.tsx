@@ -221,7 +221,7 @@ export default function InvoicesPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
               <input {...register('title')} className={inputCls} placeholder="Título da fatura" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Valor Total *</label>
                 <input {...register('total_amount')} type="number" step="0.01" min="0" className={inputCls} placeholder="0,00" />
@@ -233,7 +233,7 @@ export default function InvoicesPage() {
                 {errors.due_date && <p className="mt-1 text-sm text-red-600">{errors.due_date.message}</p>}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data de Emissão</label>
                 <input {...register('issue_date')} type="date" className={inputCls} />

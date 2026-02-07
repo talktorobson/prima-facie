@@ -188,7 +188,7 @@ export default function DocumentsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
           {([
             ['Total', stats.total, DocumentIcon, 'text-gray-600'],
             ['Ativos', stats.active, CheckCircleIcon, 'text-green-600'],
@@ -303,7 +303,7 @@ export default function DocumentsPage() {
         {/* Upload Modal */}
         {showUpload && (
           <div className="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-10 mx-auto p-5 border w-[600px] shadow-lg rounded-md bg-white">
+            <div className="relative top-10 p-5 border w-full max-w-[600px] mx-4 sm:mx-auto shadow-lg rounded-md bg-white">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Enviar Novo Documento</h3>
                 <button onClick={() => setShowUpload(false)} className="text-gray-400 hover:text-gray-600"><XMarkIcon className="w-6 h-6" /></button>
@@ -331,7 +331,7 @@ export default function DocumentsPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Descricao</label>
                     <textarea name="description" rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary" placeholder="Breve descricao do documento..." />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Nivel de Acesso</label>
                       <select name="access_level" defaultValue="internal" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary">
@@ -362,7 +362,7 @@ export default function DocumentsPage() {
         {/* Preview Modal */}
         {preview && (
           <div className="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-10 mx-auto p-5 border w-[800px] shadow-lg rounded-md bg-white">
+            <div className="relative top-10 p-5 border w-full max-w-[800px] mx-4 sm:mx-auto shadow-lg rounded-md bg-white">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Visualizar Documento</h3>
                 <button onClick={() => setPreview(null)} className="text-gray-400 hover:text-gray-600"><XMarkIcon className="w-6 h-6" /></button>
@@ -371,7 +371,7 @@ export default function DocumentsPage() {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-medium text-gray-900">{preview.name}</h4>
                   {preview.description && <p className="text-gray-600 mt-1">{preview.description}</p>}
-                  <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
                     {preview.file_type && <span>Tipo: {preview.file_type.split('/').pop()?.toUpperCase()}</span>}
                     {preview.file_size != null && <span>Tamanho: {formatFileSize(preview.file_size)}</span>}
                     {preview.version && <span>Versao: {preview.version}</span>}

@@ -22,7 +22,7 @@ const steps = [
 export default function Methodology() {
   return (
     <section className="py-24 bg-landing-ivory">
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto px-4 sm:px-6">
         <ScrollReveal>
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-landing-ink gold-line mx-auto inline-block">
@@ -31,7 +31,7 @@ export default function Methodology() {
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 max-w-5xl mx-auto">
           {steps.map((step, index) => (
             <ScrollReveal key={step.number} delay={`${index * 150}ms`}>
               <div className="text-center md:text-left">

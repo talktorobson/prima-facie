@@ -29,7 +29,7 @@ export default function Header({ variant = 'solid' }: HeaderProps) {
           : 'sticky top-0 bg-landing-ivory border-b border-landing-mist'
       }`}
     >
-      <div className="container mx-auto px-6 py-5 flex justify-between items-center">
+      <div className="container mx-auto px-4 sm:px-6 py-5 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3">
           <span
             className={`text-2xl md:text-3xl font-serif font-bold tracking-tight ${
@@ -96,7 +96,7 @@ export default function Header({ variant = 'solid' }: HeaderProps) {
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="md:hidden bg-landing-ivory border-t border-landing-mist">
-          <nav className="container mx-auto px-6 py-6 flex flex-col gap-4">
+          <nav className="container mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4">
             {navLinks.map((link) => (
               <Link
                 key={link.href}

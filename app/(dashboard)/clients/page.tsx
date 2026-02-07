@@ -179,7 +179,7 @@ export default function ClientsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
@@ -385,14 +385,14 @@ export default function ClientsPage() {
                             <p className="mt-1 text-lg font-medium text-gray-900 truncate">
                               {client.name}
                             </p>
-                            <div className="mt-1 flex items-center text-sm text-gray-500 space-x-4">
+                            <div className="mt-1 flex flex-wrap items-center text-sm text-gray-500 gap-x-4 gap-y-1">
                               <span>{getTypeLabel(client.type)}</span>
                               <span>•</span>
                               <span>{formatDocument(client)}</span>
                               <span>•</span>
                               <span>{client.email}</span>
                             </div>
-                            <div className="mt-1 flex items-center text-sm text-gray-500 space-x-4">
+                            <div className="mt-1 flex flex-wrap items-center text-sm text-gray-500 gap-x-4 gap-y-1">
                               {client.client_since && (
                                 <span>Cliente desde: {formatDate(client.client_since)}</span>
                               )}
@@ -404,7 +404,7 @@ export default function ClientsPage() {
                               )}
                             </div>
                             {(client.active_matters !== undefined || client.total_matters !== undefined) && (
-                              <div className="mt-1 flex items-center text-sm text-gray-500 space-x-4">
+                              <div className="mt-1 flex flex-wrap items-center text-sm text-gray-500 gap-x-4 gap-y-1">
                                 <span>Processos: {client.active_matters || 0} ativos de {client.total_matters || 0} total</span>
                               </div>
                             )}

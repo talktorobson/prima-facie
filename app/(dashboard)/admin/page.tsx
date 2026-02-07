@@ -23,7 +23,7 @@ export default function AdminPage() {
   const { profile } = useAuthContext()
   const { data: users } = useUsers(profile?.law_firm_id)
   const { data: lawFirm } = useLawFirm(profile?.law_firm_id ?? undefined)
-  const { data: matters } = useMatters()
+  const { data: matters } = useMatters(profile?.law_firm_id)
   const { data: activityLogs } = useActivityLogs(profile?.law_firm_id)
 
   const activeUsers = users?.filter(u => u.status === 'active').length ?? 0

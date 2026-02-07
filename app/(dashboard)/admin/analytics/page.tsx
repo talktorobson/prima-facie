@@ -12,7 +12,7 @@ import { useMemo } from 'react'
 export default function AdminAnalyticsPage() {
   const { profile } = useAuthContext()
   const { data: users, isLoading: usersLoading } = useUsers(profile?.law_firm_id)
-  const { data: matters, isLoading: mattersLoading } = useMatters()
+  const { data: matters, isLoading: mattersLoading } = useMatters(profile?.law_firm_id)
   const { data: invoices, isLoading: invoicesLoading } = useInvoices(profile?.law_firm_id)
   const { data: activityLogs, isLoading: logsLoading } = useActivityLogs(profile?.law_firm_id)
 

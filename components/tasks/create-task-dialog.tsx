@@ -18,7 +18,7 @@ export function CreateTaskDialog({ open, onClose }: CreateTaskDialogProps) {
   const { profile } = useAuthContext()
   const toast = useToast()
   const createTask = useCreateTask()
-  const { data: matters = [] } = useMatters()
+  const { data: matters = [] } = useMatters(profile?.law_firm_id)
 
   const {
     register,

@@ -48,7 +48,7 @@ export default function InvoicesPage() {
   const [statusMenuId, setStatusMenuId] = useState<string | null>(null)
 
   const { data: invoices, isLoading, error, refetch } = useInvoices(profile?.law_firm_id, statusFilter ? { status: statusFilter } : undefined)
-  const { data: matters } = useMatters()
+  const { data: matters } = useMatters(profile?.law_firm_id)
   const createMut = useCreateInvoice()
   const deleteMut = useDeleteInvoice()
   const statusMut = useUpdateInvoiceStatus()

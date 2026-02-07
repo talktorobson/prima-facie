@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useUpdateTask } from '@/lib/queries/useTasks'
 import { useMatters } from '@/lib/queries/useMatters'
 import { useToast } from '@/components/ui/toast-provider'
@@ -16,9 +17,10 @@ interface EditTaskDialogProps {
 }
 
 export function EditTaskDialog({ task, onClose }: EditTaskDialogProps) {
+  const { profile } = useAuthContext()
   const toast = useToast()
   const updateTask = useUpdateTask()
-  const { data: matters = [] } = useMatters()
+  const { data: matters = [] } = useMatters(profile?.law_firm_id)
 
   const {
     register,

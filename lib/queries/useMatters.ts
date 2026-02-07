@@ -4,11 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '@/components/providers'
 import type { Matter, MatterInsert, MatterUpdate } from '@/types/database'
 
-export function useMatters() {
+export function useMatters(lawFirmId?: string | null) {
   const supabase = useSupabase()
 
   return useQuery({
-    queryKey: ['matters'],
+    queryKey: ['matters', lawFirmId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('matters')
@@ -17,11 +17,13 @@ export function useMatters() {
           matter_type:matter_types(*),
           assigned_lawyer:users!matters_assigned_lawyer_id_fkey(id, full_name, email)
         `)
+        .eq('law_firm_id', lawFirmId!)
         .order('created_at', { ascending: false })
 
       if (error) throw error
       return data as Matter[]
     },
+    enabled: !!lawFirmId,
   })
 }
 

@@ -29,6 +29,7 @@ export interface SubscriptionPlan {
 export interface ClientSubscription {
   id: string
   client_id: string
+  law_firm_id: string
   subscription_plan_id: string
   status: SubscriptionStatus
   billing_cycle: BillingInterval

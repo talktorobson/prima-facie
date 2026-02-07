@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
+import { useRouter } from 'next/navigation'
+import {
   BellIcon,
   XMarkIcon,
   CheckIcon,
@@ -110,6 +111,7 @@ const NotificationItem = ({ notification, onClick, onMarkAsRead }: NotificationI
 }
 
 export default function NotificationPanel({ userId, isClient = false, className = '' }: NotificationPanelProps) {
+  const router = useRouter()
   const [notifications, setNotifications] = useState<ChatNotification[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -145,9 +147,8 @@ export default function NotificationPanel({ userId, isClient = false, className 
   }, [userId, isClient])
 
   const handleNotificationClick = (notification: ChatNotification) => {
-    // In a real app, navigate to the conversation
-    console.log('Navigate to conversation:', notification.conversation_id)
     setIsOpen(false)
+    router.push('/messages')
   }
 
   const handleMarkAsRead = async (notificationId: string) => {
@@ -270,11 +271,10 @@ export default function NotificationPanel({ userId, isClient = false, className 
           {/* Footer */}
           {notifications.length > 0 && (
             <div className="p-4 border-t border-gray-200 bg-gray-50">
-              <button 
+              <button
                 onClick={() => {
-                  // In real app, navigate to full notifications page
-                  console.log('Navigate to all notifications')
                   setIsOpen(false)
+                  router.push('/settings?tab=notifications')
                 }}
                 className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
               >

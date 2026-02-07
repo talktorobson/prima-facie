@@ -25,6 +25,7 @@ import {
   AlertTriangleIcon,
   UserPlusIcon
 } from 'lucide-react'
+import { CreateTaskDialog } from '@/components/tasks/create-task-dialog'
 import { useNewProspects } from '@/lib/queries/usePipeline'
 
 interface StatCardProps {
@@ -421,67 +422,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Task Modal */}
-      {showTaskModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 p-5 border w-full sm:w-96 mx-4 sm:mx-auto shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Nova Tarefa</h3>
-              <form onSubmit={(e) => {
-                e.preventDefault()
-                const formData = new FormData(e.target as HTMLFormElement)
-                const title = formData.get('title') as string
-                const description = formData.get('description') as string
-                
-                // TODO: Implement actual task creation
-                console.log('Creating task:', { title, description })
-                alert('Tarefa criada com sucesso!')
-                setShowTaskModal(false)
-              }}>
-                <div className="mb-4">
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                    Título da Tarefa
-                  </label>
-                  <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="Ex: Revisar contrato..."
-                  />
-                </div>
-                <div className="mb-4">
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                    Descrição
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="Detalhes da tarefa..."
-                  />
-                </div>
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowTaskModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
-                  >
-                    Criar Tarefa
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <CreateTaskDialog open={showTaskModal} onClose={() => setShowTaskModal(false)} />
     </div>
   )
 }

@@ -14,6 +14,9 @@ import { CheckIcon, CheckCheckIcon } from '@heroicons/react/24/solid'
 import { chatService, Message, Conversation, TypingIndicator, formatMessageTime, isMessageFromCurrentUser } from '@/lib/supabase/realtime'
 import MessageStatusIndicator from './message-status-indicator'
 import { chatNotificationService } from '@/lib/notifications/chat-notifications'
+import { useToast } from '@/components/ui/toast-provider'
+
+const COMMON_EMOJIS = ['😀', '😂', '👍', '❤️', '🙏', '👋', '✅', '⚖️', '📄', '📎', '🔔', '⏰', '📅', '💼', '🏛️', '📝', '🤝', '👏', '🎉', '✨']
 
 interface ChatInterfaceProps {
   conversation: Conversation
@@ -187,12 +190,14 @@ export default function ChatInterface({
   isClient = false,
   onClose 
 }: ChatInterfaceProps) {
+  const toast = useToast()
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
   const [typing, setTyping] = useState<TypingIndicator[]>([])
   const [isTyping, setIsTyping] = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
@@ -366,14 +371,14 @@ export default function ChatInterface({
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('O arquivo deve ter no máximo 10MB')
+      toast.error('O arquivo deve ter no máximo 10MB')
       return
     }
 
     // Validate file type
     const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
     if (!validTypes.includes(file.type)) {
-      alert('Tipo de arquivo não suportado. Use PNG, JPG, PDF, DOC, DOCX ou TXT.')
+      toast.error('Tipo de arquivo não suportado. Use PNG, JPG, PDF, DOC, DOCX ou TXT.')
       return
     }
 
@@ -420,7 +425,7 @@ export default function ChatInterface({
       
     } catch (error) {
       console.error('File upload error:', error)
-      alert('Erro ao enviar arquivo. Tente novamente.')
+      toast.error('Erro ao enviar arquivo. Tente novamente.')
     } finally {
       setIsSending(false)
       // Reset file input
@@ -538,12 +543,30 @@ export default function ChatInterface({
             />
           </div>
           
-          <button 
-            onClick={() => console.log('Emoji picker')}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-          >
-            <FaceSmileIcon className="h-5 w-5" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            >
+              <FaceSmileIcon className="h-5 w-5" />
+            </button>
+            {showEmojiPicker && (
+              <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 grid grid-cols-5 gap-1 w-52">
+                {COMMON_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => {
+                      setNewMessage((prev) => prev + emoji)
+                      setShowEmojiPicker(false)
+                    }}
+                    className="text-xl p-1 hover:bg-gray-100 rounded"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           
           <button
             onClick={handleSendMessage}

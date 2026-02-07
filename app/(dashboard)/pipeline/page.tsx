@@ -19,7 +19,9 @@ import {
 } from '@heroicons/react/24/outline'
 import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
-import { usePipelineCards, usePipelineStages } from '@/lib/queries/usePipeline'
+import { usePipelineCards, usePipelineStages, useMovePipelineCard } from '@/lib/queries/usePipeline'
+import { useSupabase } from '@/components/providers'
+import { useToast } from '@/components/ui/toast-provider'
 
 interface Lead {
   id: string
@@ -90,6 +92,9 @@ export default function PipelinePage() {
   const { profile } = useAuthContext()
   const effectiveLawFirmId = useEffectiveLawFirmId()
   const router = useRouter()
+  const supabase = useSupabase()
+  const toast = useToast()
+  const movePipelineCard = useMovePipelineCard()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
@@ -215,9 +220,44 @@ export default function PipelinePage() {
     router.push('/pipeline/new')
   }
 
-  const handleConvertToClient = (leadId: string) => {
-    // TODO: Implement conversion to client
-    console.log('Converting lead to client:', leadId)
+  const handleConvertToClient = async (leadId: string) => {
+    if (!window.confirm('Converter este lead em cliente?')) return
+
+    try {
+      // Find the pipeline card from loaded data
+      const card = pipelineCards?.find((c) => c.id === leadId)
+      if (!card) {
+        toast.error('Lead não encontrado')
+        return
+      }
+
+      const contactId = (card.contact as { id: string } | null)?.id
+      if (!contactId) {
+        toast.error('Lead sem contato vinculado')
+        return
+      }
+
+      // Update contact status to active client
+      const { error: contactError } = await supabase
+        .from('contacts')
+        .update({ client_status: 'active' })
+        .eq('id', contactId)
+
+      if (contactError) throw contactError
+
+      // Move card to "ganho/contratado" stage
+      const wonStage = pipelineStages?.find(
+        (s) => s.name.toLowerCase().includes('ganh') || s.name.toLowerCase().includes('contratad')
+      )
+      if (wonStage) {
+        await movePipelineCard.mutateAsync({ id: leadId, stageId: wonStage.id })
+      }
+
+      toast.success('Lead convertido em cliente com sucesso')
+    } catch (error) {
+      console.error('Error converting lead:', error)
+      toast.error('Erro ao converter lead em cliente')
+    }
   }
 
   const loading = cardsLoading

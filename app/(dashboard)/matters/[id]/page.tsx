@@ -19,7 +19,7 @@ import {
   TrashIcon,
   CircleStackIcon
 } from '@heroicons/react/24/outline'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 // Import DataJud components
 import { DataJudEnrichmentPanel } from '@/components/features/datajud/enrichment-panel'
@@ -30,11 +30,14 @@ import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useMatter } from '@/lib/queries/useMatters'
 import { useDocuments } from '@/lib/queries/useDocuments'
 import { useSupabase } from '@/components/providers'
+import { useToast } from '@/components/ui/toast-provider'
 
 export default function MatterDetailPage() {
   const params = useParams()
   const router = useRouter()
   const effectiveLawFirmId = useEffectiveLawFirmId()
+  const toast = useToast()
+  const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState('overview')
 
   const matterId = params.id as string
@@ -449,7 +452,7 @@ export default function MatterDetailPage() {
                 showClientView={false}
                 maxHeight="500px"
                 onEventToggle={(eventId, field, value) => {
-                  console.log('Event toggled:', { eventId, field, value })
+                  toast.success('Evento atualizado')
                 }}
               />
 
@@ -511,8 +514,9 @@ export default function MatterDetailPage() {
                 caseId={matter.id}
                 caseTitle={matter.title}
                 processNumber={matter.process_number || ''}
-                onEnrichmentComplete={(result) => {
-                  console.log('Enrichment completed:', result)
+                onEnrichmentComplete={() => {
+                  toast.success('Enriquecimento DataJud concluído')
+                  queryClient.invalidateQueries({ queryKey: ['matters'] })
                 }}
               />
             </div>

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { useSupabase } from '@/components/providers'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useToast } from '@/components/ui/toast-provider'
 import {
   ArrowLeftIcon,
   DocumentTextIcon,
@@ -145,6 +146,7 @@ export default function ClientMatterDetailPage() {
   const matterId = params.id as string
 
   const { data: matter, isLoading, error } = useMatterDetail(matterId)
+  const toast = useToast()
   const [activeTab, setActiveTab] = useState('overview')
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -184,14 +186,14 @@ export default function ClientMatterDetailPage() {
           setIsUploading(false)
           setUploadProgress(0)
           setShowUploadModal(false)
-          alert('Documento enviado com sucesso! Aguarde análise da equipe jurídica.')
+          toast.success('Documento enviado com sucesso! Aguarde análise da equipe jurídica.')
         }, 500)
       }, 2000)
     } catch (err) {
       console.error('Upload error:', err)
       setIsUploading(false)
       setUploadProgress(0)
-      alert('Erro ao enviar documento. Tente novamente.')
+      toast.error('Erro ao enviar documento. Tente novamente.')
     }
   }
 

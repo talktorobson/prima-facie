@@ -7,7 +7,8 @@ import ChatInterface from '@/components/chat/chat-interface'
 import NotificationPanel from '@/components/notifications/notification-panel'
 import NewConversationModal from '@/components/chat/new-conversation-modal'
 import { Conversation } from '@/lib/supabase/realtime'
-import { 
+import { useToast } from '@/components/ui/toast-provider'
+import {
   ChatBubbleLeftRightIcon,
   PhoneIcon,
   VideoCameraIcon,
@@ -16,6 +17,7 @@ import {
 
 export default function MessagesPage() {
   const { user } = useAuth()
+  const toast = useToast()
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [isMobileView, setIsMobileView] = useState(false)
   const [showNewConversationModal, setShowNewConversationModal] = useState(false)
@@ -57,19 +59,11 @@ export default function MessagesPage() {
   }
 
   const handlePhoneCall = () => {
-    if (selectedConversation) {
-      alert('Funcionalidade de ligação em desenvolvimento. Em breve você poderá ligar diretamente pelo sistema.')
-    } else {
-      alert('Selecione uma conversa para iniciar uma ligação.')
-    }
+    toast.info('Funcionalidade de ligação em breve')
   }
 
   const handleVideoCall = () => {
-    if (selectedConversation) {
-      alert('Funcionalidade de videochamada em desenvolvimento. Em breve você poderá fazer videochamadas pelo sistema.')
-    } else {
-      alert('Selecione uma conversa para iniciar uma videochamada.')
-    }
+    toast.info('Funcionalidade de videochamada em breve')
   }
 
   const handleSettings = () => {
@@ -77,16 +71,15 @@ export default function MessagesPage() {
   }
 
   const handleWhatsAppIntegration = () => {
-    alert('Redirecionando para configuração do WhatsApp Business...')
-    // In real implementation, this would open WhatsApp integration settings
+    toast.info('Integração WhatsApp Business em breve')
   }
 
   const handlePhoneIntegration = () => {
-    alert('Funcionalidade de integração telefônica em desenvolvimento.')
+    toast.info('Integração telefônica em breve')
   }
 
   const handleVideoIntegration = () => {
-    alert('Funcionalidade de integração de vídeo em desenvolvimento.')
+    toast.info('Integração de vídeo em breve')
   }
 
   if (!user) {
@@ -315,7 +308,7 @@ export default function MessagesPage() {
               </button>
               <button
                 onClick={() => {
-                  alert('Configurações salvas com sucesso!')
+                  toast.info('Configurações de mensagens em breve')
                   setShowSettingsModal(false)
                 }}
                 className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90"

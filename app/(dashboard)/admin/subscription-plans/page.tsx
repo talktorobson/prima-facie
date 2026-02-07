@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/hooks/use-auth'
-import { productionSubscriptionService } from '@/lib/billing/subscription-service-production'
+import { subscriptionService } from '@/lib/billing/subscription-service'
 import { SubscriptionPlan, PlanFormData } from '@/lib/billing/subscription-types'
 import { 
   PlusIcon,
@@ -95,7 +95,7 @@ export default function SubscriptionPlansPage() {
       try {
         setIsLoadingData(true)
         setError(null)
-        const loadedPlans = await productionSubscriptionService.getSubscriptionPlans(user.law_firm_id)
+        const loadedPlans = await subscriptionService.getSubscriptionPlans(user.law_firm_id)
         setPlans(loadedPlans)
       } catch (error) {
         console.error('Error loading subscription plans:', error)
@@ -191,7 +191,7 @@ export default function SubscriptionPlansPage() {
 
       if (editingPlan) {
         // Update existing plan
-        const updatedPlan = await productionSubscriptionService.updateSubscriptionPlan(
+        const updatedPlan = await subscriptionService.updateSubscriptionPlan(
           editingPlan.id, 
           formData
         )
@@ -199,7 +199,7 @@ export default function SubscriptionPlansPage() {
         console.log('Plan updated:', updatedPlan)
       } else {
         // Create new plan
-        const newPlan = await productionSubscriptionService.createSubscriptionPlan(
+        const newPlan = await subscriptionService.createSubscriptionPlan(
           user.law_firm_id,
           formData
         )
@@ -221,7 +221,7 @@ export default function SubscriptionPlansPage() {
   const handleDeletePlan = async (planId: string) => {
     if (confirm('Tem certeza que deseja excluir este plano? Esta ação não pode ser desfeita.')) {
       try {
-        await productionSubscriptionService.deleteSubscriptionPlan(planId)
+        await subscriptionService.deleteSubscriptionPlan(planId)
         setPlans(plans.filter(p => p.id !== planId))
         console.log('Plan deleted:', planId)
       } catch (error) {
@@ -236,7 +236,7 @@ export default function SubscriptionPlansPage() {
       const plan = plans.find(p => p.id === planId)
       if (!plan) return
 
-      const updatedPlan = await productionSubscriptionService.updateSubscriptionPlan(
+      const updatedPlan = await subscriptionService.updateSubscriptionPlan(
         planId, 
         { is_active: !plan.is_active }
       )
@@ -252,7 +252,7 @@ export default function SubscriptionPlansPage() {
       const plan = plans.find(p => p.id === planId)
       if (!plan) return
 
-      const updatedPlan = await productionSubscriptionService.updateSubscriptionPlan(
+      const updatedPlan = await subscriptionService.updateSubscriptionPlan(
         planId,
         { is_featured: !plan.is_featured }
       )

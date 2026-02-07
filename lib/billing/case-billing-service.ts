@@ -24,69 +24,81 @@ import {
 
 import { discountService } from './discount-service'
 import { DiscountCalculationInput } from './discount-types'
+import { createClient } from '@/lib/supabase/client'
 
 export class CaseBillingService {
+
+  private supabase = createClient()
 
   // ===== CASE TYPE MANAGEMENT =====
 
   async getCaseTypes(lawFirmId: string): Promise<CaseType[]> {
-    // Mock implementation - replace with Supabase in production
-    return this.mockCaseTypes.filter(caseType => caseType.law_firm_id === lawFirmId)
-      .sort((a, b) => a.name.localeCompare(b.name))
+    const { data, error } = await this.supabase
+      .from('case_types')
+      .select('*')
+      .eq('law_firm_id', lawFirmId)
+      .eq('is_active', true)
+      .order('name')
+
+    if (error) throw error
+    return data || []
   }
 
   async getCaseType(caseTypeId: string): Promise<CaseType | null> {
-    return this.mockCaseTypes.find(caseType => caseType.id === caseTypeId) || null
+    const { data, error } = await this.supabase
+      .from('case_types')
+      .select('*')
+      .eq('id', caseTypeId)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      throw error
+    }
+    return data
   }
 
   async createCaseType(lawFirmId: string, formData: CaseTypeFormData): Promise<CaseType> {
-    try {
-      this.validateCaseTypeData(formData)
+    this.validateCaseTypeData(formData)
 
-      const newCaseType: CaseType = {
-        id: `case-type-${Date.now()}`,
+    const { data, error } = await this.supabase
+      .from('case_types')
+      .insert({
         law_firm_id: lawFirmId,
-        ...formData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+        ...formData
+      })
+      .select()
+      .single()
 
-      console.log('Creating case type:', newCaseType)
-      this.mockCaseTypes.push(newCaseType)
-
-      return newCaseType
-    } catch (error) {
-      console.error('Error creating case type:', error)
-      throw error
-    }
+    if (error) throw error
+    return data
   }
 
   async updateCaseType(caseTypeId: string, updates: Partial<CaseTypeFormData>): Promise<CaseType> {
-    const caseTypeIndex = this.mockCaseTypes.findIndex(ct => ct.id === caseTypeId)
-    if (caseTypeIndex === -1) {
-      throw new Error('Case type not found')
-    }
+    const { data, error } = await this.supabase
+      .from('case_types')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', caseTypeId)
+      .select()
+      .single()
 
-    const updatedCaseType = {
-      ...this.mockCaseTypes[caseTypeIndex],
-      ...updates,
-      updated_at: new Date().toISOString()
-    }
-
-    console.log('Updating case type:', updatedCaseType)
-    this.mockCaseTypes[caseTypeIndex] = updatedCaseType
-
-    return updatedCaseType
+    if (error) throw error
+    return data
   }
 
   async deleteCaseType(caseTypeId: string): Promise<void> {
-    const caseTypeIndex = this.mockCaseTypes.findIndex(ct => ct.id === caseTypeId)
-    if (caseTypeIndex === -1) {
-      throw new Error('Case type not found')
-    }
+    const { error } = await this.supabase
+      .from('case_types')
+      .update({
+        is_active: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', caseTypeId)
 
-    this.mockCaseTypes.splice(caseTypeIndex, 1)
-    console.log('Deleted case type:', caseTypeId)
+    if (error) throw error
   }
 
   async createPresetCaseTypes(lawFirmId: string): Promise<CaseType[]> {
@@ -97,43 +109,58 @@ export class CaseBillingService {
         const caseType = await this.createCaseType(lawFirmId, preset)
         createdCaseTypes.push(caseType)
       } catch (error) {
-        console.error('Error creating preset case type:', preset.name, error)
+        // Skip preset if it fails (e.g. duplicate code)
       }
     }
 
-    console.log(`Created ${createdCaseTypes.length} preset case types`)
     return createdCaseTypes
   }
 
   // ===== CASE BILLING METHOD MANAGEMENT =====
 
   async getCaseBillingMethods(matterId: string): Promise<CaseBillingMethod[]> {
-    return this.mockBillingMethods.filter(method => method.matter_id === matterId)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    const { data, error } = await this.supabase
+      .from('case_billing_methods')
+      .select('*')
+      .eq('matter_id', matterId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data || []
   }
 
   async getCaseBillingMethod(billingMethodId: string): Promise<CaseBillingMethod | null> {
-    return this.mockBillingMethods.find(method => method.id === billingMethodId) || null
+    const { data, error } = await this.supabase
+      .from('case_billing_methods')
+      .select('*')
+      .eq('id', billingMethodId)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      throw error
+    }
+    return data
   }
 
   async createCaseBillingMethod(
     lawFirmId: string,
     formData: CaseBillingMethodFormData
   ): Promise<CaseBillingMethod> {
-    try {
-      this.validateBillingMethodData(formData)
+    this.validateBillingMethodData(formData)
 
-      // Get case type for minimum fee calculation
-      let minimumFee = formData.minimum_fee || 0
-      if (formData.case_type_id && formData.minimum_fee_source === 'case_type') {
-        const caseType = await this.getCaseType(formData.case_type_id)
-        if (caseType) {
-          minimumFee = this.getMinimumFeeForBillingType(caseType, formData.billing_type)
-        }
+    // Get case type for minimum fee calculation
+    let minimumFee = formData.minimum_fee || 0
+    if (formData.case_type_id && formData.minimum_fee_source === 'case_type') {
+      const caseType = await this.getCaseType(formData.case_type_id)
+      if (caseType) {
+        minimumFee = this.getMinimumFeeForBillingType(caseType, formData.billing_type)
       }
+    }
 
-      const newBillingMethod: CaseBillingMethod = {
-        id: `billing-method-${Date.now()}`,
+    const { data, error } = await this.supabase
+      .from('case_billing_methods')
+      .insert({
         matter_id: formData.matter_id,
         case_type_id: formData.case_type_id,
         billing_type: formData.billing_type,
@@ -147,40 +174,31 @@ export class CaseBillingService {
         has_subscription_discount: false,
         discount_percentage: 0,
         discount_amount: 0,
-        status: 'draft',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+        status: 'draft'
+      })
+      .select()
+      .single()
 
-      console.log('Creating case billing method:', newBillingMethod)
-      this.mockBillingMethods.push(newBillingMethod)
-
-      return newBillingMethod
-    } catch (error) {
-      console.error('Error creating case billing method:', error)
-      throw error
-    }
+    if (error) throw error
+    return data
   }
 
   async updateCaseBillingMethod(
     billingMethodId: string,
     updates: Partial<CaseBillingMethodFormData>
   ): Promise<CaseBillingMethod> {
-    const methodIndex = this.mockBillingMethods.findIndex(method => method.id === billingMethodId)
-    if (methodIndex === -1) {
-      throw new Error('Case billing method not found')
-    }
+    const { data, error } = await this.supabase
+      .from('case_billing_methods')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', billingMethodId)
+      .select()
+      .single()
 
-    const updatedMethod = {
-      ...this.mockBillingMethods[methodIndex],
-      ...updates,
-      updated_at: new Date().toISOString()
-    }
-
-    console.log('Updating case billing method:', updatedMethod)
-    this.mockBillingMethods[methodIndex] = updatedMethod
-
-    return updatedMethod
+    if (error) throw error
+    return data
   }
 
   async approveCaseBillingMethod(billingMethodId: string, approvedBy: string): Promise<CaseBillingMethod> {
@@ -295,18 +313,8 @@ export class CaseBillingService {
         warnings: validation.warnings
       }
 
-      console.log('Case billing calculation result:', {
-        matterId: matter_id,
-        baseAmount: baseCalculation.calculated_amount,
-        minimumFeeApplied: minimumFeeCheck.minimum_applied,
-        discountEligible: discountResult.eligible,
-        discountAmount: discountResult.discount_amount,
-        totalAmount
-      })
-
       return result
     } catch (error) {
-      console.error('Error calculating case billing:', error)
       throw error
     }
   }
@@ -314,85 +322,107 @@ export class CaseBillingService {
   // ===== CASE OUTCOME MANAGEMENT =====
 
   async getCaseOutcomes(matterId: string): Promise<CaseOutcome[]> {
-    return this.mockCaseOutcomes.filter(outcome => outcome.matter_id === matterId)
-      .sort((a, b) => new Date(b.outcome_date).getTime() - new Date(a.outcome_date).getTime())
+    const { data, error } = await this.supabase
+      .from('case_outcomes')
+      .select('*')
+      .eq('matter_id', matterId)
+      .order('outcome_date', { ascending: false })
+
+    if (error) throw error
+    return data || []
   }
 
   async getCaseOutcome(outcomeId: string): Promise<CaseOutcome | null> {
-    return this.mockCaseOutcomes.find(outcome => outcome.id === outcomeId) || null
+    const { data, error } = await this.supabase
+      .from('case_outcomes')
+      .select('*')
+      .eq('id', outcomeId)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      throw error
+    }
+    return data
   }
 
   async createCaseOutcome(lawFirmId: string, formData: CaseOutcomeFormData): Promise<CaseOutcome> {
-    try {
-      this.validateCaseOutcomeData(formData)
+    this.validateCaseOutcomeData(formData)
 
-      // Calculate success fee if applicable
-      let successFeeAmount = 0
-      let successFeePercentage = 0
+    // Calculate success fee if applicable
+    let successFeeAmount = 0
+    let successFeePercentage = 0
 
-      if (formData.success_achieved && formData.effective_value_redeemed) {
-        // Get billing method to determine success fee rate
-        const billingMethods = await this.getCaseBillingMethods(formData.matter_id)
-        if (billingMethods.length > 0) {
-          successFeePercentage = billingMethods[0].success_fee_percentage
-          successFeeAmount = formData.effective_value_redeemed * (successFeePercentage / 100)
-        }
+    if (formData.success_achieved && formData.effective_value_redeemed) {
+      // Get billing method to determine success fee rate
+      const billingMethods = await this.getCaseBillingMethods(formData.matter_id)
+      if (billingMethods.length > 0) {
+        successFeePercentage = billingMethods[0].success_fee_percentage
+        successFeeAmount = formData.effective_value_redeemed * (successFeePercentage / 100)
       }
+    }
 
-      const newOutcome: CaseOutcome = {
-        id: `outcome-${Date.now()}`,
+    const { data, error } = await this.supabase
+      .from('case_outcomes')
+      .insert({
         ...formData,
         success_fee_percentage: successFeePercentage,
         success_fee_amount: successFeeAmount,
-        success_fee_calculation_method: 'percentage',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+        success_fee_calculation_method: 'percentage'
+      })
+      .select()
+      .single()
 
-      console.log('Creating case outcome:', newOutcome)
-      this.mockCaseOutcomes.push(newOutcome)
-
-      return newOutcome
-    } catch (error) {
-      console.error('Error creating case outcome:', error)
-      throw error
-    }
+    if (error) throw error
+    return data
   }
 
   async updateCaseOutcome(outcomeId: string, updates: Partial<CaseOutcomeFormData>): Promise<CaseOutcome> {
-    const outcomeIndex = this.mockCaseOutcomes.findIndex(outcome => outcome.id === outcomeId)
-    if (outcomeIndex === -1) {
-      throw new Error('Case outcome not found')
-    }
+    const { data, error } = await this.supabase
+      .from('case_outcomes')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', outcomeId)
+      .select()
+      .single()
 
-    const updatedOutcome = {
-      ...this.mockCaseOutcomes[outcomeIndex],
-      ...updates,
-      updated_at: new Date().toISOString()
-    }
-
-    console.log('Updating case outcome:', updatedOutcome)
-    this.mockCaseOutcomes[outcomeIndex] = updatedOutcome
-
-    return updatedOutcome
+    if (error) throw error
+    return data
   }
 
   // ===== BUSINESS PARAMETERS =====
 
   async getBusinessParameters(lawFirmId: string, category?: string): Promise<BusinessParameter[]> {
-    let parameters = this.mockBusinessParameters.filter(param => param.law_firm_id === lawFirmId)
-    
+    let query = this.supabase
+      .from('business_parameters')
+      .select('*')
+      .eq('law_firm_id', lawFirmId)
+
     if (category) {
-      parameters = parameters.filter(param => param.parameter_category === category)
+      query = query.eq('parameter_category', category)
     }
 
-    return parameters.sort((a, b) => a.parameter_name.localeCompare(b.parameter_name))
+    const { data, error } = await query.order('parameter_name')
+
+    if (error) throw error
+    return data || []
   }
 
   async getBusinessParameter(lawFirmId: string, parameterKey: string): Promise<BusinessParameter | null> {
-    return this.mockBusinessParameters.find(
-      param => param.law_firm_id === lawFirmId && param.parameter_key === parameterKey
-    ) || null
+    const { data, error } = await this.supabase
+      .from('business_parameters')
+      .select('*')
+      .eq('law_firm_id', lawFirmId)
+      .eq('parameter_key', parameterKey)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      throw error
+    }
+    return data
   }
 
   async updateBusinessParameter(
@@ -400,18 +430,19 @@ export class CaseBillingService {
     parameterKey: string,
     value: string
   ): Promise<BusinessParameter> {
-    const paramIndex = this.mockBusinessParameters.findIndex(
-      param => param.law_firm_id === lawFirmId && param.parameter_key === parameterKey
-    )
+    const { data, error } = await this.supabase
+      .from('business_parameters')
+      .update({
+        parameter_value: value,
+        updated_at: new Date().toISOString()
+      })
+      .eq('law_firm_id', lawFirmId)
+      .eq('parameter_key', parameterKey)
+      .select()
+      .single()
 
-    if (paramIndex === -1) {
-      throw new Error('Business parameter not found')
-    }
-
-    this.mockBusinessParameters[paramIndex].parameter_value = value
-    this.mockBusinessParameters[paramIndex].updated_at = new Date().toISOString()
-
-    return this.mockBusinessParameters[paramIndex]
+    if (error) throw error
+    return data
   }
 
   // ===== UTILITY FUNCTIONS =====
@@ -567,7 +598,7 @@ export class CaseBillingService {
     // Use discount service to calculate discount
     // Use a standard client ID that matches discount service mock data for active subscribers
     const clientId = input.client_subscription_status === 'active' ? 'test-client-123' : `matter-client-${input.matter_id}`
-    
+
     const discountInput: DiscountCalculationInput = {
       client_id: clientId,
       case_type: input.case_type?.category || 'general',
@@ -581,15 +612,6 @@ export class CaseBillingService {
 
     try {
       const discountResult = await discountService.calculateDiscount(lawFirmId, discountInput)
-      
-      console.log('Discount eligibility check:', {
-        matterId: input.matter_id,
-        caseValue: input.case_value,
-        subscriptionStatus: input.client_subscription_status,
-        discountEligible: discountResult.eligible,
-        discountAmount: discountResult.total_discount_amount,
-        appliedRules: discountResult.applied_rules.length
-      })
 
       return {
         eligible: discountResult.eligible,
@@ -597,7 +619,6 @@ export class CaseBillingService {
         discount_amount: discountResult.total_discount_amount
       }
     } catch (error) {
-      console.error('Error checking discount eligibility:', error)
       return { eligible: false, discount_amount: 0 }
     }
   }
@@ -610,7 +631,7 @@ export class CaseBillingService {
     caseType: string
   ): Promise<any> {
     const clientId = `matter-client-${matterId}`
-    
+
     try {
       const opportunity = await discountService.checkCrossSellingOpportunity(
         clientId,
@@ -618,18 +639,8 @@ export class CaseBillingService {
         caseType
       )
 
-      console.log('Cross-selling opportunity for case billing:', {
-        matterId,
-        caseValue,
-        caseType,
-        potentialDiscount: opportunity.potential_discount_percentage,
-        projectedSavings: opportunity.projected_savings,
-        recommendation: opportunity.subscription_recommendation
-      })
-
       return opportunity
     } catch (error) {
-      console.error('Error checking cross-selling opportunity:', error)
       return null
     }
   }
@@ -665,123 +676,6 @@ export class CaseBillingService {
         return 0
     }
   }
-
-  // ===== MOCK DATA =====
-
-  private mockCaseTypes: CaseType[] = [
-    {
-      id: 'ct-1',
-      law_firm_id: 'firm-1',
-      name: 'Ação Trabalhista',
-      code: 'LAB_ACT',
-      category: 'labor',
-      minimum_fee_hourly: 1500.00,
-      minimum_fee_percentage: 2500.00,
-      minimum_fee_fixed: 2000.00,
-      default_billing_method: 'percentage',
-      default_hourly_rate: 300.00,
-      default_percentage_rate: 20.0,
-      default_success_fee_rate: 15.0,
-      complexity_multiplier: 1.2,
-      estimated_hours_range: '40-80 horas',
-      is_active: true,
-      created_at: '2024-01-01T10:00:00Z',
-      updated_at: '2024-01-01T10:00:00Z'
-    },
-    {
-      id: 'ct-2',
-      law_firm_id: 'firm-1',
-      name: 'Revisão de Contrato Empresarial',
-      code: 'CORP_REV',
-      category: 'corporate',
-      minimum_fee_hourly: 1000.00,
-      minimum_fee_percentage: 1500.00,
-      minimum_fee_fixed: 1200.00,
-      default_billing_method: 'hourly',
-      default_hourly_rate: 400.00,
-      default_percentage_rate: 15.0,
-      default_success_fee_rate: 20.0,
-      complexity_multiplier: 1.0,
-      estimated_hours_range: '10-30 horas',
-      is_active: true,
-      created_at: '2024-01-01T10:00:00Z',
-      updated_at: '2024-01-01T10:00:00Z'
-    }
-  ]
-
-  private mockBillingMethods: CaseBillingMethod[] = [
-    {
-      id: 'bm-1',
-      matter_id: 'matter-1',
-      case_type_id: 'ct-1',
-      billing_type: 'percentage',
-      percentage_rate: 20.0,
-      success_fee_percentage: 15.0,
-      success_fee_applies_to: 'recovered',
-      minimum_fee: 2500.00,
-      minimum_fee_source: 'case_type',
-      has_subscription_discount: false,
-      discount_percentage: 0,
-      discount_amount: 0,
-      final_amount: 10000.00,
-      status: 'active',
-      created_at: '2024-01-01T10:00:00Z',
-      updated_at: '2024-01-01T10:00:00Z'
-    }
-  ]
-
-  private mockCaseOutcomes: CaseOutcome[] = [
-    {
-      id: 'co-1',
-      matter_id: 'matter-1',
-      outcome_type: 'settlement',
-      total_value_claimed: 100000.00,
-      effective_value_redeemed: 75000.00,
-      settlement_amount: 75000.00,
-      success_achieved: true,
-      success_percentage: 75.0,
-      success_fee_percentage: 15.0,
-      success_fee_amount: 11250.00,
-      success_fee_calculation_method: 'percentage',
-      outcome_date: '2024-01-15',
-      notes: 'Acordo favorável alcançado antes do julgamento',
-      created_at: '2024-01-15T10:00:00Z',
-      updated_at: '2024-01-15T10:00:00Z'
-    }
-  ]
-
-  private mockBusinessParameters: BusinessParameter[] = [
-    {
-      id: 'bp-1',
-      law_firm_id: 'firm-1',
-      parameter_category: 'billing_rates',
-      parameter_name: 'Junior Lawyer Hourly Rate',
-      parameter_key: 'junior_lawyer_rate',
-      parameter_value: '150.00',
-      parameter_type: 'number',
-      description: 'Hourly rate for junior lawyers',
-      unit: 'currency',
-      is_active: true,
-      requires_approval: false,
-      created_at: '2024-01-01T10:00:00Z',
-      updated_at: '2024-01-01T10:00:00Z'
-    },
-    {
-      id: 'bp-2',
-      law_firm_id: 'firm-1',
-      parameter_category: 'success_fee_rates',
-      parameter_name: 'Labor Litigation Success Fee',
-      parameter_key: 'labor_success_rate',
-      parameter_value: '15.0',
-      parameter_type: 'number',
-      description: 'Success fee percentage for labor cases',
-      unit: 'percentage',
-      is_active: true,
-      requires_approval: false,
-      created_at: '2024-01-01T10:00:00Z',
-      updated_at: '2024-01-01T10:00:00Z'
-    }
-  ]
 }
 
 // Export singleton instance

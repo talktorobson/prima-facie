@@ -94,6 +94,50 @@ export function useDeletePipelineCard() {
   })
 }
 
+export function useNewProspects(lawFirmId: string | null) {
+  const supabase = useSupabase()
+  return useQuery({
+    queryKey: ['new-prospects', lawFirmId],
+    enabled: !!lawFirmId,
+    queryFn: async () => {
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const { data, error } = await supabase
+        .from('pipeline_cards')
+        .select(`
+          id, title, description, source, created_at, notes,
+          contact:contacts(id, full_name, email, phone)
+        `)
+        .eq('source', 'website')
+        .is('last_contact_date', null)
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as (Record<string, unknown> & { id: string; title: string; description?: string; source: string; created_at: string; notes?: string; contact: { id: string; full_name: string; email?: string; phone?: string } | null })[]
+    },
+  })
+}
+
+export function useNewProspectsCount(lawFirmId: string | null) {
+  const supabase = useSupabase()
+  return useQuery({
+    queryKey: ['new-prospects-count', lawFirmId],
+    enabled: !!lawFirmId,
+    queryFn: async () => {
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const { count, error } = await supabase
+        .from('pipeline_cards')
+        .select('id', { count: 'exact', head: true })
+        .eq('source', 'website')
+        .is('last_contact_date', null)
+        .gte('created_at', sevenDaysAgo.toISOString())
+      if (error) throw error
+      return count ?? 0
+    },
+  })
+}
+
 export function useMovePipelineCard() {
   const supabase = useSupabase()
   const queryClient = useQueryClient()

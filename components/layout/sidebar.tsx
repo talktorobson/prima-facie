@@ -20,6 +20,8 @@ import {
   MessageSquare
 } from 'lucide-react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
+import { useNewProspectsCount } from '@/lib/queries/usePipeline'
 import { FirmSelector } from '@/components/platform/firm-selector'
 
 interface NavItem {
@@ -57,6 +59,8 @@ export function Sidebar() {
   const pathname = usePathname()
   const { profile, signOut } = useAuthContext()
   const router = useRouter()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
+  const { data: prospectCount } = useNewProspectsCount(effectiveLawFirmId)
 
   const handleSignOut = async () => {
     await signOut()
@@ -64,9 +68,13 @@ export function Sidebar() {
   }
 
   const userType = profile?.user_type || ''
-  const filteredNavigation = navigation.filter(
-    item => !item.roles || item.roles.includes(userType)
-  )
+  const filteredNavigation = navigation
+    .filter(item => !item.roles || item.roles.includes(userType))
+    .map(item =>
+      item.href === '/pipeline' && prospectCount && prospectCount > 0
+        ? { ...item, badge: prospectCount }
+        : item
+    )
 
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">

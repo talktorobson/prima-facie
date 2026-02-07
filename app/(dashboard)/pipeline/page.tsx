@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { 
-  PlusIcon, 
+import {
+  PlusIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
   EyeIcon,
@@ -18,9 +17,9 @@ import {
   UserIcon,
   BuildingOfficeIcon
 } from '@heroicons/react/24/outline'
-import { supabase } from '@/lib/supabase/client'
 import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
+import { usePipelineCards, usePipelineStages } from '@/lib/queries/usePipeline'
 
 interface Lead {
   id: string
@@ -38,6 +37,7 @@ interface Lead {
   next_action?: string
   next_action_date?: string
   assigned_lawyer?: string
+  isNewWebsite?: boolean
 }
 
 const statusOptions = [
@@ -74,150 +74,102 @@ const legalAreaOptions = [
   { value: 'Consumidor', label: 'Consumidor' }
 ]
 
+// Map pipeline stage type/name to Lead status
+function deriveStatus(stageType?: string, stageName?: string): Lead['status'] {
+  if (stageType === 'not_hired') return 'perdido'
+  const lower = (stageName || '').toLowerCase()
+  if (lower.includes('qualificad')) return 'qualificado'
+  if (lower.includes('proposta')) return 'proposta'
+  if (lower.includes('negocia')) return 'negociacao'
+  if (lower.includes('ganh') || lower.includes('contratad')) return 'ganho'
+  if (lower.includes('contato')) return 'contato_inicial'
+  return 'novo'
+}
+
 export default function PipelinePage() {
   const { profile } = useAuthContext()
   const effectiveLawFirmId = useEffectiveLawFirmId()
   const router = useRouter()
-  const [leads, setLeads] = useState<Lead[]>([])
-  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
   const [areaFilter, setAreaFilter] = useState('')
   const [showFilters, setShowFilters] = useState(false)
 
-  // Pipeline stats
-  const [stats, setStats] = useState({
-    totalLeads: 0,
-    newLeads: 0,
-    qualified: 0,
-    inNegotiation: 0,
-    wonThisMonth: 0,
-    totalValue: 0,
-    conversionRate: 0
-  })
+  const { data: pipelineCards, isLoading: cardsLoading } = usePipelineCards()
+  const { data: pipelineStages } = usePipelineStages()
 
-  useEffect(() => {
-    fetchLeads()
-  }, [profile])
-
-  useEffect(() => {
-    filterLeads()
-  }, [searchTerm, statusFilter, sourceFilter, areaFilter, leads])
-
-  const fetchLeads = async () => {
-    if (!effectiveLawFirmId) {
-      setLoading(false)
-      return
+  // Build stage lookup
+  const stageMap = useMemo(() => {
+    const map: Record<string, { name: string; stage_type?: string }> = {}
+    if (pipelineStages) {
+      for (const s of pipelineStages) {
+        map[s.id] = { name: s.name, stage_type: s.stage_type ?? undefined }
+      }
     }
+    return map
+  }, [pipelineStages])
 
-    try {
-      setLoading(true)
-      
-      // For now, we'll use sample data since the leads table might not exist yet
-      // In a real implementation, this would be a Supabase query
-      const sampleLeads: Lead[] = [
-        {
-          id: '1',
-          name: 'Maria Santos Silva',
-          email: 'maria.santos@email.com',
-          phone: '(11) 9 8765-4321',
-          company: 'Empresa ABC Ltda',
-          source: 'website',
-          status: 'novo',
-          estimated_value: 25000,
-          probability: 20,
-          legal_area: 'Trabalhista',
-          description: 'Consulta sobre rescisão trabalhista indevida',
-          created_at: new Date().toISOString(),
-          next_action: 'Ligar para agendar consulta',
-          next_action_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          assigned_lawyer: 'João Advogado'
-        },
-        {
-          id: '2',
-          name: 'Carlos Oliveira',
-          email: 'carlos@empresa.com',
-          phone: '(11) 9 1234-5678',
-          company: 'Tech Solutions',
-          source: 'referral',
-          status: 'qualificado',
-          estimated_value: 50000,
-          probability: 60,
-          legal_area: 'Empresarial',
-          description: 'Revisão de contratos de parceria',
-          created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          next_action: 'Enviar proposta comercial',
-          next_action_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-          assigned_lawyer: 'Maria Advogada'
-        },
-        {
-          id: '3',
-          name: 'Ana Paula Costa',
-          email: 'ana.costa@email.com',
-          phone: '(11) 9 9876-5432',
-          source: 'google',
-          status: 'proposta',
-          estimated_value: 15000,
-          probability: 75,
-          legal_area: 'Família',
-          description: 'Processo de divórcio consensual',
-          created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          next_action: 'Aguardar resposta da proposta',
-          next_action_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-          assigned_lawyer: 'Pedro Advogado'
-        }
-      ]
+  // Map pipeline cards to Lead interface
+  const leads = useMemo<Lead[]>(() => {
+    if (!pipelineCards) return []
+    return pipelineCards.map((card) => {
+      const contact = card.contact as { id: string; full_name: string; company_name?: string } | null
+      const matterType = card.matter_type as { id: string; name: string } | null
+      const stage = stageMap[card.pipeline_stage_id]
+      return {
+        id: card.id,
+        name: contact?.full_name || card.title,
+        email: (card as Record<string, unknown>).email as string || '',
+        phone: (card as Record<string, unknown>).phone as string || undefined,
+        company: contact?.company_name || undefined,
+        source: card.source || 'outros',
+        status: deriveStatus(stage?.stage_type, stage?.name),
+        estimated_value: card.estimated_value ?? undefined,
+        probability: card.probability ?? 0,
+        legal_area: matterType?.name || '',
+        description: card.description || '',
+        created_at: card.created_at,
+        isNewWebsite: card.source === 'website' && !card.last_contact_date,
+      }
+    })
+  }, [pipelineCards, stageMap])
 
-      setLeads(sampleLeads)
-      calculateStats(sampleLeads)
-    } catch (error) {
-      console.error('Error fetching leads:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const calculateStats = (leadsData: Lead[]) => {
-    const stats = {
-      totalLeads: leadsData.length,
-      newLeads: leadsData.filter(l => l.status === 'novo').length,
-      qualified: leadsData.filter(l => l.status === 'qualificado').length,
-      inNegotiation: leadsData.filter(l => ['proposta', 'negociacao'].includes(l.status)).length,
-      wonThisMonth: leadsData.filter(l => l.status === 'ganho').length,
-      totalValue: leadsData.reduce((sum, l) => sum + (l.estimated_value || 0), 0),
-      conversionRate: leadsData.length > 0 ? (leadsData.filter(l => l.status === 'ganho').length / leadsData.length) * 100 : 0
-    }
-    setStats(stats)
-  }
-
-  const filterLeads = () => {
+  // Filter leads
+  const filteredLeads = useMemo(() => {
     let filtered = leads
 
     if (searchTerm) {
+      const term = searchTerm.toLowerCase()
       filtered = filtered.filter(lead =>
-        lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.description.toLowerCase().includes(searchTerm.toLowerCase())
+        lead.name.toLowerCase().includes(term) ||
+        lead.email.toLowerCase().includes(term) ||
+        lead.company?.toLowerCase().includes(term) ||
+        lead.description.toLowerCase().includes(term)
       )
     }
-
     if (statusFilter) {
       filtered = filtered.filter(lead => lead.status === statusFilter)
     }
-
     if (sourceFilter) {
       filtered = filtered.filter(lead => lead.source === sourceFilter)
     }
-
     if (areaFilter) {
       filtered = filtered.filter(lead => lead.legal_area === areaFilter)
     }
+    return filtered
+  }, [leads, searchTerm, statusFilter, sourceFilter, areaFilter])
 
-    setFilteredLeads(filtered)
-  }
+  // Pipeline stats
+  const stats = useMemo(() => ({
+    totalLeads: leads.length,
+    newLeads: leads.filter(l => l.status === 'novo').length,
+    qualified: leads.filter(l => l.status === 'qualificado').length,
+    inNegotiation: leads.filter(l => ['proposta', 'negociacao'].includes(l.status)).length,
+    wonThisMonth: leads.filter(l => l.status === 'ganho').length,
+    totalValue: leads.reduce((sum, l) => sum + (l.estimated_value || 0), 0),
+    conversionRate: leads.length > 0 ? (leads.filter(l => l.status === 'ganho').length / leads.length) * 100 : 0,
+  }), [leads])
 
   const getStatusBadge = (status: string) => {
     const statusStyles = {
@@ -266,6 +218,8 @@ export default function PipelinePage() {
     // TODO: Implement conversion to client
     console.log('Converting lead to client:', leadId)
   }
+
+  const loading = cardsLoading
 
   if (loading) {
     return (
@@ -508,6 +462,11 @@ export default function PipelinePage() {
                             {lead.name}
                           </p>
                           {getStatusBadge(lead.status)}
+                          {lead.isNewWebsite && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 animate-pulse">
+                              Novo
+                            </span>
+                          )}
                           {lead.company && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
                               <BuildingOfficeIcon className="w-3 h-3 mr-1" />

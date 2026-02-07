@@ -22,8 +22,10 @@ import {
   DollarSignIcon,
   ClockIcon,
   TrendingUpIcon,
-  AlertTriangleIcon
+  AlertTriangleIcon,
+  UserPlusIcon
 } from 'lucide-react'
+import { useNewProspects } from '@/lib/queries/usePipeline'
 
 interface StatCardProps {
   title: string
@@ -125,6 +127,7 @@ export default function DashboardPage() {
 
   const { data: activityLogs, isLoading: logsLoading } = useActivityLogs(effectiveLawFirmId)
   const { data: tasks, isLoading: tasksLoading } = useTasks(effectiveLawFirmId)
+  const { data: newProspects } = useNewProspects(effectiveLawFirmId)
 
   const recentLogs = useMemo(() => (activityLogs ?? []).slice(0, 5), [activityLogs])
 
@@ -253,6 +256,51 @@ export default function DashboardPage() {
           />
         </div>
       </ClientOnly>
+
+      {/* New Prospects Alert - Staff Only */}
+      <StaffOnly>
+        {newProspects && newProspects.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <UserPlusIcon className="h-5 w-5 text-amber-600" />
+                <h3 className="text-sm font-semibold text-amber-900">
+                  Novos Prospects do Site
+                </h3>
+                <span className="inline-flex items-center rounded-full bg-amber-200 px-2 py-0.5 text-xs font-medium text-amber-800">
+                  {newProspects.length}
+                </span>
+              </div>
+              <Link
+                href="/pipeline"
+                className="text-sm font-medium text-amber-700 hover:text-amber-900"
+              >
+                Ver no Pipeline
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {newProspects.slice(0, 5).map((prospect) => (
+                <div
+                  key={prospect.id}
+                  className="flex items-center justify-between bg-white rounded-md px-3 py-2 border border-amber-100"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {prospect.contact?.full_name || prospect.title}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {prospect.description}
+                    </p>
+                  </div>
+                  <span className="ml-3 text-xs text-gray-400 whitespace-nowrap">
+                    {formatDistanceToNow(new Date(prospect.created_at), { addSuffix: true, locale: ptBR })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </StaffOnly>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}

@@ -1,7 +1,31 @@
 'use client'
 
 import { useState } from 'react'
-import { MapPin, Phone, Mail, MessageCircle, CheckCircle2 } from 'lucide-react'
+import { MapPin, Phone, Mail, Clock, MessageCircle } from 'lucide-react'
+import ScrollReveal from '@/components/landing/scroll-reveal'
+
+const contactInfo = [
+  {
+    icon: Phone,
+    title: 'Telefone',
+    detail: '(15) 3384-4013',
+  },
+  {
+    icon: Mail,
+    title: 'E-mail',
+    detail: 'financeiro@davilareisadvogados.com.br',
+  },
+  {
+    icon: MapPin,
+    title: 'Endereco',
+    detail: 'Av. Dr. Vinicio Gagliardi, 675\nCentro, Cerquilho/SP — CEP 18520-091',
+  },
+  {
+    icon: Clock,
+    title: 'Horario',
+    detail: 'Seg a Sex, 8h as 18h',
+  },
+]
 
 export default function Contact() {
   const [form, setForm] = useState({
@@ -11,196 +35,142 @@ export default function Contact() {
     company: '',
     message: '',
   })
-  const [submitted, setSubmitted] = useState(false)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 3000)
-  }
+  const inputClass =
+    'w-full px-4 py-3 bg-white border border-landing-mist text-landing-ink placeholder:text-landing-stone/50 text-sm focus:outline-none focus:border-landing-gold transition-colors'
 
   return (
-    <section id="contato" className="py-20 bg-white border-t border-gray-200">
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-navy-950 mb-6">
-            Entre em Contato
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Agende sua consultoria gratuita. Responderemos em até 24 horas.
-          </p>
-        </div>
+    <section id="contato" className="py-24 bg-landing-mist/40">
+      <div className="container mx-auto px-6">
+        <ScrollReveal>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-landing-ink gold-line mx-auto inline-block">
+              Entre em Contato
+            </h2>
+            <p className="text-landing-stone mt-8 text-lg max-w-2xl mx-auto">
+              Agende sua consultoria e descubra como podemos proteger seu negocio
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {/* Contact Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 p-8 hover:shadow-lg transition-all duration-300">
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6">Envie sua Mensagem</h3>
-
-              {submitted && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
+          {/* Left: info cards */}
+          <ScrollReveal>
+            <div className="space-y-6">
+              {contactInfo.map((item) => (
+                <div
+                  key={item.title}
+                  className="flex items-start gap-4 p-5 bg-white border border-landing-mist/60"
+                >
+                  <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+                    <item.icon className="h-5 w-5 text-landing-gold" />
+                  </div>
                   <div>
-                    <p className="font-semibold text-green-900">Mensagem enviada com sucesso!</p>
-                    <p className="text-sm text-green-700">Entraremos em contato em breve.</p>
+                    <h4 className="text-sm font-semibold text-landing-ink mb-1">{item.title}</h4>
+                    <p className="text-sm text-landing-stone whitespace-pre-line">{item.detail}</p>
                   </div>
                 </div>
-              )}
+              ))}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <a
+                href="https://wa.me/551533844013?text=Ola%2C%20gostaria%20de%20agendar%20uma%20consultoria."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 border border-landing-ink text-landing-ink text-sm font-medium hover:bg-landing-ink hover:text-white transition-colors"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Chamar no WhatsApp
+              </a>
+            </div>
+          </ScrollReveal>
+
+          {/* Right: form */}
+          <ScrollReveal delay="100ms">
+            <form className="bg-white border border-landing-mist/60 p-8 md:p-10">
+              <h3 className="text-xl font-serif font-semibold text-landing-ink mb-6">
+                Como podemos ajudar?
+              </h3>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Nome Completo
+                  <label className="block text-xs font-medium text-landing-ink mb-1.5">
+                    Nome Completo *
                   </label>
                   <input
                     name="name"
                     value={form.name}
                     onChange={handleChange}
-                    required
-                    placeholder="Seu nome"
-                    className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Seu nome completo"
+                    className={inputClass}
                   />
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">E-mail</label>
+                    <label className="block text-xs font-medium text-landing-ink mb-1.5">
+                      E-mail *
+                    </label>
                     <input
                       name="email"
                       type="email"
                       value={form.email}
                       onChange={handleChange}
-                      required
                       placeholder="seu@email.com"
-                      className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
-                      Telefone/WhatsApp
+                    <label className="block text-xs font-medium text-landing-ink mb-1.5">
+                      Telefone *
                     </label>
                     <input
                       name="phone"
                       value={form.phone}
                       onChange={handleChange}
                       placeholder="(15) 99999-9999"
-                      className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Empresa</label>
+                  <label className="block text-xs font-medium text-landing-ink mb-1.5">
+                    Empresa <span className="text-landing-stone">(opcional)</span>
+                  </label>
                   <input
                     name="company"
                     value={form.company}
                     onChange={handleChange}
                     placeholder="Nome da sua empresa"
-                    className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClass}
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Como podemos ajudar?
+                  <label className="block text-xs font-medium text-landing-ink mb-1.5">
+                    Mensagem *
                   </label>
                   <textarea
                     name="message"
                     value={form.message}
                     onChange={handleChange}
-                    required
-                    placeholder="Descreva sua necessidade jurídica ou como podemos ajudar..."
+                    placeholder="Descreva sua necessidade juridica..."
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    className={inputClass}
                   />
                 </div>
-
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors shadow-lg hover:shadow-xl"
+                  className="w-full bg-landing-gold text-white py-3.5 text-sm font-medium tracking-wide hover:bg-landing-gold-light transition-colors"
                 >
                   Enviar Mensagem
                 </button>
-
-                <p className="text-xs text-gray-600 text-center">
-                  Seus dados estão protegidos pela LGPD. Responderemos em até 24 horas.
+                <p className="text-xs text-landing-stone text-center">
+                  Seus dados estao protegidos pela LGPD. Responderemos em ate 24 horas.
                 </p>
-              </form>
-            </div>
-          </div>
-
-          {/* Contact Information */}
-          <div className="space-y-6">
-            {/* WhatsApp CTA */}
-            <a
-              href="https://wa.me/551533844013?text=Olá%2C%20gostaria%20de%20agendar%20uma%20consultoria."
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-4 p-6 bg-green-50 border-2 border-green-500 rounded-xl hover:bg-green-100 transition-all duration-300 group"
-            >
-              <div className="flex-shrink-0">
-                <MessageCircle className="h-8 w-8 text-green-600" />
               </div>
-              <div>
-                <p className="font-semibold text-gray-900">WhatsApp</p>
-                <p className="text-sm text-gray-600 group-hover:text-gray-700">Atendimento imediato</p>
-              </div>
-            </a>
-
-            {/* Phone */}
-            <div className="p-6 bg-gradient-to-br from-blue-50 to-gray-50 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-300">
-              <div className="flex items-start gap-4">
-                <Phone className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Telefone</h4>
-                  <a href="tel:+551533844013" className="text-blue-600 font-semibold hover:text-blue-700">
-                    (15) 3384-4013
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="p-6 bg-gradient-to-br from-blue-50 to-gray-50 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-300">
-              <div className="flex items-start gap-4">
-                <Mail className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">E-mail</h4>
-                  <a href="mailto:financeiro@davilareisadvogados.com.br" className="text-blue-600 font-semibold hover:text-blue-700 text-sm">
-                    financeiro@davilareisadvogados<br />.com.br
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* Address */}
-            <div className="p-6 bg-gradient-to-br from-blue-50 to-gray-50 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-300">
-              <div className="flex items-start gap-4">
-                <MapPin className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Endereço</h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Av. Dr. Vinício Gagliardi, 675<br />
-                    Centro, Cerquilho/SP<br />
-                    CEP: 18520-091
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Hours */}
-            <div className="p-6 bg-gray-900 text-white rounded-xl">
-              <h4 className="font-semibold mb-3">Horário de Atendimento</h4>
-              <div className="space-y-1 text-sm">
-                <p>Segunda a Sexta: 8h às 18h</p>
-                <p>Sábado: 9h às 13h</p>
-              </div>
-            </div>
-          </div>
+            </form>
+          </ScrollReveal>
         </div>
       </div>
     </section>

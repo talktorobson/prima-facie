@@ -12,6 +12,30 @@ jest.mock('next/headers', () => ({
   })),
 }))
 
+// Mock Zod schema to avoid import resolution issues
+jest.mock('@/lib/schemas/settings-schemas', () => {
+  const { z } = require('zod')
+  const userManagementSchema = z.object({
+    email: z.string().email(),
+    first_name: z.string().min(1),
+    last_name: z.string().min(1),
+    user_type: z.enum(['admin', 'lawyer', 'staff', 'client']),
+    oab_number: z.string().optional(),
+    position: z.string().optional(),
+    phone: z.string().optional(),
+    status: z.enum(['active', 'inactive', 'suspended', 'pending']).optional(),
+  })
+  const userCreateSchema = userManagementSchema.extend({
+    password: z.string().min(8, 'Senha deve ter no minimo 8 caracteres'),
+    password_confirmation: z.string().optional(),
+  }).refine(
+    (data: { password: string; password_confirmation?: string }) =>
+      !data.password_confirmation || data.password === data.password_confirmation,
+    { message: 'As senhas nao coincidem', path: ['password_confirmation'] }
+  )
+  return { userManagementSchema, userCreateSchema }
+})
+
 import { NextResponse } from 'next/server'
 
 const mockVerifyAdmin = jest.fn()
@@ -42,18 +66,16 @@ jest.mock('@/lib/supabase/admin', () => ({
   }),
 }))
 
+// Valid UUIDs for tests
+const VALID_UUID_1 = '00000000-0000-0000-0000-000000000001'
+const VALID_UUID_2 = '00000000-0000-0000-0000-000000000002'
+const VALID_UUID_ADMIN = '11111111-1111-1111-1111-111111111111'
+const VALID_UUID_OTHER = '22222222-2222-2222-2222-222222222222'
+
 // Helper to build a chainable mock
 function setupInsertChain(data: unknown, error: unknown = null) {
   mockFrom.mockReturnValue({ insert: mockInsert })
   mockInsert.mockReturnValue({ select: mockSelectChain })
-  mockSelectChain.mockReturnValue({ single: mockSingle })
-  mockSingle.mockResolvedValue({ data, error })
-}
-
-function setupUpdateChain(data: unknown, error: unknown = null) {
-  mockFrom.mockReturnValue({ update: mockUpdate, select: jest.fn() })
-  mockUpdate.mockReturnValue({ eq: mockEq })
-  mockEq.mockReturnValue({ select: mockSelectChain })
   mockSelectChain.mockReturnValue({ single: mockSingle })
   mockSingle.mockResolvedValue({ data, error })
 }
@@ -68,7 +90,6 @@ function setupSelectThenUpdateChain(
   mockFrom.mockImplementation(() => {
     callCount++
     if (callCount === 1) {
-      // select for firm scoping check
       return {
         select: () => ({
           eq: () => ({
@@ -77,7 +98,6 @@ function setupSelectThenUpdateChain(
         }),
       }
     }
-    // update call
     return {
       update: (updates: unknown) => ({
         eq: () => ({
@@ -90,7 +110,47 @@ function setupSelectThenUpdateChain(
   })
 }
 
-const adminProfile = { id: 'admin-1', user_type: 'admin', law_firm_id: 'firm-1' }
+function setupSelectThenCountThenUpdateChain(
+  selectData: unknown,
+  countValue: number,
+  updateData: unknown,
+) {
+  let callCount = 0
+  mockFrom.mockImplementation(() => {
+    callCount++
+    if (callCount === 1) {
+      return {
+        select: () => ({
+          eq: () => ({
+            single: () => Promise.resolve({ data: selectData, error: null }),
+          }),
+        }),
+      }
+    }
+    if (callCount === 2) {
+      return {
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              eq: () => Promise.resolve({ count: countValue }),
+            }),
+          }),
+        }),
+      }
+    }
+    return {
+      update: () => ({
+        eq: () => ({
+          select: () => ({
+            single: () => Promise.resolve({ data: updateData, error: null }),
+          }),
+        }),
+      }),
+    }
+  })
+}
+
+const adminProfile = { id: VALID_UUID_ADMIN, user_type: 'admin', law_firm_id: 'firm-1' }
 const superAdminProfile = { id: 'sa-1', user_type: 'super_admin', law_firm_id: null }
 
 function makeRequest(body: unknown): Request {
@@ -104,7 +164,6 @@ function makeRequest(body: unknown): Request {
 describe('POST /api/admin/users', () => {
   beforeEach(() => jest.clearAllMocks())
 
-  // Dynamic import to get fresh module
   const getHandler = async () => {
     const mod = await import('@/app/api/admin/users/route')
     return mod.POST
@@ -117,6 +176,20 @@ describe('POST /api/admin/users', () => {
     const POST = await getHandler()
     const res = await POST(makeRequest({}) as never)
     expect(res.status).toBe(401)
+  })
+
+  it('returns 400 on malformed JSON', async () => {
+    mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
+    const POST = await getHandler()
+    const req = new Request('http://localhost/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'not-json{{{',
+    })
+    const res = await POST(req as never)
+    expect(res.status).toBe(400)
+    const json = await res.json()
+    expect(json.error).toContain('JSON')
   })
 
   it('returns 400 when required fields missing', async () => {
@@ -143,7 +216,7 @@ describe('POST /api/admin/users', () => {
     expect(json.error).toContain('8 caracteres')
   })
 
-  it('returns 403 when trying to create super_admin', async () => {
+  it('returns 400 when trying to create super_admin (Zod rejects invalid enum)', async () => {
     mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
     const POST = await getHandler()
     const res = await POST(
@@ -155,7 +228,7 @@ describe('POST /api/admin/users', () => {
         user_type: 'super_admin',
       }) as never
     )
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(400)
   })
 
   it('uses admin law_firm_id, ignoring body law_firm_id', async () => {
@@ -171,11 +244,10 @@ describe('POST /api/admin/users', () => {
         first_name: 'Test',
         last_name: 'User',
         user_type: 'staff',
-        law_firm_id: 'other-firm', // should be ignored
+        law_firm_id: 'other-firm',
       }) as never
     )
 
-    // Verify the insert was called with admin's firm, not body's firm
     expect(mockInsert).toHaveBeenCalledWith(
       expect.objectContaining({ law_firm_id: 'firm-1' })
     )
@@ -196,6 +268,32 @@ describe('POST /api/admin/users', () => {
     expect(res.status).toBe(400)
     const json = await res.json()
     expect(json.error).toContain('law_firm_id')
+  })
+
+  it('returns 404 when super_admin provides non-existent firm', async () => {
+    mockVerifyAdmin.mockResolvedValue({ profile: superAdminProfile, session: {} })
+    mockFrom.mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          single: () => Promise.resolve({ data: null, error: { message: 'not found' } }),
+        }),
+      }),
+    })
+
+    const POST = await getHandler()
+    const res = await POST(
+      makeRequest({
+        email: 'test@test.com',
+        password: 'password123',
+        first_name: 'Test',
+        last_name: 'User',
+        user_type: 'staff',
+        law_firm_id: 'nonexistent-firm',
+      }) as never
+    )
+    expect(res.status).toBe(404)
+    const json = await res.json()
+    expect(json.error).toContain('Escritorio')
   })
 
   it('creates user successfully with auth + profile', async () => {
@@ -240,6 +338,7 @@ describe('POST /api/admin/users', () => {
   it('rolls back auth user if profile insert fails', async () => {
     mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
     mockCreateUser.mockResolvedValue({ data: { user: { id: 'auth-rollback' } }, error: null })
+    mockDeleteUser.mockResolvedValue({ error: null })
     setupInsertChain(null, { message: 'duplicate email' })
 
     const POST = await getHandler()
@@ -266,46 +365,72 @@ describe('PATCH /api/admin/users/[id]', () => {
     return mod.PATCH
   }
 
+  it('returns 400 for invalid UUID', async () => {
+    mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
+    const PATCH = await getHandler()
+    const req = new Request('http://localhost/api/admin/users/not-a-uuid', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ first_name: 'Test' }),
+    })
+    const res = await PATCH(req as never, { params: { id: 'not-a-uuid' } })
+    expect(res.status).toBe(400)
+    const json = await res.json()
+    expect(json.error).toContain('ID invalido')
+  })
+
+  it('returns 400 on malformed JSON', async () => {
+    mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
+    const PATCH = await getHandler()
+    const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_1, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'bad-json',
+    })
+    const res = await PATCH(req as never, { params: { id: VALID_UUID_1 } })
+    expect(res.status).toBe(400)
+  })
+
   it('returns 403 when setting user_type to super_admin', async () => {
     mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
     const PATCH = await getHandler()
-    const req = new Request('http://localhost/api/admin/users/u1', {
+    const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_1, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_type: 'super_admin' }),
     })
-    const res = await PATCH(req as never, { params: { id: 'u1' } })
+    const res = await PATCH(req as never, { params: { id: VALID_UUID_1 } })
     expect(res.status).toBe(403)
   })
 
   it('returns 400 when no valid fields provided', async () => {
     mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
     const PATCH = await getHandler()
-    const req = new Request('http://localhost/api/admin/users/u1', {
+    const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_1, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: 'cant-change@test.com' }),
     })
-    const res = await PATCH(req as never, { params: { id: 'u1' } })
+    const res = await PATCH(req as never, { params: { id: VALID_UUID_1 } })
     expect(res.status).toBe(400)
   })
 
   it('rejects admin updating user from another firm', async () => {
     mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
     setupSelectThenUpdateChain(
-      { law_firm_id: 'other-firm' }, // target user from different firm
+      { law_firm_id: 'other-firm' },
       null,
       null,
       null
     )
 
     const PATCH = await getHandler()
-    const req = new Request('http://localhost/api/admin/users/u-other', {
+    const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_OTHER, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ first_name: 'Hacked' }),
     })
-    const res = await PATCH(req as never, { params: { id: 'u-other' } })
+    const res = await PATCH(req as never, { params: { id: VALID_UUID_OTHER } })
     expect(res.status).toBe(403)
   })
 
@@ -314,16 +439,16 @@ describe('PATCH /api/admin/users/[id]', () => {
     setupSelectThenUpdateChain(
       { law_firm_id: 'firm-1' },
       null,
-      { id: 'u2', first_name: 'Updated', law_firm_id: 'firm-1' }
+      { id: VALID_UUID_2, first_name: 'Updated', law_firm_id: 'firm-1' }
     )
 
     const PATCH = await getHandler()
-    const req = new Request('http://localhost/api/admin/users/u2', {
+    const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_2, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ first_name: 'Updated' }),
     })
-    const res = await PATCH(req as never, { params: { id: 'u2' } })
+    const res = await PATCH(req as never, { params: { id: VALID_UUID_2 } })
     expect(res.status).toBe(200)
   })
 })
@@ -336,11 +461,19 @@ describe('DELETE /api/admin/users/[id]', () => {
     return mod.DELETE
   }
 
+  it('returns 400 for invalid UUID', async () => {
+    mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
+    const DELETE = await getHandler()
+    const req = new Request('http://localhost/api/admin/users/bad', { method: 'DELETE' })
+    const res = await DELETE(req as never, { params: { id: 'bad' } })
+    expect(res.status).toBe(400)
+  })
+
   it('prevents self-deactivation', async () => {
     mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
     const DELETE = await getHandler()
-    const req = new Request('http://localhost/api/admin/users/admin-1', { method: 'DELETE' })
-    const res = await DELETE(req as never, { params: { id: 'admin-1' } })
+    const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_ADMIN, { method: 'DELETE' })
+    const res = await DELETE(req as never, { params: { id: VALID_UUID_ADMIN } })
     expect(res.status).toBe(400)
     const json = await res.json()
     expect(json.error).toContain('proprio')
@@ -349,15 +482,45 @@ describe('DELETE /api/admin/users/[id]', () => {
   it('rejects deactivation of user from another firm', async () => {
     mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
     setupSelectThenUpdateChain(
-      { law_firm_id: 'other-firm' },
+      { law_firm_id: 'other-firm', user_type: 'staff' },
       null,
       null
     )
 
     const DELETE = await getHandler()
-    const req = new Request('http://localhost/api/admin/users/u-other', { method: 'DELETE' })
-    const res = await DELETE(req as never, { params: { id: 'u-other' } })
+    const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_OTHER, { method: 'DELETE' })
+    const res = await DELETE(req as never, { params: { id: VALID_UUID_OTHER } })
     expect(res.status).toBe(403)
+  })
+
+  it('prevents deactivating the last admin of a firm', async () => {
+    mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
+    setupSelectThenCountThenUpdateChain(
+      { law_firm_id: 'firm-1', user_type: 'admin' },
+      1, // only 1 active admin
+      null
+    )
+
+    const DELETE = await getHandler()
+    const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_2, { method: 'DELETE' })
+    const res = await DELETE(req as never, { params: { id: VALID_UUID_2 } })
+    expect(res.status).toBe(400)
+    const json = await res.json()
+    expect(json.error).toContain('ultimo administrador')
+  })
+
+  it('allows deactivating admin when multiple admins exist', async () => {
+    mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
+    setupSelectThenCountThenUpdateChain(
+      { law_firm_id: 'firm-1', user_type: 'admin' },
+      3, // 3 active admins
+      { id: VALID_UUID_2, status: 'inactive' }
+    )
+
+    const DELETE = await getHandler()
+    const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_2, { method: 'DELETE' })
+    const res = await DELETE(req as never, { params: { id: VALID_UUID_2 } })
+    expect(res.status).toBe(200)
   })
 })
 
@@ -368,6 +531,14 @@ describe('POST /api/admin/users/[id]/reset-password', () => {
     const mod = await import('@/app/api/admin/users/[id]/reset-password/route')
     return mod.POST
   }
+
+  it('returns 400 for invalid UUID', async () => {
+    mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
+    const POST = await getHandler()
+    const req = new Request('http://localhost/api/admin/users/bad/reset-password', { method: 'POST' })
+    const res = await POST(req as never, { params: { id: 'bad' } })
+    expect(res.status).toBe(400)
+  })
 
   it('returns 404 when user not found', async () => {
     mockVerifyAdmin.mockResolvedValue({ profile: adminProfile, session: {} })
@@ -380,8 +551,8 @@ describe('POST /api/admin/users/[id]/reset-password', () => {
     })
 
     const POST = await getHandler()
-    const req = new Request('http://localhost/api/admin/users/missing/reset-password', { method: 'POST' })
-    const res = await POST(req as never, { params: { id: 'missing' } })
+    const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_1 + '/reset-password', { method: 'POST' })
+    const res = await POST(req as never, { params: { id: VALID_UUID_1 } })
     expect(res.status).toBe(404)
   })
 
@@ -400,8 +571,8 @@ describe('POST /api/admin/users/[id]/reset-password', () => {
     })
 
     const POST = await getHandler()
-    const req = new Request('http://localhost/api/admin/users/u-other/reset-password', { method: 'POST' })
-    const res = await POST(req as never, { params: { id: 'u-other' } })
+    const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_OTHER + '/reset-password', { method: 'POST' })
+    const res = await POST(req as never, { params: { id: VALID_UUID_OTHER } })
     expect(res.status).toBe(403)
   })
 
@@ -421,8 +592,8 @@ describe('POST /api/admin/users/[id]/reset-password', () => {
     mockGenerateLink.mockResolvedValue({ error: null })
 
     const POST = await getHandler()
-    const req = new Request('http://localhost/api/admin/users/u1/reset-password', { method: 'POST' })
-    const res = await POST(req as never, { params: { id: 'u1' } })
+    const req = new Request('http://localhost/api/admin/users/' + VALID_UUID_1 + '/reset-password', { method: 'POST' })
+    const res = await POST(req as never, { params: { id: VALID_UUID_1 } })
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(json.message).toContain('user@firm.com')

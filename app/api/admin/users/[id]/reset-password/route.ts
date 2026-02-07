@@ -2,14 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/supabase/verify-admin'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function POST(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const auth = await verifyAdmin()
-  if ('error' in auth) return auth.error
+  if (auth.error) return auth.error
 
   const { profile } = auth
+
+  if (!UUID_RE.test(params.id)) {
+    return NextResponse.json({ error: 'ID invalido' }, { status: 400 })
+  }
 
   const supabase = createAdminClient()
 

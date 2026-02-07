@@ -299,20 +299,23 @@ export default function UsersManagementPage() {
                   <input {...register('email')} type="email" disabled={!!editingUser} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50" />
                   {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
                 </div>
-                {!editingUser && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Senha *</label>
-                      <input {...register('password' as keyof FormData)} type="password" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Minimo 8 caracteres" />
-                      {(errors as Record<string, { message?: string }>).password && <p className="text-sm text-red-600 mt-1">{(errors as Record<string, { message?: string }>).password?.message}</p>}
+                {!editingUser && (() => {
+                  const fieldErrors = errors as Record<string, { message?: string }>
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Senha *</label>
+                        <input {...register('password' as keyof FormData)} type="password" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Minimo 8 caracteres" />
+                        {fieldErrors.password && <p className="text-sm text-red-600 mt-1">{fieldErrors.password.message}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha</label>
+                        <input {...register('password_confirmation' as keyof FormData)} type="password" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        {fieldErrors.password_confirmation && <p className="text-sm text-red-600 mt-1">{fieldErrors.password_confirmation.message}</p>}
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha</label>
-                      <input {...register('password_confirmation' as keyof FormData)} type="password" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {(errors as Record<string, { message?: string }>).password_confirmation && <p className="text-sm text-red-600 mt-1">{(errors as Record<string, { message?: string }>).password_confirmation?.message}</p>}
-                    </div>
-                  </div>
-                )}
+                  )
+                })()}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>

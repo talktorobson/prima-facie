@@ -65,7 +65,8 @@ export function useCreateUser() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-      const json = await res.json()
+      let json: { data?: User; error?: string }
+      try { json = await res.json() } catch { throw new Error('Resposta invalida do servidor') }
       if (!res.ok) throw new Error(json.error || 'Erro ao criar usuario')
       return json.data as User
     },
@@ -85,7 +86,8 @@ export function useUpdateUser() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       })
-      const json = await res.json()
+      let json: { data?: User; error?: string }
+      try { json = await res.json() } catch { throw new Error('Resposta invalida do servidor') }
       if (!res.ok) throw new Error(json.error || 'Erro ao atualizar usuario')
       return json.data as User
     },
@@ -103,7 +105,8 @@ export function useDeactivateUser() {
       const res = await fetch(`/api/admin/users/${id}`, {
         method: 'DELETE',
       })
-      const json = await res.json()
+      let json: { data?: User; error?: string }
+      try { json = await res.json() } catch { throw new Error('Resposta invalida do servidor') }
       if (!res.ok) throw new Error(json.error || 'Erro ao desativar usuario')
       return json.data as User
     },

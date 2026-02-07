@@ -191,6 +191,16 @@ export const websiteFooterSchema = z.object({
   copyright_text: z.string().min(1, 'Texto de copyright é obrigatório'),
 })
 
+// ----- Contact Form Custom Fields -----
+export const websiteContactFormFieldSchema = z.object({
+  id: z.string().min(1),
+  type: z.enum(['select', 'textarea']),
+  label: z.string().min(1),
+  placeholder: z.string().optional(),
+  required: z.boolean().optional(),
+  options: z.array(z.string()).optional(),
+})
+
 // ----- Contact Info -----
 export const websiteContactInfoSchema = z.object({
   phone: z.string().min(1, 'Telefone é obrigatório'),
@@ -200,6 +210,7 @@ export const websiteContactInfoSchema = z.object({
   hours: z.string().min(1, 'Horário é obrigatório'),
   whatsapp_number: z.string().min(1, 'Número do WhatsApp é obrigatório'),
   whatsapp_message: z.string().min(1, 'Mensagem do WhatsApp é obrigatória'),
+  contact_form_fields: z.array(websiteContactFormFieldSchema).optional(),
 })
 
 // ----- SEO -----

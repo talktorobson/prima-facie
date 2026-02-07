@@ -194,6 +194,16 @@ export interface WebsiteFooter {
   copyright_text: string
 }
 
+// ----- Contact Form Custom Fields -----
+export interface WebsiteContactFormField {
+  id: string
+  type: 'select' | 'textarea'
+  label: string
+  placeholder?: string
+  required?: boolean
+  options?: string[] // for select fields only
+}
+
 // ----- Contact Info (shared) -----
 export interface WebsiteContactInfo {
   phone: string
@@ -203,6 +213,7 @@ export interface WebsiteContactInfo {
   hours: string
   whatsapp_number: string
   whatsapp_message: string
+  contact_form_fields?: WebsiteContactFormField[]
 }
 
 // ----- SEO -----

@@ -28,6 +28,7 @@ import type {
   WebsiteCtaFinal,
   WebsiteFooter,
   WebsiteContactInfo,
+  WebsiteContactFormField,
   WebsiteSeo,
 } from '@/types/website'
 import {
@@ -1007,8 +1008,40 @@ function ContactInfoTab({ data, onSave, saving }: { data: WebsiteContactInfo; on
   const [local, setLocal] = useState<WebsiteContactInfo>(
     data || { phone: '', email: '', address: '', address_cep: '', hours: '', whatsapp_number: '', whatsapp_message: '' }
   )
+  const customFields = local.contact_form_fields || []
+
+  const addCustomField = () => {
+    const newField: WebsiteContactFormField = {
+      id: crypto.randomUUID(),
+      type: 'textarea',
+      label: '',
+      placeholder: '',
+      required: false,
+    }
+    setLocal({ ...local, contact_form_fields: [...customFields, newField] })
+  }
+
+  const updateCustomField = (index: number, updates: Partial<WebsiteContactFormField>) => {
+    const updated = [...customFields]
+    updated[index] = { ...updated[index], ...updates }
+    setLocal({ ...local, contact_form_fields: updated })
+  }
+
+  const removeCustomField = (index: number) => {
+    setLocal({ ...local, contact_form_fields: customFields.filter((_, i) => i !== index) })
+  }
+
+  const moveCustomField = (index: number, direction: 'up' | 'down') => {
+    const target = direction === 'up' ? index - 1 : index + 1
+    if (target < 0 || target >= customFields.length) return
+    const updated = [...customFields]
+    ;[updated[index], updated[target]] = [updated[target], updated[index]]
+    setLocal({ ...local, contact_form_fields: updated })
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Existing contact info fields */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <FieldLabel>Telefone</FieldLabel>
@@ -1043,6 +1076,117 @@ function ContactInfoTab({ data, onSave, saving }: { data: WebsiteContactInfo; on
           <TextInput value={local.whatsapp_message} onChange={(v) => setLocal({ ...local, whatsapp_message: v })} />
         </div>
       </div>
+
+      {/* Custom form fields editor */}
+      <div className="border-t border-gray-200 pt-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">Campos Personalizados do Formulario</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Adicione campos extras ao formulario de contato do site (alem de nome, e-mail, telefone, empresa e CNPJ).
+        </p>
+
+        {customFields.length === 0 && (
+          <p className="text-sm text-gray-400 italic mb-4">Nenhum campo personalizado adicionado.</p>
+        )}
+
+        {customFields.map((field, i) => (
+          <div key={field.id} className="border border-gray-200 rounded-lg p-4 mb-3">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-gray-600">Campo {i + 1}</span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => moveCustomField(i, 'up')}
+                  disabled={i === 0}
+                  className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => moveCustomField(i, 'down')}
+                  disabled={i === customFields.length - 1}
+                  className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => removeCustomField(i)}
+                  className="p-1 text-red-500 hover:bg-red-50 rounded"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <FieldLabel>Tipo</FieldLabel>
+                <select
+                  value={field.type}
+                  onChange={(e) => updateCustomField(i, { type: e.target.value as 'select' | 'textarea' })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                >
+                  <option value="textarea">Texto livre</option>
+                  <option value="select">Lista de opcoes</option>
+                </select>
+              </div>
+              <div>
+                <FieldLabel>Label</FieldLabel>
+                <TextInput
+                  value={field.label}
+                  onChange={(v) => updateCustomField(i, { label: v })}
+                  placeholder="Ex: Area de Interesse"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <FieldLabel>Placeholder</FieldLabel>
+                <TextInput
+                  value={field.placeholder || ''}
+                  onChange={(v) => updateCustomField(i, { placeholder: v })}
+                  placeholder="Texto de ajuda"
+                />
+              </div>
+              <div className="flex items-end pb-1">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={field.required || false}
+                    onChange={(e) => updateCustomField(i, { required: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  Obrigatorio
+                </label>
+              </div>
+            </div>
+
+            {field.type === 'select' && (
+              <div>
+                <FieldLabel>Opcoes (uma por linha)</FieldLabel>
+                <textarea
+                  value={(field.options || []).join('\n')}
+                  onChange={(e) =>
+                    updateCustomField(i, {
+                      options: e.target.value.split('\n').filter(Boolean),
+                    })
+                  }
+                  rows={3}
+                  placeholder="Direito Trabalhista&#10;Direito Civil&#10;Direito Empresarial"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                />
+              </div>
+            )}
+          </div>
+        ))}
+
+        <button
+          onClick={addCustomField}
+          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+        >
+          <Plus className="h-4 w-4" /> Adicionar campo
+        </button>
+      </div>
+
       <SaveButton saving={saving} onClick={() => onSave(local)} />
     </div>
   )

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { WebsiteContent } from '@/types/website'
 import WebsitePageShell from '@/components/website/website-page-shell'
+import WebsiteContactForm from '@/components/website/website-contact-form'
 import { Phone, Mail, MapPin, Clock } from 'lucide-react'
 import type { Metadata } from 'next'
 
@@ -45,7 +46,7 @@ export default async function ContatoPage({ params }: PageProps) {
   const data = await getData(params.slug)
   if (!data) notFound()
 
-  const { content } = data
+  const { firm, content } = data
   const info = content.contact_info
 
   const contactItems = [
@@ -100,54 +101,10 @@ export default async function ContatoPage({ params }: PageProps) {
             </div>
 
             {/* Contact form */}
-            <div className="bg-white border border-website-mist p-8 rounded">
-              <h2 className="text-xl font-serif font-semibold text-website-ink mb-6">
-                Como podemos ajudar?
-              </h2>
-              <form className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-website-ink mb-1">Nome Completo</label>
-                  <input
-                    type="text"
-                    placeholder="Seu nome completo"
-                    className="w-full px-4 py-3 border border-website-mist rounded focus:outline-none focus:border-website-accent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-website-ink mb-1">E-mail</label>
-                  <input
-                    type="email"
-                    placeholder="seu@email.com"
-                    className="w-full px-4 py-3 border border-website-mist rounded focus:outline-none focus:border-website-accent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-website-ink mb-1">Telefone</label>
-                  <input
-                    type="tel"
-                    placeholder="(00) 00000-0000"
-                    className="w-full px-4 py-3 border border-website-mist rounded focus:outline-none focus:border-website-accent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-website-ink mb-1">Mensagem</label>
-                  <textarea
-                    rows={4}
-                    placeholder="Descreva sua necessidade..."
-                    className="w-full px-4 py-3 border border-website-mist rounded focus:outline-none focus:border-website-accent resize-none"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full px-8 py-4 bg-website-accent text-white font-medium tracking-wide hover:opacity-90 transition-opacity rounded"
-                >
-                  Enviar Mensagem
-                </button>
-                <p className="text-xs text-website-stone text-center">
-                  Seus dados estao protegidos pela LGPD. Responderemos em ate 24 horas.
-                </p>
-              </form>
-            </div>
+            <WebsiteContactForm
+              lawFirmId={firm.id}
+              customFields={info?.contact_form_fields}
+            />
           </div>
         </div>
       </section>

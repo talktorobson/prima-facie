@@ -95,6 +95,7 @@ export default function PipelinePage() {
   const [sourceFilter, setSourceFilter] = useState('')
   const [areaFilter, setAreaFilter] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  const [viewingLead, setViewingLead] = useState<Lead | null>(null)
 
   const { data: pipelineCards, isLoading: cardsLoading } = usePipelineCards()
   const { data: pipelineStages } = usePipelineStages()
@@ -518,14 +519,16 @@ export default function PipelinePage() {
                   {/* Actions */}
                   <div className="ml-5 flex-shrink-0 flex space-x-2">
                     <button
-                      onClick={() => console.log('View lead:', lead.id)}
+                      onClick={() => setViewingLead(lead)}
                       className="inline-flex items-center p-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                      title="Visualizar"
                     >
                       <EyeIcon className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => console.log('Edit lead:', lead.id)}
+                      onClick={() => router.push(`/pipeline/${lead.id}/edit`)}
                       className="inline-flex items-center p-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                      title="Editar"
                     >
                       <PencilIcon className="h-4 w-4" />
                     </button>
@@ -571,6 +574,111 @@ export default function PipelinePage() {
           </div>
         )}
       </div>
+
+      {/* Lead Detail Dialog */}
+      {viewingLead && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div className="fixed inset-0 bg-gray-500/75 transition-opacity" onClick={() => setViewingLead(null)} />
+            <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+              <div className="bg-white px-4 pb-4 pt-5 sm:p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{viewingLead.name}</h3>
+                    {viewingLead.company && (
+                      <p className="text-sm text-gray-500 flex items-center mt-1">
+                        <BuildingOfficeIcon className="w-4 h-4 mr-1" />
+                        {viewingLead.company}
+                      </p>
+                    )}
+                  </div>
+                  {getStatusBadge(viewingLead.status)}
+                </div>
+
+                <dl className="space-y-3 text-sm">
+                  {viewingLead.email && (
+                    <div className="flex items-center">
+                      <dt className="flex items-center text-gray-500 w-28">
+                        <EnvelopeIcon className="w-4 h-4 mr-2" /> Email
+                      </dt>
+                      <dd className="text-gray-900">{viewingLead.email}</dd>
+                    </div>
+                  )}
+                  {viewingLead.phone && (
+                    <div className="flex items-center">
+                      <dt className="flex items-center text-gray-500 w-28">
+                        <PhoneIcon className="w-4 h-4 mr-2" /> Telefone
+                      </dt>
+                      <dd className="text-gray-900">{viewingLead.phone}</dd>
+                    </div>
+                  )}
+                  {viewingLead.legal_area && (
+                    <div className="flex items-center">
+                      <dt className="text-gray-500 w-28">Area</dt>
+                      <dd className="text-gray-900">{viewingLead.legal_area}</dd>
+                    </div>
+                  )}
+                  <div className="flex items-center">
+                    <dt className="text-gray-500 w-28">Origem</dt>
+                    <dd className="text-gray-900">{viewingLead.source}</dd>
+                  </div>
+                  {viewingLead.estimated_value != null && (
+                    <div className="flex items-center">
+                      <dt className="flex items-center text-gray-500 w-28">
+                        <CurrencyDollarIcon className="w-4 h-4 mr-2" /> Valor
+                      </dt>
+                      <dd className="text-gray-900">
+                        {formatCurrency(viewingLead.estimated_value)} ({viewingLead.probability}%)
+                      </dd>
+                    </div>
+                  )}
+                  <div className="flex items-center">
+                    <dt className="flex items-center text-gray-500 w-28">
+                      <CalendarIcon className="w-4 h-4 mr-2" /> Criado em
+                    </dt>
+                    <dd className="text-gray-900">{formatDate(viewingLead.created_at)}</dd>
+                  </div>
+                  {viewingLead.next_action && (
+                    <div className="flex items-start">
+                      <dt className="text-gray-500 w-28">Proxima acao</dt>
+                      <dd className="text-gray-900">
+                        {viewingLead.next_action}
+                        {viewingLead.next_action_date && ` (${formatDate(viewingLead.next_action_date)})`}
+                      </dd>
+                    </div>
+                  )}
+                  {viewingLead.description && (
+                    <div className="pt-2 border-t border-gray-200">
+                      <dt className="text-gray-500 mb-1">Descricao</dt>
+                      <dd className="text-gray-900">{viewingLead.description}</dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    router.push(`/pipeline/${viewingLead.id}/edit`)
+                    setViewingLead(null)
+                  }}
+                  className="inline-flex w-full justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 sm:w-auto"
+                >
+                  <PencilIcon className="w-4 h-4 mr-1.5" />
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewingLead(null)}
+                  className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

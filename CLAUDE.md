@@ -1,90 +1,112 @@
 # CLAUDE.md - Prima Facie Project
 
 ## Project Overview
-Prima Facie is a Next.js 14 application for legal practice management (Sistema de Gestão para Escritórios de Advocacia) with TypeScript, Tailwind CSS, Supabase authentication, and a comprehensive dashboard. The UI is localized in Portuguese.
+Prima Facie is a Next.js 14 legal practice management SaaS (Sistema de Gestao para Escritorios de Advocacia) with TypeScript, Tailwind CSS, Supabase (PostgreSQL + Auth + RLS + Storage), and TanStack Query. UI is localized in Portuguese (pt-BR).
 
 ## Project Structure
 ```
 prima-facie/
-├── app/                       # Next.js 14 App Router
-│   ├── (auth)/               # Authentication routes group
-│   │   ├── login/            # Login page
+├── app/                        # Next.js 14 App Router (57 pages)
+│   ├── (auth)/                # Authentication routes group
+│   │   ├── login/             # Login page
 │   │   ├── register/         # Registration page
 │   │   ├── forgot-password/  # Password recovery
+│   │   ├── privacy/          # Privacy policy page
+│   │   ├── terms/            # Terms of use page
 │   │   └── layout.tsx        # Auth layout wrapper
 │   ├── (dashboard)/          # Protected dashboard routes
-│   │   ├── admin/            # Admin panel
-│   │   ├── matters/          # Legal matters/cases (full CRUD)
-│   │   ├── clients/          # Client management (placeholder)
-│   │   ├── billing/          # Financial/billing (placeholder)
-│   │   ├── calendar/         # Calendar/scheduling (placeholder)
-│   │   ├── tasks/            # Task management (placeholder)
-│   │   ├── documents/        # Document management (placeholder)
-│   │   ├── reports/          # Reports/analytics (placeholder)
-│   │   ├── settings/         # System settings (placeholder)
+│   │   ├── admin/            # Admin panel (dashboard + 10 subroutes)
+│   │   │   ├── analytics/    # Admin analytics dashboard
+│   │   │   ├── billing/      # Admin subscription billing
+│   │   │   ├── branding/     # Firm branding settings
+│   │   │   ├── chat-topics/  # Chat topic management
+│   │   │   ├── discount-rules/ # Discount rule engine
+│   │   │   ├── law-firm/     # Law firm settings
+│   │   │   ├── notifications/ # Notification preferences
+│   │   │   ├── payment-plans/ # Payment plan configuration
+│   │   │   ├── security/     # Security audit log
+│   │   │   ├── settings/     # Admin system settings
+│   │   │   ├── subscription-plans/ # Plan management
+│   │   │   └── users/        # User management
+│   │   ├── billing/          # Billing module (4 pages)
+│   │   │   ├── invoices/     # Invoice management
+│   │   │   ├── time-tracking/ # Time entry tracking
+│   │   │   └── financial-dashboard/ # AP/AR dashboard
+│   │   ├── calendar/         # Calendar scheduling
+│   │   ├── clients/          # Client management (list, new, detail, edit)
+│   │   ├── dashboard/        # Main dashboard
+│   │   ├── documents/        # Document management
+│   │   ├── matters/          # Legal matters (list, new, detail, edit, workflow, demo)
+│   │   ├── messages/         # Chat/messaging
+│   │   ├── pipeline/         # Sales pipeline (list, new, edit)
+│   │   ├── platform/         # Super admin multi-firm view
+│   │   ├── reports/          # Reports & analytics
+│   │   ├── settings/         # User/firm settings
+│   │   ├── tasks/            # Task management
 │   │   └── layout.tsx        # Dashboard layout with sidebar
 │   ├── portal/               # Portal access
-│   │   ├── client/           # Client portal
+│   │   ├── client/           # Client portal (dashboard, matters, messages, billing, profile)
 │   │   ├── staff/            # Staff portal
 │   │   └── layout.tsx        # Portal layout wrapper
+│   ├── about/                # Public about page
+│   ├── contact/              # Public contact page
+│   ├── pricing/              # Public pricing page
 │   ├── layout.tsx            # Root layout (Inter font, Providers)
-│   └── page.tsx              # Root redirect to /login
-├── components/
-│   ├── ui/                   # Reusable UI components
-│   │   ├── button.tsx        # Variants: primary/secondary/outline/ghost/danger
-│   │   ├── input.tsx         # Labels, errors, helper text, validation
-│   │   ├── card.tsx          # Card, CardHeader, CardTitle, CardContent
-│   │   ├── table.tsx         # Full table system with hover states
-│   │   ├── form.tsx          # React Hook Form integration
-│   │   ├── dialog.tsx        # Modal with backdrop, scroll lock, escape
-│   │   ├── select.tsx        # Custom dropdown with keyboard navigation
-│   │   └── index.ts          # Barrel exports
-│   ├── layout/
-│   │   ├── sidebar.tsx       # Fixed desktop sidebar (64px, 9 menu items)
-│   │   └── mobile-menu.tsx   # Hamburger slide-out drawer (<1024px)
-│   ├── matters/              # Matter-specific components
-│   │   ├── create-matter-dialog.tsx
-│   │   ├── edit-matter-dialog.tsx
-│   │   └── delete-matter-dialog.tsx
+│   └── page.tsx              # Landing page (D'Avila Reis)
+├── components/                # 79 component files
+│   ├── ui/                   # 27 reusable UI components + barrel exports
+│   ├── layout/               # Sidebar, mobile menu, dashboard header
+│   ├── auth/                 # Role guards, user profile
+│   ├── matters/              # Create/edit/delete matter dialogs
+│   ├── tasks/                # Task dialogs, item, stats components
+│   ├── chat/                 # Chat interface, conversation list, modals
+│   ├── reports/              # Report tabs and shared utilities
+│   ├── notifications/        # Notification panel
+│   ├── landing/              # Landing page sections (hero, services, team, etc.)
+│   ├── features/
+│   │   ├── billing/          # Time tracking, case billing, payment forms
+│   │   ├── financial/        # AP/AR, collections, vendor management
+│   │   ├── datajud/          # CNJ case enrichment, timeline events
+│   │   └── exports/          # Export button component
 │   └── providers.tsx         # React Query + Supabase context
-├── lib/
-│   ├── supabase/
-│   │   ├── client.ts         # Browser Supabase client
-│   │   └── server.ts         # Server Supabase client
-│   ├── hooks/
-│   │   └── useAuth.ts        # Auth state hook
-│   ├── queries/
-│   │   └── useMatters.ts     # React Query hooks for matters CRUD
-│   └── utils/
-│       └── cn.ts             # clsx + tailwind-merge utility
+├── lib/                       # 70+ service and utility files
+│   ├── supabase/             # Client, server, storage, realtime
+│   ├── hooks/                # use-auth.ts (main), useAuth.ts (legacy)
+│   ├── providers/            # Auth context provider
+│   ├── queries/              # 13 React Query hook files
+│   ├── schemas/              # 6 Zod validation schema files
+│   ├── billing/              # 18 billing service files
+│   ├── financial/            # 3 financial service files
+│   ├── clients/              # Client service + schemas
+│   ├── matters/              # Matter service
+│   ├── exports/              # PDF, Excel, export service
+│   ├── stripe/               # Stripe config + server
+│   ├── notifications/        # Email + chat notification services
+│   ├── whatsapp/             # WhatsApp Business API
+│   ├── integrations/datajud/ # DataJud CNJ integration (4 files)
+│   └── utils/                # cn.ts (classname merger)
 ├── types/
 │   ├── index.ts              # Base types (User, ApiResponse, etc.)
-│   └── database.ts           # Full database schema types (14 entities, 19 enums)
+│   └── database.ts           # Full database schema types (14+ entities, 19+ enums)
 ├── database/
-│   ├── migrations/
-│   │   ├── 001_initial_schema.sql    # 14-table multi-tenant schema
-│   │   └── 002_row_level_security.sql # RLS policies for all tables
-│   ├── seeds/
-│   │   └── 001_sample_data.sql       # Sample firms, users, matters, tasks
-│   ├── docs/
-│   │   └── schema_overview.md
-│   └── README.md
-├── styles/
-│   └── globals.css           # Tailwind CSS setup
-├── tests/                    # 12 test files
-├── middleware.ts             # Route protection with Supabase SSR
-├── next.config.js            # Next.js config (strict mode, SWC, server actions)
-├── tailwind.config.ts        # Custom theme (primary/secondary palettes, animations)
+│   ├── migrations/           # Single consolidated init + archive
+│   │   ├── 000_init.sql      # All-in-one schema (54 tables, RLS, indexes)
+│   │   └── archive/          # 13 original migration files (historical)
+│   ├── seed-data/            # Seed SQL scripts (5 steps)
+│   └── docs/                 # Schema overview documentation
+├── tests/                    # 62 test suites (~47,000 lines)
+│   ├── frontend/             # 11 UI component test files
+│   ├── backend/              # 8 API test files
+│   ├── auth/                 # 8 auth/security test files
+│   ├── database/             # 9 database test files
+│   ├── ops/                  # 10 operations test files
+│   └── (16 more test files)  # Phase 8, integration, foundation tests
+├── middleware.ts             # Route protection (247 lines, role-based)
+├── next.config.js            # Next.js config
+├── tailwind.config.ts        # Custom theme (primary/secondary palettes)
 ├── tsconfig.json             # Strict TS config with path aliases
 ├── jest.config.js            # Jest config (jsdom, coverage)
-├── jest.setup.js             # Test mocks (Next.js router, Supabase)
-├── postcss.config.js         # PostCSS (Tailwind + Autoprefixer)
-├── .eslintrc.json            # ESLint (strict, no-any, explicit returns)
-├── .prettierrc               # Prettier (single quotes, 100 width, semicolons)
-├── package.json              # Dependencies and scripts
-├── setup.sh                  # Project setup script
-├── .env.local.example        # Environment variables template
-└── .gitignore
+└── jest.setup.js             # Test mocks (Next.js router, Supabase)
 ```
 
 ## Technology Stack
@@ -95,10 +117,15 @@ prima-facie/
 - **Database**: Supabase (PostgreSQL) with Row Level Security
 - **State Management**: Zustand 4.4.7
 - **Data Fetching**: TanStack Query (React Query) 5.17.9
-- **Forms & Validation**: React Hook Form 7.49.3 + Zod 3.22.4
+- **Forms & Validation**: React Hook Form 7.58.0 + Zod 3.22.4
 - **Icons**: Lucide React 0.309.0
 - **Date Handling**: date-fns 3.2.0
 - **CSS Utilities**: clsx 2.1.1 + tailwind-merge 3.3.1
+- **PDF**: jsPDF 2.5.1 + jsPDF-AutoTable 3.8.2
+- **Excel**: XLSX 0.18.5
+- **Payments**: Stripe 18.2.1
+- **HTTP**: Axios 1.10.0
+- **Email**: Nodemailer 7.0.3
 
 ## Available Scripts
 - `npm run dev` - Start development server
@@ -108,74 +135,131 @@ prima-facie/
 - `npm test` - Run tests
 - `npm run test:watch` - Run tests in watch mode
 - `npm run test:coverage` - Run tests with coverage
+- `npm run test:ops` - Run operations tests
+- `npm run test:database` - Run database tests
+- `npm run test:all` - Run all test suites
 - `npm run format` - Format code with Prettier
 - `npm run typecheck` - Type check without compiling
 
 ## Key Features
 
 ### Implemented
-- Multi-tenant architecture with law firm isolation
-- Role-based access control (Admin, Staff, Client)
-- Full CRUD for legal matters (create, read, update, delete with dialogs)
+- Multi-tenant architecture with law firm isolation (50+ database tables, RLS)
+- Role-based access control (super_admin, admin, lawyer, staff, client)
+- Landing page (D'Avila Reis institutional page at `/`)
+- Full CRUD for legal matters (create, edit, delete, workflow, demo views)
+- Client management (list, create, detail, edit) with CPF/CNPJ validation
+- Billing module (invoices, time tracking, financial dashboard)
+- Task management with priority, status, and assignment
+- Document management with upload and storage integration
+- Calendar scheduling with event types
+- Reports with export (PDF/Excel)
+- Sales pipeline (list, create, edit lead pages)
+- Admin panel (10 subroutes: analytics, security, billing, notifications, users, etc.)
+- Settings page (7 tabs: firm, account, notifications, security, billing, integrations, appearance)
+- Client portal (dashboard, matters, messages, billing, profile)
+- Staff portal
+- Super admin platform view (multi-firm management)
+- Chat/messaging with conversation management
 - Authentication flow (login, register, forgot password)
-- Route protection middleware with Supabase SSR cookies
-- 7 production UI components (Button, Input, Card, Table, Form, Dialog, Select)
-- Desktop sidebar + responsive mobile menu navigation
-- React Query data layer with optimistic updates and cache invalidation
-- Comprehensive database schema (14 tables) with RLS policies
+- Route protection middleware with role-based access
+- 27 production UI components with barrel exports
+- Desktop sidebar (12 items) + responsive mobile menu
+- React Query data layer with 13 hook files
+- 6 Zod validation schemas
+- 18 billing service files (subscriptions, case billing, discounts, time tracking, payment plans)
+- Financial services (AP/AR, collections, vendor management)
+- Export system (PDF, Excel)
+- DataJud CNJ integration (case enrichment, timeline events)
+- WhatsApp integration infrastructure
+- Email notification service
+- Stripe payment integration
+- 62 test suites (~47,000 lines of test code)
 - Portuguese localization throughout the UI
-- 12 test suites
 
-### Not Yet Implemented
-- Client management page (placeholder exists)
-- Billing/invoice management (placeholder exists)
-- Calendar integration (placeholder exists)
-- Task management page (placeholder exists)
-- Document management (placeholder exists)
-- Reports and analytics (placeholder exists)
-- Settings page (placeholder exists)
-- Portal access controls (placeholder exists)
+### Integration Status
+Most frontend pages use React Query hooks connected to Supabase. Some pages still use mock data internally. See `2026-master-plan.md` for detailed per-module integration status.
 
 ## Authentication Flow
-- `middleware.ts` handles route protection using Supabase SSR cookies
-- **Protected paths**: /admin, /matters, /clients, /billing, /calendar, /tasks, /documents, /reports, /settings
-- **Auth paths**: /login, /register, /forgot-password
-- **Portal paths**: /portal/client, /portal/staff
-- Unauthenticated users redirected to /login with `redirectedFrom` param
-- Authenticated users on auth pages redirected to /matters
+- `middleware.ts` handles route protection using Supabase SSR cookies (247 lines)
+- **Public paths**: `/`, `/pricing`, `/about`, `/contact`
+- **Auth paths**: `/login`, `/register`, `/forgot-password`, `/reset-password`, `/privacy`, `/terms`
+- **Dashboard paths**: `/dashboard`, `/matters`, `/clients`, `/billing`, `/calendar`, `/tasks`, `/documents`, `/reports`, `/settings`, `/messages`, `/pipeline`
+- **Admin paths**: `/admin/*` (admin role required)
+- **Platform paths**: `/platform/*` (super_admin role required)
+- **Portal paths**: `/portal/client/*`, `/portal/staff/*`
+- Unauthenticated users redirected to `/login` with `redirectedFrom` param
+- Role-based route filtering (super_admin, admin, lawyer, staff, client)
 
 ## Database Schema
-Located in `database/migrations/`. 14 tables with UUID primary keys, timestamps, soft deletes, and JSONB fields:
+Single consolidated file: `database/migrations/000_init.sql` (2,348 lines, 54 tables). Original 13 migration files archived in `database/migrations/archive/`.
 
-1. **law_firms** - Multi-tenant base (subscription, branding)
-2. **users** - Staff and clients (linked to Supabase Auth)
-3. **matter_types** - Matter categories with default rates
-4. **contacts** - Clients and prospects (individual/company)
-5. **matters** - Legal cases (process info, billing, assignments)
-6. **matter_contacts** - Matter-Contact N:N relationship
-7. **tasks** - Task management with billing integration
-8. **time_entries** - Hour tracking for billing
-9. **documents** - Document storage with versioning and access levels
-10. **invoices** - Billing with payment tracking
-11. **invoice_line_items** - Invoice detail lines
-12. **messages** - Chat system with external platform support
-13. **pipeline_stages** - Customizable sales pipeline stages
-14. **pipeline_cards** - Pipeline prospects with forecasting
-15. **activity_logs** - Audit trail
+### Schema Sections (in dependency order)
+1. **Extensions** — uuid-ossp, pgcrypto
+2. **Helper Functions** — 6 functions in `public` schema (Supabase-safe)
+3. **Core Tables (15)** — law_firms, users, matter_types, contacts, matters, matter_contacts, tasks, time_entries, documents, invoices, invoice_line_items, messages, pipeline_stages, pipeline_cards, activity_logs
+4. **Billing Tables (9)** — subscription_plans, case_types, case_billing_methods, discount_rules, payment_plans, payment_installments, client_subscriptions, billing_settings, billing_audit_log
+5. **DataJud Tables (5)** — datajud_cases, datajud_movements, datajud_subjects, datajud_parties, datajud_documents
+6. **Time Tracking (7)** — time_entry_categories, timer_sessions, time_entry_approvals, time_entry_adjustments, overtime_rules, time_reports, time_report_entries
+7. **Invoice System (9)** — case_invoices, case_invoice_line_items, invoice_templates, invoice_template_items, recurring_invoices, credit_notes, credit_note_items, invoice_numbering, invoice_email_log
+8. **Financial Mgmt (6)** — vendors, bills, expense_categories, bill_payments, payment_collections, payment_reminders, financial_alerts
+9. **Content Hub (3)** — articles, contact_submissions, newsletter_subscribers
+10. **RLS + Policies** — Staff, client, super_admin bypass, service_role bypass
+11. **Indexes, Triggers, Views** — All indexes, updated_at triggers, platform_law_firm_stats view
 
-RLS policies enforce law firm isolation and role-based data access.
+### Key Design Decisions
+- All helper functions use `public.*` schema (Supabase blocks `auth.*` custom functions)
+- All client FKs reference `contacts(id)` (no `clients` table)
+- Multi-tenant isolation via `law_firm_id` on all tables + RLS policies
+- `super_admin` has `law_firm_id = NULL` with bypass policies
+- 5 child tables have direct `law_firm_id`: matter_contacts, bill_payments, payment_reminders, payment_installments, payment_collections
+
+## React Query Hooks
+All in `lib/queries/`:
+- `useMatters.ts` - Matter CRUD
+- `useTasks.ts` - Task management
+- `useInvoices.ts` - Invoice queries
+- `useTimeEntries.ts` - Time entry queries
+- `useAdmin.ts` - Admin dashboard
+- `useCalendarEvents.ts` - Calendar events
+- `useDocuments.ts` - Document queries
+- `useReports.ts` - Report generation
+- `useSettings.ts` - Settings queries
+- `useClientPortal.ts` - Client portal
+- `useStaffPortal.ts` - Staff portal
+- `usePipeline.ts` - Sales pipeline
+- `usePlatform.ts` - Super admin platform
+
+## UI Components (27 in `components/ui/`)
+Alert, Badge, Button, Card, Checkbox, DatePicker, Dialog, DropdownMenu, EmptyState, FileUpload, Form, Input, Label, LoadingSpinner, Pagination, Progress, ScrollArea, SearchInput, Select, Separator, Skeleton, StatusWorkflowBadge, Switch, Table, Tabs, Textarea, Toast (+ToastProvider)
+
+All exported via barrel file `components/ui/index.ts`.
+
+## Sidebar Navigation (12 items)
+1. Plataforma (`/platform`) - super_admin only
+2. Visao Geral (`/admin`) - admin only
+3. Processos (`/matters`)
+4. Clientes (`/clients`)
+5. Faturamento (`/billing`)
+6. Calendario (`/calendar`)
+7. Documentos (`/documents`)
+8. Tarefas (`/tasks`)
+9. Relatorios (`/reports`)
+10. Pipeline (`/pipeline`)
+11. Mensagens (`/messages`)
+12. Configuracoes (`/settings`)
 
 ## TypeScript Path Aliases
-- `@/*` → `./*`
-- `@/components/*` → `./components/*`
-- `@/lib/*` → `./lib/*`
-- `@/styles/*` → `./styles/*`
-- `@/types/*` → `./types/*`
-- `@/utils/*` → `./lib/utils/*`
-- `@/hooks/*` → `./lib/hooks/*`
+- `@/*` -> `./*`
+- `@/components/*` -> `./components/*`
+- `@/lib/*` -> `./lib/*`
+- `@/styles/*` -> `./styles/*`
+- `@/types/*` -> `./types/*`
+- `@/utils/*` -> `./lib/utils/*`
+- `@/hooks/*` -> `./lib/hooks/*`
 
 ## Development Guidelines
-- Use snake_case for naming conventions
+- Use snake_case for DB, camelCase for TS, PascalCase for components
 - Keep components simple and focused
 - Use Server Components by default, Client Components when needed
 - Implement proper error boundaries
@@ -183,6 +267,15 @@ RLS policies enforce law firm isolation and role-based data access.
 - Use TypeScript strict mode
 - Maintain consistent code style with ESLint and Prettier
 - All UI text in Portuguese
+- React Query + Dialogs pattern for CRUD modules (see `2026-master-plan.md`)
+- Auth context: `useAuthContext()` from `@/lib/providers/auth-provider`
+- Supabase client: `useSupabase()` from `@/components/providers`
+- Profile type: `UserWithRelations` (includes `law_firm?: LawFirm`)
+- super_admin has `law_firm_id = NULL` — guard pages that assume non-null
+
+## Known Issues
+- `jest.config.js` has `moduleNameMapping` (typo, should be `moduleNameMapper`) — `@/` path aliases don't resolve in tests. Tests use self-contained mock components as workaround.
+- Supabase Web Lock deadlock: NEVER make `.from().select()` inside `onAuthStateChange` callback. See `lib/hooks/use-auth.ts` for correct two-effect pattern.
 
 ## Environment Variables
 Copy `.env.local.example` to `.env.local` and configure:
@@ -197,38 +290,58 @@ Copy `.env.local.example` to `.env.local` and configure:
 - `NEXT_PUBLIC_APP_NAME` (default: Prima Facie)
 - `NEXT_PUBLIC_STORAGE_BUCKET` (default: documents)
 
+**Integrations:**
+- `DATAJUD_API_KEY` - CNJ DataJud public API key (get from https://datajud-wiki.cnj.jus.br/api-publica/acesso)
+
 **Optional:**
 - `EMAIL_FROM`, `EMAIL_SMTP_HOST`, `EMAIL_SMTP_PORT`, `EMAIL_SMTP_USER`, `EMAIL_SMTP_PASS` - Email/SMTP
 - `NEXT_PUBLIC_GA_MEASUREMENT_ID` - Google Analytics
 - `NEXT_PUBLIC_SENTRY_DSN` - Error tracking
+- Stripe keys (see `.env.local.example`)
 
 ## Version History
+- **v4.0.0 (2026-02): Full Platform Build-Out**
+  - 57 page routes across dashboard, admin, portal, and public areas
+  - 27 UI components with barrel exports
+  - 13 React Query hook files for all modules
+  - 6 Zod validation schemas
+  - 18 billing service files + 3 financial service files
+  - DataJud CNJ integration
+  - Export system (PDF + Excel)
+  - Stripe payment integration
+  - WhatsApp + email notification infrastructure
+  - Client and staff portals
+  - Super admin multi-firm platform view
+  - Sales pipeline with lead management
+  - 62 test suites (~47,000 lines)
+  - Landing page (D'Avila Reis)
+
 - **v3.0.0 (2025-01): Full CRUD & UI Components**
   - Complete Matter CRUD (create, edit, delete dialogs)
-  - 7 production UI components (Button, Input, Card, Table, Form, Dialog, Select)
+  - 7 production UI components
   - React Query data layer with optimistic updates
   - Desktop sidebar + responsive mobile menu
   - React Hook Form + Zod validation
   - Authentication UI (Login, Register, Forgot Password)
 
-- **v2.0.0-phase2 (2025-01): Database Schema**
+- **v2.0.0 (2025-01): Database Schema**
   - 14-table multi-tenant PostgreSQL schema
-  - Row Level Security policies for all tables
+  - Row Level Security policies
   - Seed data with sample firms, users, matters, tasks
-  - Comprehensive TypeScript types for all entities (19 enums, 14+ types)
-  - Schema documentation
+  - Comprehensive TypeScript types
 
-- **v1.0.0-phase1 (2025-01-15): Foundation Setup**
+- **v1.0.0 (2025-01): Foundation Setup**
   - Next.js 14 with App Router and TypeScript
   - Supabase integration for authentication
   - Tailwind CSS with custom theme
-  - Complete project structure with all routes
-  - Unit test suite with Jest and React Testing Library
   - Middleware for route protection
   - Portuguese UI/UX implementation
 
 ## Current Status
-- Phase 1 (Foundation): Complete
-- Phase 2 (Database Schema): Complete
-- Phase 3 (UI Components & CRUD): Complete for Matters
-- **Next**: Extend CRUD to remaining modules (Clients, Billing, Tasks, Documents, Calendar, Reports, Settings)
+- Infrastructure (DB, Auth, Middleware, Landing): Complete
+- Backend Services (Billing, Financial, Clients, Matters, Exports): Complete
+- UI Components (27/27): Complete
+- React Query Hooks (13 files): Complete
+- Frontend Pages (57 routes): Built, some still using mock data internally
+- **Next**: Wire remaining pages to real Supabase data via existing RQ hooks + services
+- See `2026-master-plan.md` for detailed per-sprint integration status

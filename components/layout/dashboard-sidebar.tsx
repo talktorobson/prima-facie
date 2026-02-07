@@ -22,7 +22,8 @@ import {
   SettingsIcon,
   MessageSquareIcon,
   UserPlusIcon,
-  ShieldIcon
+  ShieldIcon,
+  GlobeIcon
 } from 'lucide-react'
 
 interface NavItem {
@@ -96,6 +97,12 @@ const navigation: NavItem[] = [
     name: 'Configurações',
     href: '/settings',
     icon: SettingsIcon,
+  },
+  {
+    name: 'Website',
+    href: '/admin/website',
+    icon: GlobeIcon,
+    roles: ['admin', 'super_admin']
   },
   {
     name: 'Admin',

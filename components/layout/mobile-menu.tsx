@@ -42,6 +42,7 @@ const navigation: NavItem[] = [
   { name: 'Relatórios', href: '/reports', icon: BarChart3 },
   { name: 'Pipeline', href: '/pipeline', icon: Kanban },
   { name: 'Mensagens', href: '/messages', icon: MessageSquare },
+  { name: 'Website', href: '/admin/website', icon: Globe, roles: ['admin', 'super_admin'] },
   { name: 'Configurações', href: '/settings', icon: Settings },
 ]
 

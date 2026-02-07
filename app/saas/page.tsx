@@ -9,8 +9,8 @@ import SaasCta from '@/components/saas/saas-cta'
 import SaasFooter from '@/components/saas/saas-footer'
 
 export const metadata: Metadata = {
-  title: 'Prima Facie — Gestao Juridica Moderna',
-  description: 'Plataforma completa de gestao para escritorios de advocacia. Processos, clientes, faturamento, documentos e muito mais.',
+  title: 'Prima Facie — Gestão Jurídica Moderna',
+  description: 'Plataforma completa de gestão para escritórios de advocacia. Processos, clientes, faturamento, documentos e muito mais.',
 }
 
 export default function SaasPage() {

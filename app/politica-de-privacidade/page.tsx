@@ -3,16 +3,16 @@ import PublicPageShell from '@/components/landing/public-page-shell'
 import ScrollReveal from '@/components/landing/scroll-reveal'
 
 export const metadata: Metadata = {
-  title: "Politica de Privacidade | D'Avila Reis Advogados",
+  title: "Política de Privacidade | D'Avila Reis Advogados",
   description:
-    'Politica de privacidade do escritorio D\'Avila Reis Advogados, em conformidade com a Lei Geral de Protecao de Dados (LGPD).',
+    'Política de privacidade do escritório D\'Avila Reis Advogados, em conformidade com a Lei Geral de Protecao de Dados (LGPD).',
 }
 
 const sections = [
   {
-    title: '1. Introducao',
+    title: '1. Introdução',
     content: [
-      'O escritorio D\'Avila Reis Advogados, inscrito no CNPJ sob o numero XX.XXX.XXX/0001-XX, com sede na Av. Dr. Vinicio Gagliardi, 675, Centro, Cerquilho/SP, CEP 18520-091, esta comprometido com a protecao da privacidade e dos dados pessoais de seus clientes, visitantes e usuarios de seus servicos digitais.',
+      'O escritório D\'Avila Reis Advogados, inscrito no CNPJ sob o numero XX.XXX.XXX/0001-XX, com sede na Av. Dr. Vinicio Gagliardi, 675, Centro, Cerquilho/SP, CEP 18520-091, esta comprometido com a protecao da privacidade e dos dados pessoais de seus clientes, visitantes e usuarios de seus servicos digitais.',
       'Esta Politica de Privacidade descreve como coletamos, utilizamos, armazenamos e protegemos suas informacoes pessoais, em conformidade com a Lei Geral de Protecao de Dados (Lei n. 13.709/2018 — LGPD) e demais normas aplicaveis.',
     ],
   },
@@ -22,9 +22,9 @@ const sections = [
       'Podemos coletar os seguintes dados pessoais:',
     ],
     list: [
-      'Dados de identificacao: nome completo, CPF, RG, CNPJ, endereco, telefone, e-mail',
-      'Dados profissionais: cargo, empresa, area de atuacao',
-      'Dados de navegacao: endereco IP, tipo de navegador, paginas acessadas, tempo de visita, cookies',
+      'Dados de identificação: nome completo, CPF, RG, CNPJ, endereço, telefone, e-mail',
+      'Dados profissionais: cargo, empresa, área de atuação',
+      'Dados de navegação: endereço IP, tipo de navegador, páginas acessadas, tempo de visita, cookies',
       'Dados fornecidos por formularios: informacoes inseridas voluntariamente nos formularios de contato ou solicitacao de servicos',
       'Dados processuais: numeros de processos, informacoes de partes e andamentos, quando necessarios para a prestacao de servicos juridicos',
     ],
@@ -35,13 +35,13 @@ const sections = [
       'Os dados pessoais coletados sao utilizados para as seguintes finalidades:',
     ],
     list: [
-      'Prestacao de servicos juridicos e atendimento ao cliente',
-      'Comunicacao sobre andamento de processos e demandas',
-      'Envio de informativos juridicos e conteudos relevantes (mediante consentimento)',
-      'Cumprimento de obrigacoes legais e regulatorias',
-      'Melhoria da experiencia de navegacao em nosso site',
-      'Analise estatistica e aprimoramento de nossos servicos',
-      'Gestao de relacionamento com clientes e prospectos',
+      'Prestação de serviços jurídicos e atendimento ao cliente',
+      'Comunicação sobre andamento de processos e demandas',
+      'Envio de informativos jurídicos e conteúdos relevantes (mediante consentimento)',
+      'Cumprimento de obrigações legais e regulatórias',
+      'Melhoria da experiência de navegação em nosso site',
+      'Análise estatística e aprimoramento de nossos serviços',
+      'Gestão de relacionamento com clientes e prospectos',
     ],
   },
   {
@@ -50,13 +50,13 @@ const sections = [
       'Os dados pessoais podem ser compartilhados com:',
     ],
     list: [
-      'Orgaos do Poder Judiciario, quando necessario para a prestacao de servicos juridicos',
-      'Orgaos publicos, em cumprimento de obrigacoes legais',
-      'Prestadores de servicos essenciais (hospedagem, e-mail, ferramentas de gestao), mediante contratos que garantam a protecao adequada dos dados',
-      'Advogados correspondentes, quando necessario para a atuacao em outras jurisdicoes',
+      'Orgãos do Poder Judiciário, quando necessário para a prestação de serviços jurídicos',
+      'Orgãos públicos, em cumprimento de obrigações legais',
+      'Prestadores de serviços essenciais (hospedagem, e-mail, ferramentas de gestão), mediante contratos que garantam a proteção adequada dos dados',
+      'Advogados correspondentes, quando necessário para a atuação em outras jurisdicoes',
     ],
     afterContent: [
-      'Em nenhuma hipotese comercializamos dados pessoais de nossos clientes ou visitantes.',
+      'Em nenhuma hipótese comercializamos dados pessoais de nossos clientes ou visitantes.',
     ],
   },
   {
@@ -69,18 +69,18 @@ const sections = [
   {
     title: '6. Direitos do Titular',
     content: [
-      'Em conformidade com a LGPD, voce tem direito a:',
+      'Em conformidade com a LGPD, você tem direito a:',
     ],
     list: [
-      'Confirmacao da existencia de tratamento de seus dados pessoais',
+      'Confirmação da existência de tratamento de seus dados pessoais',
       'Acesso aos seus dados pessoais',
-      'Correcao de dados incompletos, inexatos ou desatualizados',
-      'Anonimizacao, bloqueio ou eliminacao de dados desnecessarios ou excessivos',
-      'Portabilidade dos dados a outro fornecedor de servico',
-      'Eliminacao dos dados tratados com base no consentimento',
-      'Informacao sobre entidades publicas e privadas com as quais seus dados foram compartilhados',
-      'Informacao sobre a possibilidade de nao fornecer o consentimento e suas consequencias',
-      'Revogacao do consentimento',
+      'Correção de dados incompletos, inexatos ou desatualizados',
+      'Anonimização, bloqueio ou eliminação de dados desnecessários ou excessivos',
+      'Portabilidade dos dados a outro fornecedor de serviço',
+      'Eliminação dos dados tratados com base no consentimento',
+      'Informação sobre entidades públicas e privadas com as quais seus dados foram compartilhados',
+      'Informação sobre a possibilidade de não fornecer o consentimento e suas consequências',
+      'Revogação do consentimento',
     ],
     afterContent: [
       'Para exercer seus direitos, entre em contato com nosso Encarregado de Dados (DPO) pelos canais indicados ao final desta politica.',
@@ -89,25 +89,25 @@ const sections = [
   {
     title: '7. Cookies',
     content: [
-      'Nosso site utiliza cookies para melhorar a experiencia de navegacao. Para informacoes detalhadas sobre os tipos de cookies utilizados e como gerencia-los, consulte nossa Politica de Cookies.',
+      'Nosso site utiliza cookies para melhorar a experiência de navegação. Para informações detalhadas sobre os tipos de cookies utilizados e como gerenciar, consulte nossa Politica de Cookies.',
     ],
   },
   {
-    title: '8. Seguranca dos Dados',
+    title: '8. Segurança dos Dados',
     content: [
       'Adotamos medidas tecnicas e organizacionais apropriadas para proteger os dados pessoais contra acesso nao autorizado, perda, alteracao ou destruicao. Nossos sistemas utilizam criptografia, controles de acesso e monitoramento continuo para garantir a integridade e confidencialidade das informacoes.',
     ],
   },
   {
-    title: '9. Alteracoes nesta Politica',
+    title: '9. Alterações nesta Politica',
     content: [
-      'Esta Politica de Privacidade pode ser atualizada periodicamente para refletir mudancas em nossas praticas ou em requisitos legais. A versao mais recente estara sempre disponivel nesta pagina, com indicacao da data da ultima atualizacao.',
+      'Esta Política de Privacidade pode ser atualizada periodicamente para refletir mudanças em nossas praticas ou em requisitos legais. A versão mais recente estará sempre disponível nesta página, com indicação da data da última atualização.',
     ],
   },
   {
     title: '10. Contato do DPO (Encarregado de Dados)',
     content: [
-      'Para questoes relacionadas a protecao de dados pessoais, exercicio de direitos ou duvidas sobre esta politica, entre em contato:',
+      'Para questões relacionadas a proteção de dados pessoais, exercício de direitos ou dúvidas sobre esta política, entre em contato:',
     ],
     contact: {
       name: 'D\'Avila Reis Advogados — Encarregado de Dados',
@@ -130,7 +130,7 @@ export default function PoliticaDePrivacidadePage() {
             </h1>
             <div className="w-12 h-[2px] bg-landing-gold mx-auto mb-6" />
             <p className="text-landing-stone text-sm">
-              Ultima atualizacao: Fevereiro de 2026
+              Última atualização: Fevereiro de 2026
             </p>
           </div>
         </section>

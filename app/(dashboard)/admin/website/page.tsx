@@ -219,6 +219,7 @@ export default function AdminWebsitePage() {
                   content={content}
                   lawFirm={lawFirm}
                   slug={lawFirm?.slug || ''}
+                  lawFirmId={effectiveLawFirmId || ''}
                   onSaveSlug={async (slug) => {
                     if (!effectiveLawFirmId) return
                     await updateSlug.mutateAsync({ lawFirmId: effectiveLawFirmId, slug })
@@ -347,6 +348,7 @@ function GeralTab({
   content,
   lawFirm,
   slug,
+  lawFirmId,
   onSaveSlug,
   onSaveSeo,
   saving,
@@ -354,6 +356,7 @@ function GeralTab({
   content: { seo: WebsiteSeo; section_order: string[]; hidden_sections: string[]; is_published: boolean }
   lawFirm: { name: string } | undefined | null
   slug: string
+  lawFirmId: string
   onSaveSlug: (slug: string) => Promise<void>
   onSaveSeo: (data: WebsiteSeo) => void
   onSaveOrder: (order: string[]) => void
@@ -403,12 +406,16 @@ function GeralTab({
             />
           </div>
           <div>
-            <FieldLabel>URL da Imagem OG</FieldLabel>
-            <TextInput
+            <WebsiteImageUpload
+              lawFirmId={lawFirmId}
               value={seo.og_image_url || ''}
-              onChange={(v) => setSeo({ ...seo, og_image_url: v })}
-              placeholder="https://..."
+              onChange={(url) => setSeo({ ...seo, og_image_url: url })}
+              folder="seo"
+              label="Imagem de Compartilhamento (OG Image)"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Aparece ao compartilhar o link no WhatsApp, Facebook, LinkedIn, etc.
+            </p>
           </div>
           <SaveButton saving={saving} onClick={() => onSaveSeo(seo)} />
         </div>

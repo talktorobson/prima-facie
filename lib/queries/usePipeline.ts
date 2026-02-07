@@ -29,8 +29,7 @@ export function usePipelineCards(stageId?: string) {
         .select(`
           *,
           contact:contacts(id, full_name, company_name),
-          matter_type:matter_types(id, name),
-          assigned_user:users!pipeline_cards_assigned_to_fkey(id, full_name)
+          matter_type:matter_types(id, name)
         `)
         .order('created_at', { ascending: false })
       if (stageId) query = query.eq('pipeline_stage_id', stageId)

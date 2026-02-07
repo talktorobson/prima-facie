@@ -86,7 +86,10 @@ export default function MattersPage() {
   // Load matters from database
   useEffect(() => {
     async function loadMatters() {
-      if (!profile?.law_firm_id) return
+      if (!profile?.law_firm_id) {
+        setLoading(false)
+        return
+      }
 
       try {
         setLoading(true)

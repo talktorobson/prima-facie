@@ -66,7 +66,10 @@ export default function BillingPage() {
   }, [profile, selectedPeriod])
 
   const fetchBillingData = async () => {
-    if (!profile?.law_firm_id) return
+    if (!profile?.law_firm_id) {
+      setLoading(false)
+      return
+    }
 
     try {
       setLoading(true)

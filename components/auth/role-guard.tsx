@@ -19,7 +19,16 @@ interface RoleGuardProps {
  * Conditional component that shows children only if user has required roles
  */
 export function RoleGuard({ children, allowedRoles, fallback = null, requireAll = false }: RoleGuardProps) {
-  const { profile } = useAuthContext()
+  const { profile, user } = useAuthContext()
+
+  // Profile still loading (user exists but profile not yet fetched)
+  if (user && !profile) {
+    return (
+      <div className="flex items-center justify-center min-h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    )
+  }
 
   if (!profile) {
     return <>{fallback}</>

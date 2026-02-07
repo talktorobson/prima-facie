@@ -105,7 +105,10 @@ export default function PipelinePage() {
   }, [searchTerm, statusFilter, sourceFilter, areaFilter, leads])
 
   const fetchLeads = async () => {
-    if (!profile?.law_firm_id) return
+    if (!profile?.law_firm_id) {
+      setLoading(false)
+      return
+    }
 
     try {
       setLoading(true)

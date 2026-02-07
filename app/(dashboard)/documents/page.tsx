@@ -116,7 +116,10 @@ export default function DocumentsPage() {
   }, [searchTerm, statusFilter, categoryFilter, documents])
 
   const fetchDocuments = async () => {
-    if (!profile?.law_firm_id) return
+    if (!profile?.law_firm_id) {
+      setLoading(false)
+      return
+    }
 
     try {
       setLoading(true)

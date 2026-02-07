@@ -43,7 +43,7 @@ export function useAuth(): AuthState & AuthActions {
   const [error, setError] = useState<string | null>(null)
 
   const router = useRouter()
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
 
   // =====================================================
   // PROFILE MANAGEMENT
@@ -202,59 +202,53 @@ export function useAuth(): AuthState & AuthActions {
   // AUTH STATE LISTENER
   // =====================================================
 
+  // Effect 1: Listen for auth state changes (lightweight — no Supabase queries).
+  // The onAuthStateChange callback runs while the Supabase auth Web Lock is held.
+  // Any Supabase data query inside it would call getSession() internally, which
+  // tries to acquire the same lock — causing a permanent deadlock. So we ONLY
+  // update React state here and let Effect 2 handle profile fetching.
   useEffect(() => {
-    let mounted = true
-
-    // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-
-      if (mounted) {
-        if (session?.user) {
-          setUser(session.user)
-          const userProfile = await fetchUserProfile(session.user)
-          if (mounted) {
-            setProfile(userProfile)
-          }
-        }
-        setLoading(false)
-      }
-    }
-
-    getInitialSession()
-
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return
-
-        console.log('Auth state changed:', event, session?.user?.email)
-
-        if (event === 'SIGNED_IN' && session?.user) {
+      (event, session) => {
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
           setUser(session.user)
-          const userProfile = await fetchUserProfile(session.user)
-          if (mounted) {
-            setProfile(userProfile)
-          }
+          setLoading(false)
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setProfile(null)
+          setLoading(false)
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
           setUser(session.user)
-          // Profile should remain the same, but we can refresh if needed
-        }
-
-        if (mounted) {
-          setLoading(false)
         }
       }
     )
 
     return () => {
-      mounted = false
       subscription.unsubscribe()
     }
-  }, [supabase.auth])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Effect 2: Fetch user profile when auth user changes.
+  // This runs OUTSIDE the auth lock, so Supabase queries work normally.
+  useEffect(() => {
+    if (!user) {
+      setProfile(null)
+      return
+    }
+
+    let cancelled = false
+    fetchUserProfile(user).then((userProfile) => {
+      if (!cancelled) {
+        setProfile(userProfile)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
   return {
     user,

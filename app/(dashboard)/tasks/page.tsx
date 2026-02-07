@@ -101,7 +101,10 @@ export default function TasksPage() {
   }, [searchTerm, statusFilter, priorityFilter, tasks])
 
   const fetchTasks = async () => {
-    if (!profile?.law_firm_id) return
+    if (!profile?.law_firm_id) {
+      setLoading(false)
+      return
+    }
 
     try {
       setLoading(true)

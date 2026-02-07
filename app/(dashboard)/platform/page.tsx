@@ -11,8 +11,8 @@ import {
 } from '@heroicons/react/24/outline'
 
 export default function PlatformPage() {
-  const { data: firms, isLoading: firmsLoading } = usePlatformFirms()
-  const { data: stats, isLoading: statsLoading } = usePlatformStats()
+  const { data: firms, isLoading: firmsLoading, error: firmsError } = usePlatformFirms()
+  const { data: stats, isLoading: statsLoading, error: statsError } = usePlatformStats()
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
@@ -21,6 +21,7 @@ export default function PlatformPage() {
     new Date(date).toLocaleDateString('pt-BR')
 
   const loading = firmsLoading || statsLoading
+  const error = firmsError || statsError
 
   return (
     <SuperAdminOnly
@@ -43,6 +44,11 @@ export default function PlatformPage() {
         {loading ? (
           <div className="flex items-center justify-center min-h-32">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <p className="text-red-800 font-medium">Erro ao carregar dados da plataforma</p>
+            <p className="text-red-600 text-sm mt-1">{(error as Error).message}</p>
           </div>
         ) : (
           <>

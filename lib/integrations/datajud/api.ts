@@ -130,8 +130,6 @@ interface ElasticsearchResponse {
   }
 }
 
-// Public API key (published on CNJ wiki, same for everyone)
-const DEFAULT_API_KEY = 'cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw=='
 const BASE_URL = 'https://api-publica.datajud.cnj.jus.br'
 
 /**
@@ -195,8 +193,8 @@ class DataJudApiService {
   private client: AxiosInstance
   private rateLimit: RateLimitConfig
 
-  constructor(apiKey?: string) {
-    const key = apiKey || DEFAULT_API_KEY
+  constructor(apiKey: string) {
+    const key = apiKey
 
     this.rateLimit = {
       requests_per_minute: 120,
@@ -338,8 +336,13 @@ let dataJudApiInstance: DataJudApiService | null = null
 
 export const getDataJudApi = (): DataJudApiService => {
   if (!dataJudApiInstance) {
-    // Use env var as optional override; the public key is the default
-    const apiKey = process.env.DATAJUD_API_KEY || undefined
+    const apiKey = process.env.DATAJUD_API_KEY
+    if (!apiKey) {
+      throw new Error(
+        'DATAJUD_API_KEY environment variable is not set. ' +
+        'Get the public key from https://datajud-wiki.cnj.jus.br/api-publica/acesso'
+      )
+    }
     dataJudApiInstance = new DataJudApiService(apiKey)
   }
   return dataJudApiInstance

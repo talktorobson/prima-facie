@@ -8,7 +8,13 @@
 const axios = require('axios');
 
 const BASE_URL = 'http://localhost:3000';
-const DATAJUD_API_KEY = 'cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==';
+const DATAJUD_API_KEY = process.env.DATAJUD_API_KEY;
+
+if (!DATAJUD_API_KEY) {
+  console.error('ERROR: DATAJUD_API_KEY environment variable is not set.');
+  console.error('Get the public key from https://datajud-wiki.cnj.jus.br/api-publica/acesso');
+  process.exit(1);
+}
 
 function log(message, level = 'INFO') {
   const timestamp = new Date().toISOString();

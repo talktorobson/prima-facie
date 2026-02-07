@@ -268,7 +268,7 @@ ORDER BY total_events DESC;
 ### API Documentation
 - CNJ DataJud Public API: https://datajud-wiki.cnj.jus.br/api-publica/acesso
 - API Base URL: `https://api-publica.datajud.cnj.jus.br/api_publica_{court}/_search`
-- Auth: `APIKey cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==` (public)
+- Auth: `APIKey $DATAJUD_API_KEY` (public key — get from https://datajud-wiki.cnj.jus.br/api-publica/acesso)
 - Prima Facie API: `/api/datajud/*` endpoints
 
 ### Support

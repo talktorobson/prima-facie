@@ -1,14 +1,13 @@
 'use client'
 
 import { AdminOnly } from '@/components/auth/role-guard'
-import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useUsers, useCreateUser, useUpdateUser, useDeactivateUser } from '@/lib/queries/useAdmin'
 import { useToast } from '@/components/ui/toast-provider'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { userManagementSchema, type UserManagementFormData } from '@/lib/schemas/settings-schemas'
+import { userManagementSchema, userCreateSchema, type UserManagementFormData, type UserCreateFormData } from '@/lib/schemas/settings-schemas'
 import type { User } from '@/types/database'
 import {
   UsersIcon,
@@ -24,7 +23,6 @@ import {
 import Link from 'next/link'
 
 export default function UsersManagementPage() {
-  const { profile } = useAuthContext()
   const effectiveLawFirmId = useEffectiveLawFirmId()
   const toast = useToast()
   const [searchTerm, setSearchTerm] = useState('')
@@ -38,8 +36,11 @@ export default function UsersManagementPage() {
   const updateUser = useUpdateUser()
   const deactivateUser = useDeactivateUser()
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<UserManagementFormData>({
-    resolver: zodResolver(userManagementSchema),
+  type FormData = UserCreateFormData | UserManagementFormData
+  const activeSchema = editingUser ? userManagementSchema : userCreateSchema
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(activeSchema),
   })
 
   const allUsers = users ?? []
@@ -79,7 +80,7 @@ export default function UsersManagementPage() {
 
   const openCreateModal = () => {
     setEditingUser(null)
-    reset({ email: '', first_name: '', last_name: '', user_type: 'staff', oab_number: '', position: '', phone: '', status: 'active' })
+    reset({ email: '', first_name: '', last_name: '', user_type: 'staff', oab_number: '', position: '', phone: '', status: 'active', password: '', password_confirmation: '' } as FormData)
     setShowModal(true)
   }
 
@@ -98,21 +99,22 @@ export default function UsersManagementPage() {
     setShowModal(true)
   }
 
-  const onSubmit = (data: UserManagementFormData) => {
+  const onSubmit = (data: FormData) => {
     if (editingUser) {
       updateUser.mutate(
         { id: editingUser.id, updates: { first_name: data.first_name, last_name: data.last_name, user_type: data.user_type, oab_number: data.oab_number, position: data.position, phone: data.phone, status: data.status } },
         {
           onSuccess: () => { toast.success('Usuario atualizado com sucesso!'); setShowModal(false) },
-          onError: () => { toast.error('Erro ao atualizar usuario.') },
+          onError: (err) => { toast.error(err instanceof Error ? err.message : 'Erro ao atualizar usuario.') },
         }
       )
     } else {
+      const createData = data as UserCreateFormData
       createUser.mutate(
-        { email: data.email, first_name: data.first_name, last_name: data.last_name, user_type: data.user_type, oab_number: data.oab_number, position: data.position, phone: data.phone, law_firm_id: effectiveLawFirmId ?? null },
+        { email: createData.email, password: createData.password, first_name: createData.first_name, last_name: createData.last_name, user_type: createData.user_type, oab_number: createData.oab_number, position: createData.position, phone: createData.phone, law_firm_id: effectiveLawFirmId ?? undefined },
         {
           onSuccess: () => { toast.success('Usuario criado com sucesso!'); setShowModal(false) },
-          onError: () => { toast.error('Erro ao criar usuario.') },
+          onError: (err) => { toast.error(err instanceof Error ? err.message : 'Erro ao criar usuario.') },
         }
       )
     }
@@ -297,6 +299,23 @@ export default function UsersManagementPage() {
                   <input {...register('email')} type="email" disabled={!!editingUser} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50" />
                   {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
                 </div>
+                {!editingUser && (() => {
+                  const fieldErrors = errors as Record<string, { message?: string }>
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Senha *</label>
+                        <input {...register('password' as keyof FormData)} type="password" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Minimo 8 caracteres" />
+                        {fieldErrors.password && <p className="text-sm text-red-600 mt-1">{fieldErrors.password.message}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha</label>
+                        <input {...register('password_confirmation' as keyof FormData)} type="password" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        {fieldErrors.password_confirmation && <p className="text-sm text-red-600 mt-1">{fieldErrors.password_confirmation.message}</p>}
+                      </div>
+                    </div>
+                  )
+                })()}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>

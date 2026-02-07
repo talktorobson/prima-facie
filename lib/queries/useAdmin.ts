@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '@/components/providers'
-import type { User, UserInsert, UserUpdate, ActivityLog, PipelineStage, PipelineStageInsert, PipelineStageUpdate } from '@/types/database'
+import type { User, UserUpdate, ActivityLog, PipelineStage, PipelineStageInsert, PipelineStageUpdate } from '@/types/database'
 
 interface UsersFilters {
   user_type?: string
@@ -43,20 +43,32 @@ export function useUsers(lawFirmId: string | null | undefined, filters?: UsersFi
   })
 }
 
+interface CreateUserPayload {
+  email: string
+  password: string
+  first_name: string
+  last_name: string
+  user_type: string
+  oab_number?: string | null
+  position?: string | null
+  phone?: string | null
+  law_firm_id?: string | null
+}
+
 export function useCreateUser() {
-  const supabase = useSupabase()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (user: UserInsert) => {
-      const { data, error } = await supabase
-        .from('users')
-        .insert(user)
-        .select()
-        .single()
-
-      if (error) throw error
-      return data as User
+    mutationFn: async (payload: CreateUserPayload) => {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      let json: { data?: User; error?: string }
+      try { json = await res.json() } catch { throw new Error('Resposta invalida do servidor') }
+      if (!res.ok) throw new Error(json.error || 'Erro ao criar usuario')
+      return json.data as User
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -65,20 +77,19 @@ export function useCreateUser() {
 }
 
 export function useUpdateUser() {
-  const supabase = useSupabase()
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: UserUpdate }) => {
-      const { data, error } = await supabase
-        .from('users')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-      return data as User
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      let json: { data?: User; error?: string }
+      try { json = await res.json() } catch { throw new Error('Resposta invalida do servidor') }
+      if (!res.ok) throw new Error(json.error || 'Erro ao atualizar usuario')
+      return json.data as User
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -87,20 +98,17 @@ export function useUpdateUser() {
 }
 
 export function useDeactivateUser() {
-  const supabase = useSupabase()
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase
-        .from('users')
-        .update({ status: 'inactive' })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-      return data as User
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: 'DELETE',
+      })
+      let json: { data?: User; error?: string }
+      try { json = await res.json() } catch { throw new Error('Resposta invalida do servidor') }
+      if (!res.ok) throw new Error(json.error || 'Erro ao desativar usuario')
+      return json.data as User
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })

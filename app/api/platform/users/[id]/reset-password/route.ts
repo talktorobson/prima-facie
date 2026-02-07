@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySuperAdmin } from '@/lib/supabase/verify-super-admin'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { resetUserPassword } from '@/lib/services/user-management'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function POST(
   _request: NextRequest,
@@ -9,28 +11,15 @@ export async function POST(
   const auth = await verifySuperAdmin()
   if (auth.error) return auth.error
 
-  const supabase = createAdminClient()
-
-  // Get user email from profile
-  const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('email, auth_user_id')
-    .eq('id', params.id)
-    .single()
-
-  if (userError || !user?.email) {
-    return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 404 })
+  if (!UUID_RE.test(params.id)) {
+    return NextResponse.json({ error: 'ID invalido' }, { status: 400 })
   }
 
-  // Generate recovery link
-  const { error: linkError } = await supabase.auth.admin.generateLink({
-    type: 'recovery',
-    email: user.email,
-  })
+  const result = await resetUserPassword(params.id)
 
-  if (linkError) {
-    return NextResponse.json({ error: linkError.message }, { status: 500 })
+  if (result.error) {
+    return NextResponse.json({ error: result.error }, { status: result.status })
   }
 
-  return NextResponse.json({ message: 'Link de recuperacao enviado para ' + user.email })
+  return NextResponse.json({ message: result.message })
 }

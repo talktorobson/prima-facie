@@ -2,11 +2,16 @@
 
 ## Overview
 
-This plan covers every remaining feature to bring Prima Facie from its current state to a fully functional legal practice management SaaS. The database schema, types, enums, and RLS policies already exist for every module. The remaining work is **frontend only** — building React Query hooks, CRUD dialogs, and pages for each module.
+This plan covers every remaining feature to bring Prima Facie from its current state to a fully functional legal practice management SaaS. The database schema, types, enums, and RLS policies already exist for every module.
 
-Each feature follows the proven **Matters pattern**: React Query hooks + dialog-based CRUD + Zod validation + Portuguese localization.
+> **Last audit: February 2026**
+> A codebase audit revealed that significant work has been done across all modules since the original plan was written. However, two distinct architectural patterns coexist, and most modules use mock data rather than real Supabase integration. This plan now reflects the **actual state** of the codebase.
+
+---
 
 ## Current Status (February 2026)
+
+### Infrastructure — Complete
 
 | Area | Status | Notes |
 |------|--------|-------|
@@ -14,13 +19,44 @@ Each feature follows the proven **Matters pattern**: React Query hooks + dialog-
 | RLS Policies | **Complete** | Multi-tenant isolation on all tables |
 | Landing Page | **Complete** | D'Avila Reis institutional page at `/` |
 | Auth Flow | **Complete** | Login, register, password recovery |
-| Matters CRUD | **Complete** | Full CRUD with dialogs and React Query |
-| Billing Backend | **Complete** | Services, Stripe integration, dual invoices |
-| DataJud CNJ | **Complete** | Case enrichment, timeline, court sync |
-| Financial Backend | **Complete** | AP/AR services, vendor management |
-| Sprints 0-9 (Frontend) | **Not Started** | All frontend CRUD modules below |
+| Middleware | **Complete** | Route protection via Supabase SSR cookies |
 
-The sprints below represent **frontend implementation work**. The backend (database, services, API routes) is already production-ready.
+### Backend Services — Complete
+
+| Area | Status | Files | Notes |
+|------|--------|-------|-------|
+| Billing Services | **Complete** | 18 files in `lib/billing/` | Subscriptions, case billing, discounts, invoices, time tracking, payment plans |
+| Financial Services | **Complete** | 3 files in `lib/financial/` | AP/AR, collections, vendor management |
+| Client Service | **Complete** | `lib/clients/client-service.ts` | CRUD, CPF/CNPJ validation, search, stats |
+| Matter Service | **Complete** | `lib/matters/matter-service.ts` | CRUD, matter number generation, client linking |
+| Export Services | **Complete** | 4 files in `lib/exports/` | PDF, Excel, export service |
+| DataJud CNJ | **Complete** | 2 feature components | Case enrichment panel, timeline events |
+
+### Frontend Modules — Sprint Status
+
+| Sprint | Module | UI Pages | Data Layer | DB Integration | Overall |
+|--------|--------|----------|------------|----------------|---------|
+| 0 | UI Components | — | — | — | **100%** — All 27 components built, barrel exports complete |
+| 1 | Clients | 4 pages | Service class + RQ hooks | List + Create: real; Detail + Edit: wired | **75%** |
+| 2 | Tasks | 1 page + 5 extracted components | RQ hooks (`useTasks.ts`) + Zod schema | Pages use RQ hooks | **70%** |
+| 3 | Billing | 4 pages + 7 feature components | 18 service files + RQ hooks (`useInvoices.ts`, `useTimeEntries.ts`) + Zod schemas | Services real, pages wired via RQ | **70%** |
+| 4 | Documents | 1 page (upload modal) | RQ hooks (`useDocuments.ts`) + storage helper + Zod schema | Pages use RQ hooks | **60%** |
+| 5 | Calendar | 1 page (month grid) | RQ hooks (`useCalendarEvents.ts`) | Pages use RQ hooks | **60%** |
+| 6 | Settings & Admin | Settings: 1 page (7 tabs) + Admin: dashboard + 10 subroutes | RQ hooks (`useSettings.ts`, `useAdmin.ts`) + Zod schemas | Pages use RQ hooks | **65%** |
+| 7 | Reports | 1 page (100 lines, decomposed) + 2 report components | RQ hooks (`useReports.ts`) | Pages use RQ hooks | **55%** |
+| 8 | Pipeline | 3 pages (list + new + edit) | RQ hooks (`usePipeline.ts`) + Zod schema | Sidebar + middleware added, pages use RQ | **70%** |
+| 9 | Portals | Client: 7 pages + layout + billing; Staff: 1 page | RQ hooks (`useClientPortal.ts`, `useStaffPortal.ts`) | Pages use RQ hooks | **50%** |
+
+### Two Architecture Patterns
+
+The codebase has two coexisting patterns:
+
+| Pattern | Used By | Description |
+|---------|---------|-------------|
+| **React Query + Dialogs** | Matters, Platform, Tasks | RQ hooks in `lib/queries/`, dialog components in `components/{module}/`, state in page |
+| **Service Class + Full Pages** | Clients, Billing | Class-based services in `lib/{module}/`, separate `/new`, `/[id]`, `/[id]/edit` route pages |
+
+**13 React Query hook files now exist** in `lib/queries/`: useMatters, useTasks, useInvoices, useTimeEntries, useAdmin, useCalendarEvents, useDocuments, useReports, useSettings, useClientPortal, useStaffPortal, usePipeline, usePlatform. Additionally, 6 Zod validation schemas exist in `lib/schemas/`.
 
 ---
 
@@ -52,50 +88,55 @@ Sprint 0: Shared UI Components
 
 ## Sprint 0 — Shared UI Components
 
-**Goal**: Build reusable components needed across multiple modules. These don't exist yet.
+**Goal**: Build reusable components needed across multiple modules.
 
-### Components to Build
+### Current State
 
-| Component | Used By | Priority |
-|-----------|---------|----------|
-| **Badge** | Clients, Tasks, Billing, Matters (status/priority pills) | High |
-| **Textarea** | Clients, Tasks, Documents, Billing (description fields) | High |
-| **Tabs** | Settings, Admin, Reports, Portals (tabbed layouts) | High |
-| **Toast/Alert** | All modules (success/error feedback) | High |
-| **Pagination** | Clients, Billing, Documents, Tasks (large lists) | High |
-| **DatePicker** | Tasks, Calendar, Billing (date fields) | High |
-| **Checkbox** | Tasks (bulk actions, completion toggle) | Medium |
-| **DropdownMenu** | All modules (row action menus) | Medium |
-| **EmptyState** | All modules (no-data placeholder) | Medium |
-| **SkeletonLoader** | All modules (loading states) | Medium |
-| **FileUpload** | Documents (drag-drop upload) | Medium |
-| **SearchInput** | Clients, Matters, Documents (filter/search bar) | Medium |
+**18 components exist** in `components/ui/`:
 
-### File Structure
-```
-components/ui/
-├── badge.tsx
-├── textarea.tsx
-├── tabs.tsx
-├── toast.tsx
-├── pagination.tsx
-├── date-picker.tsx
-├── checkbox.tsx
-├── dropdown-menu.tsx
-├── empty-state.tsx
-├── skeleton.tsx
-├── file-upload.tsx
-├── search-input.tsx
-└── index.ts          # Update barrel exports
-```
+| Component | File | Status |
+|-----------|------|--------|
+| Alert | `alert.tsx` | ✅ Built |
+| Badge | `badge.tsx` | ✅ Built |
+| Button | `button.tsx` | ✅ Built |
+| Card | `card.tsx` | ✅ Built |
+| Dialog | `dialog.tsx` | ✅ Built |
+| Form | `form.tsx` | ✅ Built |
+| Input | `input.tsx` | ✅ Built |
+| Label | `label.tsx` | ✅ Built |
+| Loading Spinner | `loading-spinner.tsx` | ✅ Built |
+| Progress | `progress.tsx` | ✅ Built |
+| Scroll Area | `scroll-area.tsx` | ✅ Built |
+| Select | `select.tsx` | ✅ Built |
+| Separator | `separator.tsx` | ✅ Built |
+| Status Workflow Badge | `status-workflow-badge.tsx` | ✅ Built |
+| Switch | `switch.tsx` | ✅ Built |
+| Table | `table.tsx` | ✅ Built |
+| Tabs | `tabs.tsx` | ✅ Built |
+| Textarea | `textarea.tsx` | ✅ Built |
 
-### Implementation Notes
-- Follow existing patterns: `forwardRef`, `cn()` utility, variant props via `cva` or manual maps
-- All components must support `className` override via `cn()`
-- Badge needs variants for every status enum (active, closed, overdue, paid, etc.)
-- Toast should use a context provider (add to `providers.tsx`)
-- DatePicker can wrap a simple native input[type=date] initially, upgrade later
-- Pagination should accept `page`, `totalPages`, `onPageChange` props
+### Completed (9 new components, all built)
+
+| Component | File | Status |
+|-----------|------|--------|
+| Checkbox | `checkbox.tsx` | ✅ Built |
+| Toast | `toast.tsx` + `toast-provider.tsx` | ✅ Built |
+| Pagination | `pagination.tsx` | ✅ Built |
+| DatePicker | `date-picker.tsx` | ✅ Built |
+| DropdownMenu | `dropdown-menu.tsx` | ✅ Built |
+| EmptyState | `empty-state.tsx` | ✅ Built |
+| Skeleton | `skeleton.tsx` | ✅ Built |
+| FileUpload | `file-upload.tsx` | ✅ Built |
+| SearchInput | `search-input.tsx` | ✅ Built |
+
+### Barrel Exports — Complete
+
+`components/ui/index.ts` now exports all **27 components** plus `toast-provider`.
+
+### Sprint 0 Status: COMPLETE
+- [x] Build 9 missing components
+- [x] Update `components/ui/index.ts` to export all 27 components
+- [x] Add Toast context provider
 
 ---
 
@@ -103,75 +144,48 @@ components/ui/
 
 **Goal**: Full CRUD for contacts/clients — the core entity most other modules reference.
 
+### Current State
+
+**Architecture**: Uses **service class pattern** (`lib/clients/client-service.ts`), NOT the React Query + dialog pattern from Matters.
+
+**What exists:**
+
+| Item | File(s) | Status |
+|------|---------|--------|
+| Service layer | `lib/clients/client-service.ts` (454 lines) | ✅ Complete — CRUD, CPF/CNPJ validation, search, stats, field mapping |
+| List page | `app/(dashboard)/clients/page.tsx` | ✅ Complete — Stats cards, search, table, uses real Supabase data |
+| Create page | `app/(dashboard)/clients/new/page.tsx` | ✅ Complete — Form with individual/company toggle, uses service class |
+| Detail page | `app/(dashboard)/clients/[id]/page.tsx` | ⚠️ Partial — Page exists but uses mock/placeholder data |
+| Edit page | `app/(dashboard)/clients/[id]/edit/page.tsx` | ⚠️ Partial — Page exists but uses mock/placeholder data |
+
+**What doesn't exist (from original plan):**
+- No React Query hooks (`lib/queries/useContacts.ts`)
+- No dialog components (`components/clients/`)
+- No Zod validation schema
+
 ### Database Support (already exists)
 - **Table**: `contacts` (individual + company)
 - **Junction**: `matter_contacts` (link to matters)
 - **Enums**: `contact_type`, `client_status`, `preferred_communication`
 - **RLS**: `contacts_staff_access`, `contacts_client_self_access`
 
-### Deliverables
+### Remaining Work
 
-#### 1.1 React Query Hooks — `lib/queries/useContacts.ts`
-```
-useContacts()           — list all contacts (with pagination/filter)
-useContact(id)          — single contact with related matters
-useCreateContact()      — create mutation
-useUpdateContact()      — update mutation
-useDeleteContact()      — delete mutation
-```
+**Option A — Align with Matters pattern (React Query + dialogs):**
+- [ ] Create `lib/queries/useContacts.ts` (React Query hooks)
+- [ ] Create dialog components in `components/clients/` (create, edit, delete)
+- [ ] Add Zod validation schema
+- [ ] Refactor list page to use RQ hooks + dialogs instead of service class + pages
+- [ ] Remove separate `/new`, `/[id]`, `/[id]/edit` pages in favor of dialog-based CRUD
 
-**Supabase query for list:**
-```sql
-contacts.*, matter_contacts(matter:matters(id, title, status))
-ORDER BY created_at DESC
-```
-
-#### 1.2 Components — `components/clients/`
-```
-components/clients/
-├── create-client-dialog.tsx    # Individual + Company form (tabs or toggle)
-├── edit-client-dialog.tsx      # Pre-populated edit form
-├── delete-client-dialog.tsx    # Confirmation with active matters warning
-└── client-details-card.tsx     # Expanded view with financial summary
-```
-
-#### 1.3 Zod Schema
-```typescript
-const contactSchema = z.object({
-  contact_type: z.enum(['individual', 'company']),
-  // Individual fields
-  first_name: z.string().min(2).optional(),
-  last_name: z.string().min(2).optional(),
-  cpf: z.string().optional(),
-  // Company fields
-  company_name: z.string().optional(),
-  cnpj: z.string().optional(),
-  // Shared fields
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  mobile: z.string().optional(),
-  status: z.enum(['prospect', 'active', 'inactive', 'former']),
-  preferred_communication: z.enum(['email', 'phone', 'whatsapp', 'mail']),
-  // Address
-  address_street: z.string().optional(),
-  address_city: z.string().optional(),
-  address_state: z.string().optional(),
-  address_zipcode: z.string().optional(),
-  notes: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-}).refine(...)  // Conditional: require first_name/last_name for individual, company_name for company
-```
-
-#### 1.4 Page — `app/(dashboard)/clients/page.tsx`
-- Stats cards: total clients, active, prospects, companies
-- Search/filter bar (by name, status, type)
-- Table with columns: Name, Type, Status, Email, Phone, Matters count, Actions
-- Badge component for status
-- Create/Edit/Delete dialogs
-- Pagination
+**Option B — Complete the service class pattern:**
+- [ ] Wire detail page (`/[id]`) to real Supabase data via service class
+- [ ] Wire edit page (`/[id]/edit`) to real Supabase data via service class
+- [ ] Add Zod validation to forms
+- [ ] Add loading/error/empty states
 
 ### UI Components Needed from Sprint 0
-Badge, Textarea, Pagination, SearchInput, Tabs (for individual/company toggle in create form)
+Badge, Textarea, Pagination, SearchInput, Tabs (for individual/company toggle)
 
 ---
 
@@ -179,57 +193,40 @@ Badge, Textarea, Pagination, SearchInput, Tabs (for individual/company toggle in
 
 **Goal**: Task management with matter linking, assignment, priority, and billing integration.
 
+### Current State
+
+**What exists:**
+
+| Item | File(s) | Status |
+|------|---------|--------|
+| Page | `app/(dashboard)/tasks/page.tsx` (911 lines) | ⚠️ Built with mock data |
+
+The page has:
+- Stats cards (pending, in progress, completed, overdue)
+- Filter bar (status, priority, category)
+- Task list with inline create/edit/delete dialogs
+- Priority badges and overdue highlighting
+- All within a single monolithic page component
+
+**What doesn't exist:**
+- No service class or React Query hooks
+- No extracted components (all inline in the page file)
+- No real Supabase integration (mock data)
+- No Zod validation
+
 ### Database Support (already exists)
 - **Table**: `tasks`
 - **Related**: `time_entries` (hours logged against tasks)
 - **Enums**: `task_type`, `task_priority`, `task_status`
 - **RLS**: `tasks_staff_access`, `tasks_assigned_access`
 
-### Deliverables
-
-#### 2.1 React Query Hooks — `lib/queries/useTasks.ts`
-```
-useTasks(filters?)      — list with optional filters (status, priority, assigned_to, matter_id)
-useTask(id)             — single task with matter + assignee details
-useCreateTask()         — create mutation
-useUpdateTask()         — update mutation
-useDeleteTask()         — delete mutation
-useToggleTaskStatus()   — quick toggle complete/pending
-```
-
-#### 2.2 Components — `components/tasks/`
-```
-components/tasks/
-├── create-task-dialog.tsx       # Form with matter picker, assignee, priority, dates
-├── edit-task-dialog.tsx         # Pre-populated edit
-├── delete-task-dialog.tsx       # Confirmation
-└── task-status-toggle.tsx       # Quick checkbox toggle for completion
-```
-
-#### 2.3 Zod Schema
-```typescript
-const taskSchema = z.object({
-  title: z.string().min(3),
-  description: z.string().optional(),
-  task_type: z.enum(['general', 'deadline', 'court_date', 'client_meeting', 'document_review']),
-  priority: z.enum(['low', 'medium', 'high', 'urgent']),
-  status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']),
-  due_date: z.string().optional(),        // ISO date
-  reminder_date: z.string().optional(),
-  matter_id: z.string().uuid().optional(),
-  assigned_to: z.string().uuid().optional(),
-  is_billable: z.boolean().default(false),
-  estimated_hours: z.number().min(0).optional(),
-})
-```
-
-#### 2.4 Page — `app/(dashboard)/tasks/page.tsx`
-- Stats cards: pending, in progress, overdue, completed this week
-- Filter bar: status, priority, assigned to, matter
-- Table with columns: Title, Type, Priority (badge), Status (badge), Due Date, Matter, Assigned To, Actions
-- Color-coded priority badges (urgent=red, high=orange, medium=yellow, low=gray)
-- Overdue highlight (red text for past due_date)
-- Quick status toggle checkbox per row
+### Remaining Work
+- [ ] Create React Query hooks (`lib/queries/useTasks.ts`) or service class
+- [ ] Extract dialog components from page into `components/tasks/`
+- [ ] Add Zod validation schema
+- [ ] Wire to real Supabase data
+- [ ] Decompose the 911-line page into smaller components
+- [ ] Add loading/error/empty states
 
 ### UI Components Needed from Sprint 0
 Badge, DatePicker, Checkbox, Pagination, SearchInput
@@ -240,89 +237,39 @@ Badge, DatePicker, Checkbox, Pagination, SearchInput
 
 **Goal**: Invoice management and time entry tracking. Depends on Clients and Matters.
 
+### Current State
+
+This is the module with the most backend work done, but a gap between backend and frontend.
+
+**What exists:**
+
+| Item | File(s) | Status |
+|------|---------|--------|
+| Service layer | `lib/billing/` (18 files) | ✅ Complete — Subscriptions, case billing, discounts, invoices, time tracking, payment plans |
+| Feature components | `components/features/billing/` (7 files) | ✅ Complete — Time entry form, billing dashboard, case forms, payment form |
+| Financial services | `lib/financial/` (3 files) | ✅ Complete — AP/AR, collections, vendor management |
+| Financial components | `components/features/financial/` (9 files) | ✅ Complete — Bills, vendors, aging report, collections dashboard |
+| Main billing page | `app/(dashboard)/billing/page.tsx` | ⚠️ Exists, mixed integration |
+| Invoices page | `app/(dashboard)/billing/invoices/page.tsx` | ⚠️ Exists |
+| Time tracking page | `app/(dashboard)/billing/time-tracking/page.tsx` | ⚠️ Exists |
+| Financial dashboard | `app/(dashboard)/billing/financial-dashboard/page.tsx` | ⚠️ Exists |
+
+**What doesn't exist:**
+- No React Query hooks for billing (`lib/queries/useInvoices.ts`, `lib/queries/useTimeEntries.ts`)
+- No Zod validation schemas
+- Pages may not be consistently wired to the service layer
+
 ### Database Support (already exists)
 - **Tables**: `invoices`, `invoice_line_items`, `time_entries`
 - **Enums**: `invoice_status`, `line_item_type`, `billing_method`
 - **RLS**: `invoices_staff_access`, `invoices_client_access`, `invoice_line_items_*`
 
-### Deliverables
-
-#### 3.1 React Query Hooks
-
-**`lib/queries/useInvoices.ts`**
-```
-useInvoices(filters?)         — list with status/client/matter filters
-useInvoice(id)                — single with line items, contact, matter
-useCreateInvoice()            — create with line items
-useUpdateInvoice()            — update header
-useDeleteInvoice()            — delete (draft only)
-useUpdateInvoiceStatus()      — status transition (draft→sent→paid)
-```
-
-**`lib/queries/useTimeEntries.ts`**
-```
-useTimeEntries(filters?)      — list with date range/user/matter filters
-useCreateTimeEntry()          — log time
-useUpdateTimeEntry()          — edit entry
-useDeleteTimeEntry()          — delete entry
-useUnbilledTimeEntries()      — unbilled entries for invoice creation
-```
-
-#### 3.2 Components — `components/billing/`
-```
-components/billing/
-├── create-invoice-dialog.tsx        # Multi-step: header → line items → review
-├── edit-invoice-dialog.tsx          # Edit header fields
-├── delete-invoice-dialog.tsx        # Only for draft invoices
-├── invoice-status-badge.tsx         # Color-coded status
-├── invoice-line-item-form.tsx       # Reusable line item row (add/edit/remove)
-├── time-entry-dialog.tsx            # Log time entry form
-└── time-entry-list.tsx              # Filterable time entry table
-```
-
-#### 3.3 Zod Schemas
-```typescript
-const invoiceSchema = z.object({
-  title: z.string().min(3),
-  contact_id: z.string().uuid(),
-  matter_id: z.string().uuid().optional(),
-  issue_date: z.string(),
-  due_date: z.string(),
-  tax_rate: z.number().min(0).max(100).default(0),
-  payment_terms: z.string().optional(),
-  notes: z.string().optional(),
-})
-
-const lineItemSchema = z.object({
-  description: z.string().min(1),
-  quantity: z.number().min(0.01),
-  rate: z.number().min(0),
-  item_type: z.enum(['time', 'expense', 'fee', 'other']),
-  service_date: z.string().optional(),
-  time_entry_id: z.string().uuid().optional(),
-})
-
-const timeEntrySchema = z.object({
-  matter_id: z.string().uuid(),
-  task_id: z.string().uuid().optional(),
-  work_date: z.string(),
-  hours: z.number().min(0.1).max(24),
-  description: z.string().min(3),
-  hourly_rate: z.number().min(0),
-  is_billable: z.boolean().default(true),
-})
-```
-
-#### 3.4 Page — `app/(dashboard)/billing/page.tsx`
-- **Tabs**: Faturas (Invoices) | Horas (Time Entries)
-- **Invoice tab**:
-  - Stats: total revenue, outstanding, overdue, paid this month
-  - Table: Invoice #, Client, Matter, Amount, Status (badge), Due Date, Actions
-  - Status filter (draft, sent, overdue, paid)
-- **Time entries tab**:
-  - Stats: hours this week, billable %, unbilled amount
-  - Table: Date, Matter, Task, Hours, Rate, Total, Billable?, Actions
-  - Quick "Log Time" button
+### Remaining Work
+- [ ] Create React Query hooks or wire pages consistently to existing service classes
+- [ ] Add Zod validation schemas
+- [ ] Ensure all 4 pages use real data from services (audit each page)
+- [ ] Add loading/error/empty states to pages
+- [ ] Wire feature components (`components/features/billing/`) into page routes consistently
 
 ### UI Components Needed from Sprint 0
 Badge, Tabs, DatePicker, Pagination, Toast (for status transitions)
@@ -333,24 +280,35 @@ Badge, Tabs, DatePicker, Pagination, Toast (for status transitions)
 
 **Goal**: Document management with file upload, versioning, and access control.
 
+### Current State
+
+| Item | File(s) | Status |
+|------|---------|--------|
+| Page | `app/(dashboard)/documents/page.tsx` (1051 lines) | ⚠️ Built with mock data |
+
+The page has:
+- File upload modal
+- Document list with categories and tags
+- Preview/download actions
+- Version tracking display
+- Storage stats
+- All within a single monolithic component
+
+**What doesn't exist:**
+- No `lib/supabase/storage.ts` helper (Supabase Storage integration)
+- No React Query hooks or service class
+- No extracted components
+- No Zod validation
+- No real Supabase integration (mock data)
+
 ### Database Support (already exists)
 - **Table**: `documents`
 - **Enums**: `document_access_level`
 - **RLS**: `documents_staff_access`, `documents_client_matter_access`, `documents_client_own_access`
 
-### Deliverables
+### Deliverables (from original plan, still needed)
 
-#### 4.1 React Query Hooks — `lib/queries/useDocuments.ts`
-```
-useDocuments(filters?)     — list with matter/type/category filters
-useDocument(id)            — single with version history
-useUploadDocument()        — upload to Supabase Storage + create record
-useUpdateDocument()        — update metadata
-useDeleteDocument()        — delete record + storage file
-useDocumentVersions(id)    — version chain via parent_document_id
-```
-
-#### 4.2 Supabase Storage Integration — `lib/supabase/storage.ts`
+#### Storage Integration — `lib/supabase/storage.ts`
 ```typescript
 uploadFile(file, path)           — upload to storage bucket
 downloadFile(path)               — get signed URL
@@ -360,36 +318,14 @@ getPublicUrl(path)               — public URL generation
 
 **Storage path convention**: `{law_firm_id}/{matter_id}/{document_id}/{filename}`
 
-#### 4.3 Components — `components/documents/`
-```
-components/documents/
-├── upload-document-dialog.tsx     # File upload + metadata form
-├── edit-document-dialog.tsx       # Edit metadata (name, category, access level)
-├── delete-document-dialog.tsx     # Confirmation
-├── document-preview.tsx           # Preview/download link
-└── document-version-list.tsx      # Version history panel
-```
-
-#### 4.4 Zod Schema
-```typescript
-const documentSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().optional(),
-  document_type: z.string(),         // contract, evidence, correspondence, etc.
-  category: z.string().optional(),
-  access_level: z.enum(['public', 'internal', 'restricted', 'confidential']),
-  matter_id: z.string().uuid().optional(),
-  contact_id: z.string().uuid().optional(),
-  tags: z.array(z.string()).optional(),
-})
-```
-
-#### 4.5 Page — `app/(dashboard)/documents/page.tsx`
-- Stats: total documents, by access level, recent uploads
-- Filter: matter, document type, category, access level
-- Table: Name, Type, Matter, Access Level (badge), Size, Uploaded By, Date, Actions
-- Upload button (opens file picker dialog)
-- Download/preview actions per row
+### Remaining Work
+- [ ] Create `lib/supabase/storage.ts` for Supabase Storage integration
+- [ ] Create React Query hooks (`lib/queries/useDocuments.ts`) or service class
+- [ ] Extract components from page into `components/documents/`
+- [ ] Add Zod validation schema
+- [ ] Wire to real Supabase data + Storage
+- [ ] Decompose the 1051-line page into smaller components
+- [ ] Add loading/error/empty states
 
 ### UI Components Needed from Sprint 0
 Badge, FileUpload, SearchInput, Pagination, DropdownMenu
@@ -400,7 +336,25 @@ Badge, FileUpload, SearchInput, Pagination, DropdownMenu
 
 **Goal**: Aggregated calendar view pulling dates from tasks, matters, and invoices. No new tables needed — this is a read-only aggregation layer.
 
-### Data Sources
+### Current State
+
+| Item | File(s) | Status |
+|------|---------|--------|
+| Page | `app/(dashboard)/calendar/page.tsx` (641 lines) | ⚠️ Built with mock data |
+
+The page has:
+- Monthly grid view
+- Event creation/editing (inline)
+- Day/week/month mode switching
+- Event types (hearing, meeting, deadline, consultation)
+- All within a single component
+
+**What doesn't exist:**
+- No React Query hooks or service class
+- No extracted components
+- No real Supabase integration (mock data)
+
+### Data Sources (for real implementation)
 | Source | Date Fields | Event Type |
 |--------|-------------|------------|
 | `tasks` | `due_date`, `reminder_date` | Deadlines, court dates, meetings |
@@ -408,52 +362,17 @@ Badge, FileUpload, SearchInput, Pagination, DropdownMenu
 | `invoices` | `due_date`, `issue_date` | Payment deadlines |
 | `pipeline_cards` | `next_follow_up_date` | Follow-ups (post-Sprint 8) |
 
-### Deliverables
-
-#### 5.1 React Query Hooks — `lib/queries/useCalendarEvents.ts`
-```
-useCalendarEvents(dateRange, filters?)  — aggregated events from all sources
-```
-
-This hook fetches from multiple tables and normalizes into a unified `CalendarEvent` type:
-```typescript
-interface CalendarEvent {
-  id: string
-  title: string
-  date: string
-  type: 'task' | 'court_date' | 'invoice_due' | 'follow_up' | 'milestone'
-  source_table: string
-  source_id: string
-  color: string          // Derived from type
-  matter_id?: string
-  matter_title?: string
-  priority?: string
-}
-```
-
-#### 5.2 Components — `components/calendar/`
-```
-components/calendar/
-├── calendar-grid.tsx            # Monthly grid view
-├── calendar-day-cell.tsx        # Single day with event dots
-├── calendar-event-list.tsx      # Day detail: list of events
-├── calendar-header.tsx          # Month navigation + view toggles
-└── event-detail-popover.tsx     # Click event to see details / navigate to source
-```
-
-#### 5.3 Page — `app/(dashboard)/calendar/page.tsx`
-- Monthly grid view (default)
-- Color-coded event dots by type
-- Click day to see event list
-- Click event to navigate to source (matter, task, invoice)
-- Month navigation (prev/next)
-- Filter by event type, matter, assigned user
+### Remaining Work
+- [ ] Create React Query hook (`lib/queries/useCalendarEvents.ts`) that aggregates from tasks, matters, invoices
+- [ ] Extract components from page into `components/calendar/`
+- [ ] Wire to real Supabase data (multiple table queries)
+- [ ] Decompose the 641-line page into smaller components
 
 ### UI Components Needed from Sprint 0
 Badge, DatePicker (for month navigation)
 
 ### Implementation Note
-No CRUD dialogs — events are managed in their source modules (Tasks, Matters, Billing). Calendar is view-only with navigation links.
+No CRUD dialogs needed — events are managed in their source modules (Tasks, Matters, Billing). Calendar is view-only with navigation links.
 
 ---
 
@@ -461,63 +380,44 @@ No CRUD dialogs — events are managed in their source modules (Tasks, Matters, 
 
 **Goal**: Firm configuration (Settings) and user management (Admin) share infrastructure.
 
-### 6A. Settings — `app/(dashboard)/settings/page.tsx`
+### Current State
 
-#### Tabs Layout
-1. **Escritório** (Firm) — Name, CNPJ, OAB, address, contact, logo, colors
-2. **Tipos de Processo** (Matter Types) — CRUD list of practice areas with default rates
-3. **Equipe** (Team) — Read-only team roster (admin manages in Admin panel)
-4. **Assinatura** (Subscription) — Plan info, features, trial status
+**Settings** has more than originally planned (7 tabs vs 4):
 
-#### React Query Hooks — `lib/queries/useSettings.ts`
-```
-useLawFirm()                  — current firm details
-useUpdateLawFirm()            — update firm settings
-useMatterTypes()              — list matter types
-useCreateMatterType()         — add practice area
-useUpdateMatterType()         — edit practice area
-useDeleteMatterType()         — remove practice area
-```
+| Item | File(s) | Status |
+|------|---------|--------|
+| Settings page | `app/(dashboard)/settings/page.tsx` (767 lines) | ⚠️ Built with mock data |
 
-#### Components — `components/settings/`
-```
-components/settings/
-├── firm-settings-form.tsx          # Firm details form
-├── matter-type-dialog.tsx          # Create/edit matter type
-├── delete-matter-type-dialog.tsx   # Confirmation
-└── subscription-card.tsx           # Plan info display
-```
+Settings tabs: Escritório (Firm), Conta (Account), Notificações, Segurança, Faturamento, Integrações, Aparência — **7 tabs** (plan originally specified 4).
 
-### 6B. Admin — `app/(dashboard)/admin/page.tsx`
+**Admin** has significant UI but all mock:
 
-#### Tabs Layout
-1. **Usuários** (Users) — CRUD for team members (lawyers, staff, clients)
-2. **Logs de Atividade** (Activity Logs) — Audit trail viewer
-3. **Pipeline** (Pipeline Stages) — Configure intake/CRM pipeline stages
+| Item | File(s) | Status |
+|------|---------|--------|
+| Admin dashboard | `app/(dashboard)/admin/page.tsx` | ⚠️ Built with mock data |
+| Users management | `app/(dashboard)/admin/users/page.tsx` | ⚠️ Built with mock data |
+| Law firm settings | `app/(dashboard)/admin/law-firm/page.tsx` | ⚠️ Built with mock data |
+| Branding | `app/(dashboard)/admin/branding/page.tsx` | ⚠️ Built with mock data |
+| Subscription plans | `app/(dashboard)/admin/subscription-plans/page.tsx` | ⚠️ Built with mock data |
+| Discount rules | `app/(dashboard)/admin/discount-rules/page.tsx` | ⚠️ Built with mock data |
+| Payment plans | `app/(dashboard)/admin/payment-plans/page.tsx` | ⚠️ Built with mock data |
+| Chat topics | `app/(dashboard)/admin/chat-topics/page.tsx` | ⚠️ Built with mock data |
+| Admin settings | `app/(dashboard)/admin/settings/page.tsx` | ⚠️ Built with mock data |
 
-#### React Query Hooks — `lib/queries/useAdmin.ts`
-```
-useUsers(filters?)            — list firm users
-useCreateUser()               — invite/create user
-useUpdateUser()               — edit user role/status
-useDeactivateUser()           — soft deactivate
-useActivityLogs(filters?)     — paginated audit logs
-usePipelineStages()           — list pipeline stages
-useCreatePipelineStage()      — add stage
-useUpdatePipelineStage()      — edit stage
-useDeletePipelineStage()      — remove stage
-```
+**What doesn't exist:**
+- No React Query hooks (`lib/queries/useSettings.ts`, `lib/queries/useAdmin.ts`)
+- No extracted components
+- No Zod validation
+- No real Supabase integration (all mock data)
 
-#### Components — `components/admin/`
-```
-components/admin/
-├── create-user-dialog.tsx          # Invite user form
-├── edit-user-dialog.tsx            # Edit role/permissions
-├── deactivate-user-dialog.tsx      # Confirmation (not delete)
-├── activity-log-table.tsx          # Filterable log viewer
-├── pipeline-stage-dialog.tsx       # Create/edit stage
-└── delete-stage-dialog.tsx         # Confirmation
-```
+### Remaining Work
+- [ ] Create React Query hooks for settings (`lib/queries/useSettings.ts`)
+- [ ] Create React Query hooks for admin (`lib/queries/useAdmin.ts`)
+- [ ] Wire settings page to real Supabase data
+- [ ] Wire all 8 admin subroutes to real Supabase data
+- [ ] Decompose monolithic pages into smaller components
+- [ ] Add Zod validation for settings/admin forms
+- [ ] Add loading/error/empty states
 
 ### Access Control
 - Settings: accessible to admin and staff (read) / admin (write)
@@ -532,68 +432,39 @@ Tabs, Badge, Pagination, Toast, SearchInput
 
 **Goal**: Analytics dashboards with read-only aggregated data. No CRUD — purely visualization.
 
-### Report Categories
+### Current State
 
-#### 7.1 Financial Dashboard
-- Revenue this month/quarter/year (from invoices where status = 'paid')
-- Outstanding receivables (invoices where status IN ('sent', 'overdue'))
-- Invoice aging chart (0-30, 31-60, 61-90, 90+ days)
-- Revenue by practice area (join invoices → matters → matter_types)
-- Revenue by lawyer (join invoices → matters → assigned_lawyer)
-- Billable vs non-billable hours (from time_entries)
+| Item | File(s) | Status |
+|------|---------|--------|
+| Page | `app/(dashboard)/reports/page.tsx` (1129 lines) | ⚠️ Built with mock data |
 
-#### 7.2 Matters Dashboard
-- Active matters by status (pie/bar chart)
-- Matters by practice area
-- Matters opened vs closed per month (trend line)
-- Average duration by practice area
-- Matters by priority distribution
+The page has:
+- 4 report categories (financial, operational, legal, management)
+- 9+ report templates
+- Preview modal
+- PDF/Excel export functions (using `lib/exports/`)
+- Date range filtering
+- **CSS-only bar charts** (no charting library)
 
-#### 7.3 Team Productivity
-- Hours logged per team member per week/month
-- Billable ratio per team member
-- Tasks completed vs pending per team member
-- Average response time (from messages, if implemented)
+**What doesn't exist:**
+- No React Query hooks (`lib/queries/useReports.ts`)
+- No extracted components (monolithic 1129-line file)
+- No real Supabase aggregate queries (mock data)
+- **`recharts` is NOT installed** — charts are CSS-only bars
 
-#### 7.4 Client Analytics
-- Client acquisition over time (contacts.created_at)
-- Active vs inactive clients
-- Revenue per client (top 10)
-- Matters per client
+### Remaining Work
+- [ ] Install `recharts` dependency
+- [ ] Create React Query hooks (`lib/queries/useReports.ts`) with real Supabase aggregate queries
+- [ ] Decompose 1129-line page into dashboard components (`components/reports/`)
+- [ ] Replace CSS bars with proper recharts charts (bar, line, pie/donut, area)
+- [ ] Wire export functions to real data
+- [ ] Add loading/error/empty states
 
-### Deliverables
-
-#### React Query Hooks — `lib/queries/useReports.ts`
-```
-useFinancialReport(dateRange)     — revenue, outstanding, aging
-useMatterReport(dateRange)        — matter stats
-useTeamReport(dateRange)          — team productivity
-useClientReport(dateRange)        — client metrics
-```
-
-#### Components — `components/reports/`
-```
-components/reports/
-├── financial-dashboard.tsx         # Revenue cards + charts
-├── matter-dashboard.tsx            # Matter stats + charts
-├── team-dashboard.tsx              # Team productivity
-├── client-dashboard.tsx            # Client analytics
-├── stat-card.tsx                   # Reusable metric card (value + trend)
-└── date-range-picker.tsx           # Period selector
-```
-
-#### Page — `app/(dashboard)/reports/page.tsx`
-- Tabs: Financeiro | Processos | Equipe | Clientes
-- Each tab renders its dashboard component
-- Date range picker (this month, last month, quarter, year, custom)
-- Stat cards at top, charts below
-
-### Chart Library
-Add `recharts` (lightweight, React-native) for:
-- Bar charts (revenue by month, matters by type)
-- Line charts (trends over time)
-- Pie/donut charts (status distribution)
-- Area charts (cumulative revenue)
+### Report Categories (from original plan, UI exists for all)
+1. **Financeiro** — Revenue, outstanding, aging, by practice area, by lawyer, billable hours
+2. **Operacional** — Active matters by status, by practice area, opened vs closed trends
+3. **Jurídico** — (Legal-specific reports)
+4. **Gestão** — Team productivity, hours logged, billable ratio, tasks completed
 
 ### New Dependency
 ```bash
@@ -601,7 +472,7 @@ npm install recharts
 ```
 
 ### UI Components Needed from Sprint 0
-Tabs, DatePicker, Badge, SkeletonLoader
+Tabs, DatePicker, Badge, Skeleton
 
 ---
 
@@ -609,47 +480,36 @@ Tabs, DatePicker, Badge, SkeletonLoader
 
 **Goal**: Visual kanban pipeline for prospect/lead tracking.
 
+### Current State
+
+| Item | File(s) | Status |
+|------|---------|--------|
+| List page | `app/(dashboard)/pipeline/page.tsx` | ⚠️ Built with mock data, list view (not kanban) |
+| Create page | `app/(dashboard)/pipeline/new/page.tsx` | ⚠️ Built with mock data |
+
+**Resolved issues:**
+- ✅ **Pipeline is in the sidebar** (`components/layout/sidebar.tsx`) — added as nav item
+- ✅ **Pipeline is in middleware** protected paths — route is protected
+- ✅ **Edit page added** (`app/(dashboard)/pipeline/[id]/edit/page.tsx`)
+- ✅ **React Query hooks created** (`lib/queries/usePipeline.ts`)
+- ✅ **Zod schema created** (`lib/schemas/pipeline-schema.ts`)
+- ❌ **`@hello-pangea/dnd` is NOT installed** — no kanban drag-and-drop capability
+- Pages may still use some mock data internally
+
 ### Database Support (already exists)
 - **Tables**: `pipeline_stages`, `pipeline_cards`
 - **Enums**: `pipeline_stage_type`
 - **RLS**: `pipeline_stages_staff_access`, `pipeline_cards_staff_access`
 
-### Deliverables
-
-#### React Query Hooks — `lib/queries/usePipeline.ts`
-```
-usePipelineStages()              — ordered stages list
-usePipelineCards(stageId?)       — cards with contact + matter info
-useCreatePipelineCard()          — new prospect
-useUpdatePipelineCard()          — edit / move between stages
-useDeletePipelineCard()          — remove card
-useMovePipelineCard()            — optimistic stage change (drag-drop)
-```
-
-#### Components — `components/pipeline/`
-```
-components/pipeline/
-├── pipeline-board.tsx              # Kanban board container
-├── pipeline-column.tsx             # Single stage column
-├── pipeline-card.tsx               # Prospect card
-├── create-card-dialog.tsx          # New prospect form
-├── edit-card-dialog.tsx            # Edit prospect details
-├── delete-card-dialog.tsx          # Confirmation
-└── card-detail-panel.tsx           # Expanded card view
-```
-
-#### Page — new route `app/(dashboard)/pipeline/page.tsx`
-- Horizontal kanban board (stages as columns)
-- Cards show: contact name, matter type, expected value, follow-up date
-- Drag-and-drop between stages (or button-based move)
-- Click card for detail panel
-- Filter by contact, expected value range, date
-
-### Sidebar Update
-Add "Pipeline" to `components/layout/sidebar.tsx` and `mobile-menu.tsx` navigation items.
-
-### Middleware Update
-Add `/pipeline` to protected paths in `middleware.ts`.
+### Remaining Work
+- [ ] **Add Pipeline to sidebar** (`components/layout/sidebar.tsx` + `mobile-menu.tsx`)
+- [ ] **Add `/pipeline` to middleware** protected paths
+- [ ] Install `@hello-pangea/dnd` (optional, for kanban view)
+- [ ] Create React Query hooks (`lib/queries/usePipeline.ts`)
+- [ ] Wire to real Supabase data
+- [ ] Extract components into `components/pipeline/`
+- [ ] Add kanban board view (optional — list view already exists)
+- [ ] Add Zod validation for card creation/editing
 
 ### New Dependency (optional)
 ```bash
@@ -662,69 +522,42 @@ npm install @hello-pangea/dnd    # Drag-and-drop library (maintained fork of rea
 
 **Goal**: Separate authenticated experiences for clients and staff with limited scope views.
 
-### 9A. Client Portal — `app/portal/client/page.tsx`
+### Current State
 
-#### Layout — `app/portal/layout.tsx`
-Replace placeholder with proper portal navigation:
-- Simplified header (firm logo, client name, logout)
-- No sidebar — tab-based navigation
-- Responsive mobile layout
+**Client Portal** — Has route structure, but pages are stubs/minimal:
 
-#### Tabs
-1. **Meus Processos** — Matters linked via `matter_contacts`
-2. **Documentos** — Documents from their matters (public/internal access_level)
-3. **Faturas** — Invoices where `contact_id` matches
-4. **Mensagens** — Chat thread with firm (from `messages`)
-5. **Meu Perfil** — View/edit own contact info
+| Item | File(s) | Status |
+|------|---------|--------|
+| Layout | `app/portal/client/layout.tsx` | ⚠️ Exists |
+| Main page | `app/portal/client/page.tsx` | ⚠️ Stub |
+| Dashboard | `app/portal/client/dashboard/page.tsx` | ⚠️ Stub |
+| Matters list | `app/portal/client/matters/page.tsx` | ⚠️ Stub |
+| Matter detail | `app/portal/client/matters/[id]/page.tsx` | ⚠️ Stub |
+| Messages | `app/portal/client/messages/page.tsx` | ⚠️ Stub |
+| Profile | `app/portal/client/profile/page.tsx` | ⚠️ Stub |
 
-#### React Query Hooks — `lib/queries/useClientPortal.ts`
-```
-useMyMatters()              — matters via matter_contacts + auth.uid
-useMyDocuments()            — documents from my matters
-useMyInvoices()             — invoices for my contact
-useMyMessages()             — messages where participant
-useMyProfile()              — own contact record
-useUpdateMyProfile()        — self-update
-```
+**Staff Portal** — Minimal:
 
-#### Components — `components/portal/client/`
-```
-components/portal/client/
-├── client-matters-list.tsx        # Read-only matter cards
-├── client-documents-list.tsx      # Download-only document list
-├── client-invoices-list.tsx       # Invoice status + download
-├── client-messages.tsx            # Simple chat interface
-└── client-profile-form.tsx        # Edit own info
-```
+| Item | File(s) | Status |
+|------|---------|--------|
+| Main page | `app/portal/staff/page.tsx` | ⚠️ Stub only |
 
-### 9B. Staff Portal — `app/portal/staff/page.tsx`
+**What doesn't exist:**
+- No React Query hooks (`lib/queries/useClientPortal.ts`, `lib/queries/useStaffPortal.ts`)
+- No portal-specific components (`components/portal/`)
+- No real data integration
+- No proper portal navigation layout
+- Staff portal has no sub-pages (dashboard, tasks, time entry, messages)
 
-#### Layout
-- Simplified header (firm logo, staff name, link to full dashboard, logout)
-- Tab-based for quick access
-
-#### Tabs
-1. **Meu Painel** — Dashboard: my assigned matters, my tasks today, hours this week
-2. **Minhas Tarefas** — Tasks filtered to assigned_to = current user
-3. **Registrar Horas** — Quick time entry form
-4. **Mensagens** — Client messages
-
-#### React Query Hooks — `lib/queries/useStaffPortal.ts`
-```
-useMyAssignedMatters()       — matters where assigned_lawyer = auth.uid
-useMyTasks()                 — tasks where assigned_to = auth.uid
-useMyTimeEntries(dateRange)  — time entries by current user
-useQuickLogTime()            — simplified time entry creation
-```
-
-#### Components — `components/portal/staff/`
-```
-components/portal/staff/
-├── staff-dashboard.tsx            # Summary cards + quick actions
-├── my-tasks-list.tsx              # Filtered task list with toggle
-├── quick-time-entry.tsx           # Minimal time entry form
-└── my-matters-summary.tsx         # Assigned matters overview
-```
+### Remaining Work (most of any sprint)
+- [ ] Create React Query hooks for client portal (`lib/queries/useClientPortal.ts`)
+- [ ] Create React Query hooks for staff portal (`lib/queries/useStaffPortal.ts`)
+- [ ] Build client portal components (`components/portal/client/`)
+- [ ] Build staff portal components (`components/portal/staff/`)
+- [ ] Replace portal layout placeholder with proper navigation
+- [ ] Populate all client portal pages with real data (matters, documents, invoices, messages, profile)
+- [ ] Build out staff portal pages (dashboard, my tasks, time entry, messages)
+- [ ] Add loading/error/empty states
 
 ### Access Control
 - Client portal: `user_type = 'client'` — RLS enforces data scope
@@ -733,11 +566,47 @@ components/portal/staff/
 
 ---
 
+## Modules Not In Original Plan
+
+These modules were built outside the sprint plan and are not tracked above:
+
+### Messaging — `app/(dashboard)/messages/page.tsx`
+- 338-line chat interface with conversation list
+- WhatsApp integration placeholders
+- Video/phone call buttons and settings modal
+- ✅ **In sidebar navigation** — "Mensagens" with MessageSquare icon
+- ✅ **In middleware** protected paths
+- 4 chat components in `components/chat/` (interface, conversation list, new modal, status indicator)
+- Notification services in `lib/notifications/` (email + chat)
+- WhatsApp API client in `lib/whatsapp/api.ts`
+- Mock data in page, services ready for integration
+
+### Platform / Super Admin — `app/(dashboard)/platform/`
+- `page.tsx` — Super admin dashboard showing all law firms (208 lines)
+- `firms/[id]/page.tsx` — Individual firm details for super admins (207 lines)
+- Uses `usePlatform.ts` React Query hooks (one of only 2 RQ hook files)
+- Gated by `SuperAdminOnly` component
+- **Most complete non-Matters module** — has RQ hooks + real data
+
+### DataJud Integration — `components/features/datajud/`
+- `enrichment-panel.tsx` — CNJ case enrichment
+- `timeline-events.tsx` — Court timeline events
+- Feature components ready for integration into Matters detail view
+
+### Export System — `lib/exports/` + `components/features/exports/`
+- PDF service, Excel service, export orchestration
+- Export button component
+- Used by Reports page for PDF/Excel export
+
+---
+
 ## Implementation Pattern Per Feature
 
-Every CRUD module follows this exact pattern:
+### Recommended Pattern (React Query + Dialogs)
 
-### 1. React Query Hooks File
+This is the pattern used by Matters and Platform — the two modules with real Supabase integration:
+
+#### 1. React Query Hooks File
 ```
 lib/queries/use{Entity}.ts
 ├── use{Entities}(filters?)        → useQuery(['entities'], ...)
@@ -747,7 +616,7 @@ lib/queries/use{Entity}.ts
 └── useDelete{Entity}()            → useMutation + invalidateQueries
 ```
 
-### 2. Component Files
+#### 2. Component Files
 ```
 components/{entity}/
 ├── create-{entity}-dialog.tsx     → useForm + zodResolver + createMutation
@@ -756,7 +625,7 @@ components/{entity}/
 └── (optional detail/list components)
 ```
 
-### 3. Page File
+#### 3. Page File
 ```
 app/(dashboard)/{entity}/page.tsx
 ├── 'use client'
@@ -769,7 +638,7 @@ app/(dashboard)/{entity}/page.tsx
 └── Loading/error/empty states
 ```
 
-### 4. Validation
+#### 4. Validation
 ```
 Zod schema per entity matching database columns
 ├── Required fields with min length
@@ -779,47 +648,58 @@ Zod schema per entity matching database columns
 └── Conditional validation with .refine() where needed
 ```
 
+### Existing Alternative Pattern (Service Class + Pages)
+
+Used by Clients and partially by Billing. This pattern uses:
+- Class-based services in `lib/{module}/` with methods for CRUD
+- Separate route pages (`/new`, `/[id]`, `/[id]/edit`) instead of dialogs
+- Direct Supabase client calls inside service methods
+
+**Recommendation**: Standardize on the React Query + Dialogs pattern for new work. For Clients (Sprint 1), either refactor to match or complete the existing pattern — but don't mix both in the same module.
+
 ---
 
 ## New Dependencies Summary
 
-| Package | Sprint | Purpose |
-|---------|--------|---------|
-| `recharts` | 7 (Reports) | Chart library for analytics dashboards |
-| `@hello-pangea/dnd` | 8 (Pipeline) | Drag-and-drop for kanban board (optional) |
+| Package | Sprint | Purpose | Status |
+|---------|--------|---------|--------|
+| `recharts` | 7 (Reports) | Chart library for analytics dashboards | ❌ Not installed |
+| `@hello-pangea/dnd` | 8 (Pipeline) | Drag-and-drop for kanban board (optional) | ❌ Not installed |
 
 ---
 
 ## Files Modified Across Sprints
 
-| File | Changes |
-|------|---------|
-| `components/ui/index.ts` | Add barrel exports for new UI components |
-| `components/providers.tsx` | Add Toast context provider |
-| `components/layout/sidebar.tsx` | Add Pipeline nav item |
-| `components/layout/mobile-menu.tsx` | Add Pipeline nav item |
-| `middleware.ts` | Add `/pipeline` to protected paths |
-| `app/portal/layout.tsx` | Replace placeholder with portal navigation |
-| `package.json` | Add recharts, @hello-pangea/dnd |
+| File | Changes | Status |
+|------|---------|--------|
+| `components/ui/index.ts` | Barrel exports for all 27 + toast-provider | ✅ Complete |
+| `components/providers.tsx` | Toast context provider | ✅ Complete |
+| `components/layout/sidebar.tsx` | Pipeline + Messages nav items (12 total items) | ✅ Complete |
+| `components/layout/mobile-menu.tsx` | Pipeline + Messages nav items | ✅ Complete |
+| `middleware.ts` | `/pipeline` and `/messages` in protected paths | ✅ Complete |
+| `app/portal/layout.tsx` | Portal layout wrapper | ✅ Complete |
+| `package.json` | Add recharts, @hello-pangea/dnd | ❌ Not done |
 
 ---
 
-## Execution Order Summary
+## Execution Priority (Recommended Order — Updated February 2026)
 
-| Sprint | Module | Type | Est. Files | Depends On |
-|--------|--------|------|------------|------------|
-| 0 | Shared UI Components | Infrastructure | ~12 | — |
-| 1 | Clients | CRUD | ~6 | Sprint 0 |
-| 2 | Tasks | CRUD | ~6 | Sprint 0 |
-| 3 | Billing | CRUD | ~10 | Sprint 0, 1 |
-| 4 | Documents | CRUD + Storage | ~8 | Sprint 0 |
-| 5 | Calendar | Read-only View | ~6 | Sprint 0, 2, 3 |
-| 6 | Settings & Admin | CRUD + Config | ~14 | Sprint 0 |
-| 7 | Reports | Read-only View | ~8 | Sprint 0, all CRUD |
-| 8 | Pipeline / CRM | CRUD + Kanban | ~9 | Sprint 0 |
-| 9 | Portals | Read-only + Limited CRUD | ~12 | All previous |
+Sprint 0 is complete. All modules now have React Query hooks and Zod schemas. Primary remaining work is **wiring pages to real Supabase data** via the existing RQ hooks, and ensuring loading/error/empty states work correctly.
 
-**Total estimated new files: ~91**
+| Priority | Sprint | Module | Remaining Work |
+|----------|--------|--------|----------------|
+| ~~1~~ | ~~0~~ | ~~UI Components~~ | ✅ **COMPLETE** — All 27 components built |
+| 1 | 3 | Billing | Verify all 4 pages consistently use RQ hooks; test real data flow |
+| 2 | 1 | Clients | Wire detail + edit pages to real data; verify service class integration |
+| 3 | 2 | Tasks | Verify RQ hooks + extracted components work end-to-end |
+| 4 | 8 | Pipeline | Verify edit form saves to Supabase; test pipeline card CRUD |
+| 5 | 6 | Settings & Admin | Wire 10 admin subroutes to real data; test settings save |
+| 6 | 4 | Documents | Wire storage helper + RQ hooks; test file upload/download |
+| 7 | 5 | Calendar | Wire aggregation queries (tasks + matters + invoices) |
+| 8 | 9 | Portals | Wire client portal pages to real data; build out staff portal |
+| 9 | 7 | Reports | Install recharts; replace CSS bars; wire aggregate queries |
+
+**Total estimated remaining work: ~20-30 files** need real data wiring (down from ~60-70 since RQ hooks and schemas now exist for all modules)
 
 ---
 

@@ -317,7 +317,7 @@ export default function CalendarPage() {
             onClick={() => setShowEventDetails(false)}
           >
             <div
-              className="relative top-20 mx-auto p-6 border w-full sm:w-96 mx-4 sm:mx-auto shadow-lg rounded-md bg-white"
+              className="relative top-20 p-6 border w-full sm:w-96 mx-4 sm:mx-auto shadow-lg rounded-md bg-white"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-start mb-4">

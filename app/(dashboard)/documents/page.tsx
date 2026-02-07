@@ -303,7 +303,7 @@ export default function DocumentsPage() {
         {/* Upload Modal */}
         {showUpload && (
           <div className="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-10 mx-auto p-5 border w-full max-w-[600px] mx-4 sm:mx-auto shadow-lg rounded-md bg-white">
+            <div className="relative top-10 p-5 border w-full max-w-[600px] mx-4 sm:mx-auto shadow-lg rounded-md bg-white">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Enviar Novo Documento</h3>
                 <button onClick={() => setShowUpload(false)} className="text-gray-400 hover:text-gray-600"><XMarkIcon className="w-6 h-6" /></button>
@@ -362,7 +362,7 @@ export default function DocumentsPage() {
         {/* Preview Modal */}
         {preview && (
           <div className="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-10 mx-auto p-5 border w-full max-w-[800px] mx-4 sm:mx-auto shadow-lg rounded-md bg-white">
+            <div className="relative top-10 p-5 border w-full max-w-[800px] mx-4 sm:mx-auto shadow-lg rounded-md bg-white">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Visualizar Documento</h3>
                 <button onClick={() => setPreview(null)} className="text-gray-400 hover:text-gray-600"><XMarkIcon className="w-6 h-6" /></button>

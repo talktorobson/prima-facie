@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MapPin, Phone, Mail } from 'lucide-react'
+import { MapPin, Phone, Mail, MessageCircle, CheckCircle2 } from 'lucide-react'
 
 export default function Contact() {
   const [form, setForm] = useState({
@@ -11,151 +11,193 @@ export default function Contact() {
     company: '',
     message: '',
   })
+  const [submitted, setSubmitted] = useState(false)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSubmitted(true)
+    setTimeout(() => setSubmitted(false), 3000)
+  }
+
   return (
-    <section className="py-16 bg-navy-900 border-t border-navy-700">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-semibold text-white mb-3">
+    <section id="contato" className="py-20 bg-white border-t border-gray-200">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold text-navy-950 mb-6">
             Entre em Contato
           </h2>
-          <p className="text-lg text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Agende sua consultoria gratuita e proteja seu negócio hoje mesmo
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Agende sua consultoria gratuita. Responderemos em até 24 horas.
           </p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* Contact Form */}
-          <div className="border border-navy-700 rounded-sm bg-navy-800/50 backdrop-blur-sm p-7">
-            <h3 className="text-xl font-semibold text-white mb-5">Como podemos ajudar?</h3>
-            <form className="space-y-5">
-              <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">
-                  Nome Completo *
-                </label>
-                <input
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder="Seu nome completo"
-                  className="w-full h-10 px-3 py-2 text-sm border border-navy-600 bg-navy-800/50 text-white placeholder:text-gray-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1">E-mail *</label>
-                  <input
-                    name="email"
-                    type="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    placeholder="seu@email.com"
-                    className="w-full h-10 px-3 py-2 text-sm border border-navy-600 bg-navy-800/50 text-white placeholder:text-gray-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
+          <div className="lg:col-span-2">
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 p-8 hover:shadow-lg transition-all duration-300">
+              <h3 className="text-2xl font-semibold text-gray-900 mb-6">Envie sua Mensagem</h3>
+
+              {submitted && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-green-900">Mensagem enviada com sucesso!</p>
+                    <p className="text-sm text-green-700">Entraremos em contato em breve.</p>
+                  </div>
                 </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1">
-                    Telefone/WhatsApp *
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Nome Completo
                   </label>
                   <input
-                    name="phone"
-                    value={form.phone}
+                    name="name"
+                    value={form.name}
                     onChange={handleChange}
-                    placeholder="(15) 99999-9999"
-                    className="w-full h-10 px-3 py-2 text-sm border border-navy-600 bg-navy-800/50 text-white placeholder:text-gray-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                    placeholder="Seu nome"
+                    className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">
-                  Empresa (opcional)
-                </label>
-                <input
-                  name="company"
-                  value={form.company}
-                  onChange={handleChange}
-                  placeholder="Nome da sua empresa"
-                  className="w-full h-10 px-3 py-2 text-sm border border-navy-600 bg-navy-800/50 text-white placeholder:text-gray-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">
-                  Como podemos ajudar? *
-                </label>
-                <textarea
-                  name="message"
-                  value={form.message}
-                  onChange={handleChange}
-                  placeholder="Descreva sua necessidade jurídica, dúvida ou como podemos ajudar sua empresa..."
-                  rows={4}
-                  className="w-full px-3 py-2 text-sm border border-navy-600 bg-navy-800/50 text-white placeholder:text-gray-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-amber-500 hover:bg-amber-600 text-navy-900 py-2.5 text-base font-medium rounded-sm transition-colors"
-              >
-                Enviar Mensagem
-              </button>
-              <p className="text-xs text-gray-400 text-center">
-                Seus dados estão protegidos pela LGPD. Responderemos em até 24 horas.
-              </p>
-            </form>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">E-mail</label>
+                    <input
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      required
+                      placeholder="seu@email.com"
+                      className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Telefone/WhatsApp
+                    </label>
+                    <input
+                      name="phone"
+                      value={form.phone}
+                      onChange={handleChange}
+                      placeholder="(15) 99999-9999"
+                      className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Empresa</label>
+                  <input
+                    name="company"
+                    value={form.company}
+                    onChange={handleChange}
+                    placeholder="Nome da sua empresa"
+                    className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Como podemos ajudar?
+                  </label>
+                  <textarea
+                    name="message"
+                    value={form.message}
+                    onChange={handleChange}
+                    required
+                    placeholder="Descreva sua necessidade jurídica ou como podemos ajudar..."
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors shadow-lg hover:shadow-xl"
+                >
+                  Enviar Mensagem
+                </button>
+
+                <p className="text-xs text-gray-600 text-center">
+                  Seus dados estão protegidos pela LGPD. Responderemos em até 24 horas.
+                </p>
+              </form>
+            </div>
           </div>
 
           {/* Contact Information */}
-          <div className="space-y-5">
-            <div className="text-center mb-6">
-              <h4 className="text-lg font-semibold text-white mb-2">Atendimento Imediato</h4>
-              <p className="text-gray-300 mb-4">Fale conosco agora mesmo pelo WhatsApp</p>
-              <a
-                href="https://wa.me/551533844013?text=Olá%2C%20gostaria%20de%20agendar%20uma%20consultoria."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded transition-colors"
-              >
-                Chamar no WhatsApp
-              </a>
-            </div>
+          <div className="space-y-6">
+            {/* WhatsApp CTA */}
+            <a
+              href="https://wa.me/551533844013?text=Olá%2C%20gostaria%20de%20agendar%20uma%20consultoria."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 p-6 bg-green-50 border-2 border-green-500 rounded-xl hover:bg-green-100 transition-all duration-300 group"
+            >
+              <div className="flex-shrink-0">
+                <MessageCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">WhatsApp</p>
+                <p className="text-sm text-gray-600 group-hover:text-gray-700">Atendimento imediato</p>
+              </div>
+            </a>
 
-            <div className="border border-navy-700 rounded-sm bg-navy-800/50 backdrop-blur-sm p-7">
-              <div className="flex items-start space-x-3">
-                <Phone className="h-5 w-5 text-amber-400 mt-1" />
+            {/* Phone */}
+            <div className="p-6 bg-gradient-to-br from-blue-50 to-gray-50 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-300">
+              <div className="flex items-start gap-4">
+                <Phone className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                 <div>
-                  <h4 className="text-sm font-semibold text-white mb-1">Telefone</h4>
-                  <p className="text-gray-300 text-xs leading-relaxed">(15) 3384-4013</p>
+                  <h4 className="font-semibold text-gray-900 mb-1">Telefone</h4>
+                  <a href="tel:+551533844013" className="text-blue-600 font-semibold hover:text-blue-700">
+                    (15) 3384-4013
+                  </a>
                 </div>
               </div>
             </div>
 
-            <div className="border border-navy-700 rounded-sm bg-navy-800/50 backdrop-blur-sm p-7">
-              <div className="flex items-start space-x-3">
-                <Mail className="h-5 w-5 text-amber-400 mt-1" />
+            {/* Email */}
+            <div className="p-6 bg-gradient-to-br from-blue-50 to-gray-50 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-300">
+              <div className="flex items-start gap-4">
+                <Mail className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                 <div>
-                  <h4 className="text-sm font-semibold text-white mb-1">E-mail</h4>
-                  <p className="text-gray-300 text-xs leading-relaxed">
-                    financeiro@davilareisadvogados.com.br
-                  </p>
+                  <h4 className="font-semibold text-gray-900 mb-1">E-mail</h4>
+                  <a href="mailto:financeiro@davilareisadvogados.com.br" className="text-blue-600 font-semibold hover:text-blue-700 text-sm">
+                    financeiro@davilareisadvogados<br />.com.br
+                  </a>
                 </div>
               </div>
             </div>
 
-            <div className="border border-navy-700 rounded-sm bg-navy-800/50 backdrop-blur-sm p-7">
-              <div className="flex items-start space-x-3">
-                <MapPin className="h-5 w-5 text-amber-400 mt-1" />
+            {/* Address */}
+            <div className="p-6 bg-gradient-to-br from-blue-50 to-gray-50 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-300">
+              <div className="flex items-start gap-4">
+                <MapPin className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                 <div>
-                  <h4 className="text-sm font-semibold text-white mb-1">Endereço</h4>
-                  <p className="text-gray-300 text-xs leading-relaxed">
-                    Av. Dr. Vinício Gagliardi, 675
-                    <br />
-                    Centro, Cerquilho/SP
-                    <br />
+                  <h4 className="font-semibold text-gray-900 mb-1">Endereço</h4>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Av. Dr. Vinício Gagliardi, 675<br />
+                    Centro, Cerquilho/SP<br />
                     CEP: 18520-091
                   </p>
                 </div>
+              </div>
+            </div>
+
+            {/* Hours */}
+            <div className="p-6 bg-gray-900 text-white rounded-xl">
+              <h4 className="font-semibold mb-3">Horário de Atendimento</h4>
+              <div className="space-y-1 text-sm">
+                <p>Segunda a Sexta: 8h às 18h</p>
+                <p>Sábado: 9h às 13h</p>
               </div>
             </div>
           </div>

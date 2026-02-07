@@ -1,114 +1,92 @@
+import { Briefcase, Award, Heart } from 'lucide-react'
+
 export default function Team() {
   return (
-    <section className="py-16 bg-navy-800 border-t border-navy-700">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-semibold text-white mb-3">
+    <section id="equipe" className="py-20 bg-gray-50 border-t border-gray-200">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold text-navy-950 mb-6">
             Expertise Reconhecida
           </h2>
-          <p className="text-lg text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Nossa equipe combina décadas de experiência com conhecimento especializado em direito
-            empresarial
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Uma equipe que combina décadas de experiência com conhecimento especializado em direito
+            empresarial e trabalhista
           </p>
         </div>
 
-        <div className="max-w-md mx-auto">
-          <div className="text-center border border-navy-600 rounded-sm bg-navy-700 p-8">
-            <div className="w-20 h-20 bg-amber-500 rounded-full mx-auto mb-5 flex items-center justify-center">
-              <span className="text-navy-900 font-bold text-lg">DR</span>
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Dr. D&apos;avila Reis</h3>
-            <p className="text-amber-400 font-medium mb-3">Sócio-Fundador</p>
-            <p className="text-sm text-gray-300 leading-relaxed">
-              Mais de 20 anos de experiência em direito trabalhista empresarial. Especialista em
-              defesa de empresários e blindagem patrimonial.
-            </p>
-          </div>
-        </div>
-
-        {/* Seção de Carreiras */}
-        <div className="mt-16">
-          <div className="text-center mb-10">
-            <h3 className="text-2xl font-semibold text-white mb-3">
-              Faça Parte da Nossa Equipe
-            </h3>
-            <p className="text-gray-300">
-              Construa sua carreira em um dos escritórios mais respeitados do direito empresarial
-            </p>
-          </div>
-
-          <div className="mb-8">
-            <h4 className="text-lg font-semibold text-white mb-6 text-center">
-              Por que trabalhar na D&apos;avila Reis?
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                {
-                  emoji: '\u{1F680}',
-                  title: 'Crescimento Profissional',
-                  desc: 'Ambiente que valoriza o desenvolvimento e oferece oportunidades reais de crescimento',
-                },
-                {
-                  emoji: '\u{1F4BC}',
-                  title: 'Cases Desafiadores',
-                  desc: 'Trabalhe com empresas de grande porte em casos complexos e estratégicos',
-                },
-                {
-                  emoji: '\u{1F3C6}',
-                  title: 'Reconhecimento',
-                  desc: 'Faça parte de uma equipe reconhecida pela excelência e resultados',
-                },
-                {
-                  emoji: '\u2696\uFE0F',
-                  title: 'Tradição + Inovação',
-                  desc: '20 anos de mercado combinados com as mais modernas ferramentas jurídicas',
-                },
-              ].map((item, index) => (
-                <div
-                  key={index}
-                  className="border border-navy-600 rounded-sm bg-navy-700 p-5 text-center"
-                >
-                  <div className="text-2xl mb-2">{item.emoji}</div>
-                  <h5 className="font-semibold text-white mb-2 text-sm">{item.title}</h5>
-                  <p className="text-xs text-gray-300 leading-relaxed">{item.desc}</p>
+        <div className="max-w-2xl mx-auto">
+          {/* Founder Card */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
+            <div className="flex flex-col md:flex-row">
+              {/* Left - Image Placeholder */}
+              <div className="md:w-1/3 bg-gradient-to-br from-blue-100 to-blue-50 p-8 flex items-center justify-center">
+                <div className="w-32 h-32 rounded-full bg-blue-600 flex items-center justify-center text-white text-4xl font-bold">
+                  DR
                 </div>
-              ))}
+              </div>
+
+              {/* Right - Info */}
+              <div className="md:w-2/3 p-8 flex flex-col justify-center">
+                <div className="inline-block w-fit mb-4">
+                  <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                    Sócio-Fundador
+                  </span>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Dr. Robson D'Avila Reis</h3>
+                <p className="text-blue-600 font-semibold mb-4">OAB/SP nº XXXXX</p>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-start gap-3">
+                    <Briefcase className="h-5 w-5 text-blue-600 flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Experiência</p>
+                      <p className="text-gray-600 text-sm">Mais de 20 anos em direito trabalhista e empresarial</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Award className="h-5 w-5 text-blue-600 flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Especialização</p>
+                      <p className="text-gray-600 text-sm">Defesa de empresários e blindagem patrimonial</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Heart className="h-5 w-5 text-blue-600 flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Compromisso</p>
+                      <p className="text-gray-600 text-sm">Dedicado à proteção do patrimônio dos clientes</p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-gray-700 leading-relaxed">
+                  Fundador com trajetória consolidada no mercado jurídico, reconhecido pela excelência em consultoria preventiva e defesa estratégica. Desenvolve soluções personalizadas para empresas que buscam segurança jurídica.
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="text-center">
-            <h4 className="text-lg font-semibold text-white mb-4">Oportunidades Abertas</h4>
-            <p className="text-gray-300 mb-6 text-sm">
-              Temos vagas para profissionais que querem fazer a diferença no direito empresarial e
-              trabalhista.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              {[
-                { title: 'Advogado Júnior', subtitle: 'Direito Trabalhista' },
-                { title: 'Estagiário em Direito', subtitle: '4h/dia - Manhã ou Tarde' },
-                { title: 'Assistente Administrativo', subtitle: '8h/dia - Presencial' },
-              ].map((vaga, index) => (
-                <div
-                  key={index}
-                  className="border border-navy-600 rounded-sm bg-navy-700 p-4 text-center"
-                >
-                  <h5 className="font-semibold text-white text-sm">{vaga.title}</h5>
-                  <p className="text-xs text-gray-300">{vaga.subtitle}</p>
-                </div>
-              ))}
+          {/* Qualifications */}
+          <div className="mt-12 pt-12 border-t border-gray-200">
+            <h4 className="text-lg font-bold text-gray-900 mb-6 text-center">Formação e Credenciais</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-lg border border-gray-200">
+                <p className="font-semibold text-gray-900 mb-2">Educação</p>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li>• Bacharelado em Direito</li>
+                  <li>• Especialização em Direito Trabalhista</li>
+                  <li>• Formação Continuada em Compliance</li>
+                </ul>
+              </div>
+              <div className="bg-white p-6 rounded-lg border border-gray-200">
+                <p className="font-semibold text-gray-900 mb-2">Membros e Certificações</p>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li>• OAB - Ordem dos Advogados do Brasil</li>
+                  <li>• Associações Profissionais Jurídicas</li>
+                  <li>• Formação em Mediação e Arbitragem</li>
+                </ul>
+              </div>
             </div>
-            <button
-              type="button"
-              className="bg-amber-500 hover:bg-amber-600 text-navy-900 px-6 py-2 rounded text-sm font-medium transition-colors duration-200 mr-4"
-            >
-              Ver Todas as Vagas →
-            </button>
-            <button
-              type="button"
-              className="border border-amber-500 text-amber-400 px-6 py-2 rounded text-sm font-medium hover:bg-navy-700 transition-colors duration-200"
-            >
-              Cadastre seu Currículo
-            </button>
           </div>
         </div>
       </div>

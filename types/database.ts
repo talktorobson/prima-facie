@@ -86,6 +86,26 @@ export type Database = {
         Insert: WebsiteContentInsert
         Update: WebsiteContentUpdate
       }
+      ai_conversations: {
+        Row: AIConversation
+        Insert: AIConversationInsert
+        Update: AIConversationUpdate
+      }
+      ai_messages: {
+        Row: AIMessage
+        Insert: AIMessageInsert
+        Update: AIMessageUpdate
+      }
+      ai_message_feedback: {
+        Row: AIMessageFeedback
+        Insert: AIMessageFeedbackInsert
+        Update: AIMessageFeedbackUpdate
+      }
+      ai_tool_executions: {
+        Row: AIToolExecution
+        Insert: AIToolExecutionInsert
+        Update: AIToolExecutionUpdate
+      }
     }
     Views: {
       platform_law_firm_stats: {
@@ -116,6 +136,10 @@ export type Database = {
       message_status: 'sent' | 'delivered' | 'read' | 'failed'
       pipeline_stage_type: 'intake' | 'onboarding' | 'not_hired'
       plan_type: 'trial' | 'basic' | 'professional' | 'enterprise'
+      ai_conversation_status: 'active' | 'archived' | 'deleted'
+      ai_message_role: 'user' | 'assistant' | 'system' | 'tool'
+      ai_feedback_rating: 'positive' | 'negative'
+      ai_tool_status: 'pending' | 'approved' | 'executed' | 'rejected' | 'error'
     }
   }
 }
@@ -818,6 +842,78 @@ export interface TimeEntryForm {
   is_billable?: boolean
   hourly_rate?: number
 }
+
+// =====================================================
+// AI CONVERSATIONS
+// =====================================================
+
+export interface AIConversation extends BaseEntity {
+  law_firm_id: string | null
+  user_id: string
+  title: string
+  status: Database['public']['Enums']['ai_conversation_status']
+  context_type?: string
+  context_entity_id?: string
+  provider: string
+  model: string
+  total_tokens_used: number
+}
+
+export type AIConversationInsert = Omit<AIConversation, 'id' | 'created_at' | 'updated_at' | 'total_tokens_used'>
+export type AIConversationUpdate = Partial<Omit<AIConversationInsert, 'user_id' | 'law_firm_id'>>
+
+// =====================================================
+// AI MESSAGES
+// =====================================================
+
+export interface AIMessage extends BaseEntity {
+  conversation_id: string
+  law_firm_id: string | null
+  role: Database['public']['Enums']['ai_message_role']
+  content: string | null
+  tool_calls?: Record<string, unknown>[]
+  tool_results?: Record<string, unknown>[]
+  tokens_input: number
+  tokens_output: number
+}
+
+export type AIMessageInsert = Omit<AIMessage, 'id' | 'created_at' | 'updated_at'>
+export type AIMessageUpdate = Partial<Pick<AIMessage, 'content'>>
+
+// =====================================================
+// AI MESSAGE FEEDBACK
+// =====================================================
+
+export interface AIMessageFeedback {
+  id: string
+  message_id: string
+  user_id: string
+  law_firm_id: string | null
+  rating: Database['public']['Enums']['ai_feedback_rating']
+  comment?: string
+  created_at: string
+}
+
+export type AIMessageFeedbackInsert = Omit<AIMessageFeedback, 'id' | 'created_at'>
+export type AIMessageFeedbackUpdate = Partial<Pick<AIMessageFeedback, 'rating' | 'comment'>>
+
+// =====================================================
+// AI TOOL EXECUTIONS
+// =====================================================
+
+export interface AIToolExecution extends BaseEntity {
+  message_id: string
+  law_firm_id: string | null
+  tool_name: string
+  tool_input?: Record<string, unknown>
+  tool_output?: Record<string, unknown>
+  status: Database['public']['Enums']['ai_tool_status']
+  requires_confirmation: boolean
+  executed_at?: string
+}
+
+export type AIToolExecutionInsert = Omit<AIToolExecution, 'id' | 'created_at' | 'updated_at'>
+export type AIToolExecutionUpdate = Partial<Pick<AIToolExecution, 'status' | 'tool_output' | 'executed_at'>>
 
 // =====================================================
 // EXPORT ALL TYPES

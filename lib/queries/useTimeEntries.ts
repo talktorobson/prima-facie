@@ -21,11 +21,11 @@ interface TimeEntryWithRelations extends TimeEntry {
   }
 }
 
-export function useTimeEntries(filters?: TimeEntryFilters) {
+export function useTimeEntries(lawFirmId: string | null | undefined, filters?: TimeEntryFilters) {
   const supabase = useSupabase()
 
   return useQuery({
-    queryKey: ['time-entries', filters],
+    queryKey: ['time-entries', lawFirmId, filters],
     queryFn: async () => {
       let query = supabase
         .from('time_entries')
@@ -34,6 +34,7 @@ export function useTimeEntries(filters?: TimeEntryFilters) {
           matters(id, title),
           users!time_entries_user_id_fkey(id, full_name)
         `)
+        .eq('law_firm_id', lawFirmId!)
         .order('work_date', { ascending: false })
 
       if (filters?.matter_id) {
@@ -51,6 +52,7 @@ export function useTimeEntries(filters?: TimeEntryFilters) {
       if (error) throw error
       return data as TimeEntryWithRelations[]
     },
+    enabled: !!lawFirmId,
   })
 }
 

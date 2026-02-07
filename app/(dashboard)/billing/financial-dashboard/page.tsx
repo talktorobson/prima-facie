@@ -38,9 +38,9 @@ const getStatusText = (status: string) => {
 }
 
 export default function FinancialDashboardPage() {
-  useAuthContext()
-  const { data: invoices, isLoading: invoicesLoading } = useInvoices()
-  const { data: timeEntries, isLoading: timeEntriesLoading } = useTimeEntries()
+  const { profile } = useAuthContext()
+  const { data: invoices, isLoading: invoicesLoading } = useInvoices(profile?.law_firm_id)
+  const { data: timeEntries, isLoading: timeEntriesLoading } = useTimeEntries(profile?.law_firm_id)
 
   const isLoading = invoicesLoading || timeEntriesLoading
 

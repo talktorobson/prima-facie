@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const timeEntrySchema = z.object({
+  law_firm_id: z.string().uuid().optional(),
   matter_id: z.string().min(1, 'Processo é obrigatório'),
   description: z.string().min(1, 'Descrição é obrigatória'),
   hours_worked: z.coerce.number().min(0.1, 'Horas trabalhadas deve ser maior que 0'),

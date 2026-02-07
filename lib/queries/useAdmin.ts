@@ -14,15 +14,16 @@ interface ActivityLogsFilters {
   user_id?: string
 }
 
-export function useUsers(filters?: UsersFilters) {
+export function useUsers(lawFirmId: string | null | undefined, filters?: UsersFilters) {
   const supabase = useSupabase()
 
   return useQuery({
-    queryKey: ['admin', 'users', filters],
+    queryKey: ['admin', 'users', lawFirmId, filters],
     queryFn: async () => {
       let query = supabase
         .from('users')
         .select('*')
+        .eq('law_firm_id', lawFirmId!)
         .order('created_at', { ascending: false })
 
       if (filters?.user_type) {
@@ -38,6 +39,7 @@ export function useUsers(filters?: UsersFilters) {
       if (error) throw error
       return data as User[]
     },
+    enabled: !!lawFirmId,
   })
 }
 
@@ -106,15 +108,16 @@ export function useDeactivateUser() {
   })
 }
 
-export function useActivityLogs(filters?: ActivityLogsFilters) {
+export function useActivityLogs(lawFirmId: string | null | undefined, filters?: ActivityLogsFilters) {
   const supabase = useSupabase()
 
   return useQuery({
-    queryKey: ['admin', 'activity-logs', filters],
+    queryKey: ['admin', 'activity-logs', lawFirmId, filters],
     queryFn: async () => {
       let query = supabase
         .from('activity_logs')
         .select('*, users!activity_logs_user_id_fkey(id, full_name)')
+        .eq('law_firm_id', lawFirmId!)
         .order('created_at', { ascending: false })
         .limit(100)
 
@@ -131,6 +134,7 @@ export function useActivityLogs(filters?: ActivityLogsFilters) {
       if (error) throw error
       return data as ActivityLog[]
     },
+    enabled: !!lawFirmId,
   })
 }
 

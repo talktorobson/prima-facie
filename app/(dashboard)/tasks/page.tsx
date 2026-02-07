@@ -39,7 +39,7 @@ const priorityOptions = [
 export default function TasksPage() {
   const { profile } = useAuthContext()
   const toast = useToast()
-  const { data: tasks = [], isLoading } = useTasks()
+  const { data: tasks = [], isLoading } = useTasks(profile?.law_firm_id)
   const toggleStatus = useToggleTaskStatus()
   const deleteTask = useDeleteTask()
 

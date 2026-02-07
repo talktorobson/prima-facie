@@ -21,10 +21,10 @@ import { ptBR } from 'date-fns/locale'
 
 export default function AdminPage() {
   const { profile } = useAuthContext()
-  const { data: users } = useUsers()
+  const { data: users } = useUsers(profile?.law_firm_id)
   const { data: lawFirm } = useLawFirm(profile?.law_firm_id ?? undefined)
   const { data: matters } = useMatters()
-  const { data: activityLogs } = useActivityLogs()
+  const { data: activityLogs } = useActivityLogs(profile?.law_firm_id)
 
   const activeUsers = users?.filter(u => u.status === 'active').length ?? 0
   const activeMatters = matters?.filter(m => m.status === 'active').length ?? 0

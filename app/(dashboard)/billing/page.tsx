@@ -32,9 +32,9 @@ const statusText = (s: string) => {
 }
 
 export default function BillingPage() {
-  useAuthContext()
-  const { data: invoices, isLoading: il } = useInvoices()
-  const { data: timeEntries, isLoading: tl } = useTimeEntries()
+  const { profile } = useAuthContext()
+  const { data: invoices, isLoading: il } = useInvoices(profile?.law_firm_id)
+  const { data: timeEntries, isLoading: tl } = useTimeEntries(profile?.law_firm_id)
   const loading = il || tl
 
   const stats = useMemo(() => {

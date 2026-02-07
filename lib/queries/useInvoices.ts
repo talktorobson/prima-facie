@@ -33,11 +33,11 @@ interface InvoiceWithRelations extends Invoice {
   }>
 }
 
-export function useInvoices(filters?: InvoiceFilters) {
+export function useInvoices(lawFirmId: string | null | undefined, filters?: InvoiceFilters) {
   const supabase = useSupabase()
 
   return useQuery({
-    queryKey: ['invoices', filters],
+    queryKey: ['invoices', lawFirmId, filters],
     queryFn: async () => {
       let query = supabase
         .from('invoices')
@@ -46,6 +46,7 @@ export function useInvoices(filters?: InvoiceFilters) {
           contacts(id, full_name, company_name),
           matters(id, title)
         `)
+        .eq('law_firm_id', lawFirmId!)
         .order('created_at', { ascending: false })
 
       if (filters?.status) {
@@ -63,6 +64,7 @@ export function useInvoices(filters?: InvoiceFilters) {
       if (error) throw error
       return data as InvoiceWithRelations[]
     },
+    enabled: !!lawFirmId,
   })
 }
 

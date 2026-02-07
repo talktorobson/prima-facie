@@ -1,10 +1,6 @@
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  created_at: Date;
-  updated_at: Date;
-}
+// Re-export canonical types from database.ts
+// The User type with law_firm_id, user_type, etc. is in database.ts
+export type { User, UserInsert, UserUpdate } from './database'
 
 export interface Api_Response<T> {
   success: boolean;

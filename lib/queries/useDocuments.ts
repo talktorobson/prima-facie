@@ -10,15 +10,16 @@ interface DocumentsFilters {
   access_level?: string
 }
 
-export function useDocuments(filters?: DocumentsFilters) {
+export function useDocuments(lawFirmId: string | null | undefined, filters?: DocumentsFilters) {
   const supabase = useSupabase()
 
   return useQuery({
-    queryKey: ['documents', filters],
+    queryKey: ['documents', lawFirmId, filters],
     queryFn: async () => {
       let query = supabase
         .from('documents')
         .select('*, matters(id, title)')
+        .eq('law_firm_id', lawFirmId!)
         .order('created_at', { ascending: false })
 
       if (filters?.matter_id) {
@@ -38,6 +39,7 @@ export function useDocuments(filters?: DocumentsFilters) {
       if (error) throw error
       return data as Document[]
     },
+    enabled: !!lawFirmId,
   })
 }
 

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/hooks/use-auth'
+import { useAuthContext } from '@/lib/providers/auth-provider'
 import { clientService, ClientFormData } from '@/lib/clients/client-service'
 import { useMatterTypes } from '@/lib/queries/useSettings'
 import { useUsers } from '@/lib/queries/useAdmin'
@@ -51,8 +52,9 @@ const paymentMethodOptions = [
 export default function NewClientPage() {
   const router = useRouter()
   const { profile } = useAuth()
+  const { profile: authProfile } = useAuthContext()
   const { data: matterTypes } = useMatterTypes()
-  const { data: lawyers } = useUsers({ user_type: 'lawyer' })
+  const { data: lawyers } = useUsers(authProfile?.law_firm_id, { user_type: 'lawyer' })
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   const [formData, setFormData] = useState({

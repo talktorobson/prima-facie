@@ -10,10 +10,10 @@ interface TaskFilters {
   assigned_to?: string
 }
 
-export function useTasks(filters?: TaskFilters) {
+export function useTasks(lawFirmId: string | null | undefined, filters?: TaskFilters) {
   const supabase = useSupabase()
   return useQuery({
-    queryKey: ['tasks'],
+    queryKey: ['tasks', lawFirmId, filters],
     queryFn: async () => {
       let query = supabase
         .from('tasks')
@@ -22,6 +22,7 @@ export function useTasks(filters?: TaskFilters) {
           matter:matters(id, title),
           assigned_user:users!tasks_assigned_to_fkey(id, full_name)
         `)
+        .eq('law_firm_id', lawFirmId!)
         .order('created_at', { ascending: false })
 
       if (filters?.status) {
@@ -38,6 +39,7 @@ export function useTasks(filters?: TaskFilters) {
       if (error) throw error
       return data as Task[]
     },
+    enabled: !!lawFirmId,
   })
 }
 

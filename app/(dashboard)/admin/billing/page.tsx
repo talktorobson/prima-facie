@@ -25,7 +25,7 @@ const planLimits: Record<string, { users: number; matters: number; storage: stri
 export default function AdminBillingPage() {
   const { profile } = useAuthContext()
   const { data: lawFirm, isLoading: firmLoading } = useLawFirm(profile?.law_firm_id ?? undefined)
-  const { data: invoices, isLoading: invoicesLoading } = useInvoices()
+  const { data: invoices, isLoading: invoicesLoading } = useInvoices(profile?.law_firm_id)
 
   const isLoading = firmLoading || invoicesLoading
 

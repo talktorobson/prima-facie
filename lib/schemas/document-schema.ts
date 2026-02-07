@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const documentSchema = z.object({
+  law_firm_id: z.string().uuid().optional(),
   name: z.string().min(1, 'Nome é obrigatório'),
   description: z.string().optional(),
   matter_id: z.string().optional(),

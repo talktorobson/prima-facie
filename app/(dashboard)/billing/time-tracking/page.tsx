@@ -83,7 +83,7 @@ export default function TimeTrackingPage() {
     return undefined
   }, [billableFilter])
 
-  const { data: timeEntries, isLoading, error, refetch } = useTimeEntries(filters)
+  const { data: timeEntries, isLoading, error, refetch } = useTimeEntries(profile?.law_firm_id, filters)
   const { data: matters } = useMatters()
   const createMut = useCreateTimeEntry()
   const updateMut = useUpdateTimeEntry()

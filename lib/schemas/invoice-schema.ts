@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const invoiceSchema = z.object({
+  law_firm_id: z.string().uuid().optional(),
   contact_id: z.string().min(1, 'Cliente é obrigatório'),
   matter_id: z.string().optional(),
   invoice_number: z.string().min(1, 'Número da fatura é obrigatório'),

@@ -15,6 +15,7 @@ import {
   PlusIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
+import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useMatter, useUpdateMatter } from '@/lib/queries/useMatters'
 import { useUsers, useActivityLogs } from '@/lib/queries/useAdmin'
 
@@ -55,12 +56,13 @@ const statusWorkflow = {
 export default function MatterWorkflowPage() {
   const params = useParams()
   const router = useRouter()
+  const { profile } = useAuthContext()
   const matterId = params.id as string
 
   const { data: matter, isLoading: matterLoading } = useMatter(matterId)
   const updateMatter = useUpdateMatter()
-  const { data: users = [] } = useUsers()
-  const { data: activityLogs = [] } = useActivityLogs({ entity_type: 'matter' })
+  const { data: users = [] } = useUsers(profile?.law_firm_id)
+  const { data: activityLogs = [] } = useActivityLogs(profile?.law_firm_id, { entity_type: 'matter' })
 
   const [showStatusChange, setShowStatusChange] = useState(false)
   const [showAssignment, setShowAssignment] = useState(false)

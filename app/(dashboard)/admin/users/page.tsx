@@ -31,7 +31,7 @@ export default function UsersManagementPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
 
-  const { data: users, isLoading } = useUsers()
+  const { data: users, isLoading } = useUsers(profile?.law_firm_id)
   const createUser = useCreateUser()
   const updateUser = useUpdateUser()
   const deactivateUser = useDeactivateUser()

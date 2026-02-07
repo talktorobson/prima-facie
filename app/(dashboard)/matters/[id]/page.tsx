@@ -26,6 +26,7 @@ import { DataJudEnrichmentPanel } from '@/components/features/datajud/enrichment
 import { DataJudTimelineEvents } from '@/components/features/datajud/timeline-events'
 
 // Import hooks
+import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useMatter } from '@/lib/queries/useMatters'
 import { useDocuments } from '@/lib/queries/useDocuments'
 import { useSupabase } from '@/components/providers'
@@ -33,6 +34,7 @@ import { useSupabase } from '@/components/providers'
 export default function MatterDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { profile } = useAuthContext()
   const [activeTab, setActiveTab] = useState('overview')
 
   const matterId = params.id as string
@@ -41,7 +43,7 @@ export default function MatterDetailPage() {
   const { data: matter, isLoading: matterLoading, error: matterError } = useMatter(matterId)
 
   // Fetch documents for this matter
-  const { data: documents = [], isLoading: docsLoading } = useDocuments({ matter_id: matterId })
+  const { data: documents = [], isLoading: docsLoading } = useDocuments(profile?.law_firm_id, { matter_id: matterId })
 
   // Fetch tasks for this matter
   const supabase = useSupabase()

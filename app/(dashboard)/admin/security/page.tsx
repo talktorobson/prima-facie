@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { AdminOnly } from '@/components/auth/role-guard'
+import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useActivityLogs, useUsers } from '@/lib/queries/useAdmin'
 import Link from 'next/link'
 import { ArrowLeftIcon, ShieldCheckIcon, FunnelIcon } from '@heroicons/react/24/outline'
@@ -9,11 +10,12 @@ import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export default function AdminSecurityPage() {
+  const { profile } = useAuthContext()
   const [entityFilter, setEntityFilter] = useState('')
   const [userFilter, setUserFilter] = useState('')
 
-  const { data: activityLogs, isLoading: logsLoading } = useActivityLogs()
-  const { data: users, isLoading: usersLoading } = useUsers()
+  const { data: activityLogs, isLoading: logsLoading } = useActivityLogs(profile?.law_firm_id)
+  const { data: users, isLoading: usersLoading } = useUsers(profile?.law_firm_id)
 
   const isLoading = logsLoading || usersLoading
 

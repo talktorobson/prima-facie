@@ -121,8 +121,8 @@ export default function DashboardPage() {
 
   const isSuperAdmin = profile?.user_type === 'super_admin'
 
-  const { data: activityLogs, isLoading: logsLoading } = useActivityLogs()
-  const { data: tasks, isLoading: tasksLoading } = useTasks()
+  const { data: activityLogs, isLoading: logsLoading } = useActivityLogs(profile?.law_firm_id)
+  const { data: tasks, isLoading: tasksLoading } = useTasks(profile?.law_firm_id)
 
   const recentLogs = useMemo(() => (activityLogs ?? []).slice(0, 5), [activityLogs])
 

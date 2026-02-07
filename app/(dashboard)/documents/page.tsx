@@ -80,7 +80,7 @@ export default function DocumentsPage() {
   const { profile } = useAuthContext()
   const supabase = useSupabase()
   const toast = useToast()
-  const { data: documents = [], isLoading } = useDocuments()
+  const { data: documents = [], isLoading } = useDocuments(profile?.law_firm_id)
   const uploadMut = useUploadDocument()
   const deleteMut = useDeleteDocument()
 

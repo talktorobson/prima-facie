@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const taskSchema = z.object({
+  law_firm_id: z.string().uuid().optional(),
   title: z.string().min(1, 'Título é obrigatório'),
   description: z.string().optional(),
   matter_id: z.string().optional(),

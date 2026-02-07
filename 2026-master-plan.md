@@ -2,9 +2,25 @@
 
 ## Overview
 
-This plan covers every remaining feature to bring Prima Facie from its current state (Matters CRUD complete) to a fully functional legal practice management SaaS. No new database tables or migrations are needed — the schema, types, enums, and RLS policies already exist for every module.
+This plan covers every remaining feature to bring Prima Facie from its current state to a fully functional legal practice management SaaS. The database schema, types, enums, and RLS policies already exist for every module. The remaining work is **frontend only** — building React Query hooks, CRUD dialogs, and pages for each module.
 
 Each feature follows the proven **Matters pattern**: React Query hooks + dialog-based CRUD + Zod validation + Portuguese localization.
+
+## Current Status (February 2026)
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Database (50+ tables) | **Complete** | All migrations applied, seed data deployed |
+| RLS Policies | **Complete** | Multi-tenant isolation on all tables |
+| Landing Page | **Complete** | D'Avila Reis institutional page at `/` |
+| Auth Flow | **Complete** | Login, register, password recovery |
+| Matters CRUD | **Complete** | Full CRUD with dialogs and React Query |
+| Billing Backend | **Complete** | Services, Stripe integration, dual invoices |
+| DataJud CNJ | **Complete** | Case enrichment, timeline, court sync |
+| Financial Backend | **Complete** | AP/AR services, vendor management |
+| Sprints 0-9 (Frontend) | **Not Started** | All frontend CRUD modules below |
+
+The sprints below represent **frontend implementation work**. The backend (database, services, API routes) is already production-ready.
 
 ---
 

@@ -262,8 +262,7 @@ ORDER BY total_events DESC;
 ## 📚 Additional Resources
 
 ### Related Documentation
-- [DataJud Integration Guide](../How-to-integrate-API-Datajud-CNJ.md)
-- [DataJud Test Report](../DATAJUD-TEST-REPORT.md)
+- [DataJud Integration Guide](../../docs/datajud-integration.md)
 - [Database Schema](../migrations/datajud-schema.sql)
 
 ### API Documentation

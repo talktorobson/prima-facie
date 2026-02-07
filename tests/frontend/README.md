@@ -420,8 +420,7 @@ jobs:
 
 ### Prima Facie Specific Resources
 - Main project README: `/README.md`
-- Phase 8.7 documentation: `/DUAL-INVOICE-SYSTEM.md`
-- Testing checklist: `/PHASE_8_7_TESTING_CHECKLIST.md`
+- Dual invoice system: `/docs/dual-invoice-system.md`
 - API documentation: `/database/docs/`
 
 ## 🤝 Contributing

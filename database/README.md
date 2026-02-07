@@ -1,100 +1,13 @@
-# Database Status - Production Ready
+# Prima Facie Database
 
-## 🎉 PRODUCTION DATABASE DEPLOYED + DATAJUD CNJ INTEGRATED
+**Status**: Production Ready (June 2025)
 
-**Status**: ✅ **100% COMPLETE** (June 20, 2025)
+The Prima Facie database is fully deployed to Supabase with 50+ tables, Row Level Security, and realistic seed data.
 
-The Prima Facie Legal-as-a-Service platform database is fully deployed to production with comprehensive schema, realistic seed data, and complete DataJud CNJ integration.
+## Schema Overview
 
-## Current State
-
-### Schema Deployment ✅
-- **50+ Tables**: All core, business, advanced billing, and DataJud CNJ tables deployed
-- **DataJud Integration**: Complete CNJ database integration with case enrichment
-- **Row Level Security**: Multi-tenant isolation enforced on all tables
-- **Performance Indexes**: Optimized queries across all relationships
-- **Foreign Key Constraints**: Proper data integrity maintained
-
-### Seed Data Deployment ✅
-- **2 Law Firms**: Realistic Brazilian legal practices
-- **8 Clients**: Individual (CPF) and Corporate (CNPJ) contacts
-- **8 Legal Matters**: Active cases across multiple practice areas
-- **5 DataJud Cases**: CNJ-enriched cases with real Brazilian court data
-- **18 Time Entries**: Billable hours with market rates
-- **6 Subscription Plans**: R$ 890 - R$ 8,500/month service tiers
-- **Complete Financial Data**: Vendors, bills, invoices, discounts
-- **DataJud Timeline**: 16 court movements with authentic Brazilian legal procedures
-
-## Working Migration Scripts
-
-### ✅ Successfully Applied Scripts
-1. **`manual-migration-step1.sql`** - Core legal practice tables
-2. **`manual-migration-step2.sql`** - Supporting business tables
-3. **`manual-migration-step3-advanced.sql`** - Advanced billing and financial tables
-
-### ✅ Successfully Applied Seed Data
-1. **`seed-data-step1-core-FIXED.sql`** - Core business data
-2. **`seed-data-step2-billing.sql`** - Subscription and billing configurations
-3. **`seed-data-step3-timetracking.sql`** - Time entries and invoices
-4. **`seed-data-step4-financial.sql`** - Financial ecosystem
-
-### ✅ DataJud CNJ Integration
-1. **`migrations/datajud-schema.sql`** - DataJud database schema
-2. **`seed-data/datajud-seed-data-SAFE.sql`** - Production-ready DataJud seed data ✅ **DEPLOYED**
-
-## Verification Tools
-
-### Database Schema Verification
-```bash
-node verify-migration.js
+### Core Legal Practice
 ```
-**Expected Result**: 20+ tables confirmed with proper relationships
-
-### Seed Data Verification
-```bash
-node verify-seed-data.js
-```
-**Expected Result**: All tables populated with realistic test data
-
-## Database Features Ready for Use
-
-### Legal Practice Management
-- ✅ Client and matter management with Brazilian compliance
-- ✅ Time tracking with automated billing calculations
-- ✅ Document management with access controls
-- ✅ Task management integrated with billing
-
-### Advanced Billing System
-- ✅ Multi-modal case billing (hourly, fixed, percentage, hybrid)
-- ✅ Subscription management with usage tracking
-- ✅ Automated discount engine for cross-selling
-- ✅ Dual invoice system (subscription + case billing)
-
-### Financial Management
-- ✅ Complete accounts payable system
-- ✅ Vendor management with Brazilian compliance
-- ✅ Revenue analytics and reporting capabilities
-- ✅ Multi-tenant financial isolation
-
-### Communication & Pipeline
-- ✅ Client messaging and chat history
-- ✅ Sales pipeline and opportunity tracking
-- ✅ Activity logging and audit trails
-
-### DataJud CNJ Integration ✅
-- ✅ Case enrichment with official CNJ database
-- ✅ Real-time court movement tracking
-- ✅ Multi-jurisdictional support (TRT, TJSP, TRF, etc.)
-- ✅ Client matching with confidence scoring
-- ✅ Brazilian legal compliance (CNJ numbering, court systems)
-- ✅ Sync history and performance monitoring
-- ✅ Professional Portuguese localization
-
-## Database Schema Overview
-
-### Core Legal Practice Tables
-```sql
--- Client and matter management
 contacts              # Clients with CPF/CNPJ validation
 matter_types          # Legal case categories
 matters               # Legal cases with court information
@@ -103,9 +16,8 @@ tasks                 # Case task management
 time_entries          # Billable time tracking
 ```
 
-### Business Operations Tables
-```sql
--- Document and communication management
+### Business Operations
+```
 documents             # Legal document storage
 messages              # Client communication
 pipeline_stages       # Sales pipeline stages
@@ -113,69 +25,121 @@ pipeline_cards        # Sales opportunities
 activity_logs         # System audit trail
 ```
 
-### Advanced Billing & Financial Tables
-```sql
--- Subscription and billing management
+### Billing & Financial
+```
 subscription_plans    # Service tier definitions
-case_types           # Case billing configurations
-client_subscriptions # Active subscription tracking
-discount_rules       # Automated pricing incentives
-
--- Financial operations
-invoices             # Multi-modal invoice system
-invoice_line_items   # Detailed invoice breakdowns
-vendors              # Supplier and court management
-bills                # Accounts payable
+case_types            # Case billing configurations
+client_subscriptions  # Active subscription tracking
+discount_rules        # Automated pricing incentives
+invoices              # Multi-modal invoice system
+invoice_line_items    # Detailed invoice breakdowns
+vendors               # Supplier and court management
+bills                 # Accounts payable
 ```
 
-## Security & Multi-tenancy
+### DataJud CNJ Integration
+```
+datajud_*             # CNJ database integration tables
+                      # Case enrichment, timeline, participants
+```
 
-### Row Level Security (RLS)
+For a detailed visual reference, see [Schema Overview](docs/schema_overview.md).
+
+## Security
+
+All tables are protected by Row Level Security (RLS) policies enforcing multi-tenant isolation by `law_firm_id`. See `database/migrations/` for policy definitions.
+
+## Migration History
+
+Migrations were applied manually via the Supabase SQL Editor. All scripts use `IF NOT EXISTS` and are idempotent.
+
+### Schema Migrations (applied in order)
+
+| Step | File | Tables |
+|------|------|--------|
+| 1 | `manual-migration-step1.sql` | Core legal practice: contacts, matter_types, matters, matter_contacts |
+| 2 | `manual-migration-step2.sql` | Supporting: tasks, time_entries, documents, invoices, messages, pipelines, activity_logs |
+| 3 | `manual-migration-step3-advanced.sql` | Billing & financial: subscription_plans, case_types, client_subscriptions, discount_rules, vendors, bills |
+| 4 | `migrations/datajud-schema.sql` | DataJud CNJ integration tables |
+
+### Row Level Security
+
+| Migration | Scope |
+|-----------|-------|
+| `database/migrations/002_row_level_security.sql` | RLS for core tables |
+| `database/migrations/003_billing_rls.sql` | RLS for billing tables |
+| `database/migrations/004_super_admin.sql` | Super admin role policies |
+
+### How to Apply a New Migration
+
+1. Open [Supabase SQL Editor](https://supabase.com/dashboard)
+2. Paste the SQL script contents
+3. Click **RUN**
+4. Verify with: `node verify-migration.js`
+
+## Seed Data
+
+Seed data was applied in 4 steps plus the DataJud dataset. All scripts are idempotent (safe to re-run).
+
+### Application Order
+
+| Step | File | Content |
+|------|------|---------|
+| 1 | `seed-data-step1-core-FIXED.sql` | 8 matter types, 8 clients (CPF/CNPJ), 8 matters, 6 tasks |
+| 2 | `seed-data-step2-billing.sql` | 6 subscription plans (R$ 890-8,500/mo), 8 case types, 4 discount rules |
+| 3 | `seed-data-step3-timetracking.sql` | 18 time entries, 7 invoices (paid/pending/overdue), 10+ line items |
+| 4 | `seed-data-step4-financial.sql` | 7 vendors, 9 bills, 7 messages, 7 documents, pipeline stages + cards |
+| 5 | `seed-data/datajud-seed-data-SAFE.sql` | 5 DataJud cases with CNJ movements and participants |
+
+### Current Data Summary
+
+- 2 Law Firms (Davila Reis Advocacia, Silva & Associados)
+- 6 Users (linked to Supabase Auth)
+- 8 Clients (individual CPF + corporate CNPJ)
+- 8 Legal Matters across practice areas
+- 5 DataJud-enriched cases with real court data
+- 18 Time entries with market-rate billing
+- 6 Subscription plans
+- Complete financial data (vendors, bills, invoices, discounts)
+
+### How to Apply Seed Data
+
+1. Ensure all migrations have been applied first
+2. Open [Supabase SQL Editor](https://supabase.com/dashboard)
+3. Execute each seed script in order (Step 1 through 5)
+4. Verify with: `node verify-seed-data.js`
+
+### Resetting Seed Data
+
+To clear seed data while keeping the schema:
 ```sql
--- All tables protected by law_firm_id isolation
-ALTER TABLE [table_name] ENABLE ROW LEVEL SECURITY;
-
--- Example policy for data isolation
-CREATE POLICY "law_firm_isolation" ON matters
-  FOR ALL USING (law_firm_id = auth.current_user_law_firm_id());
+DELETE FROM invoice_line_items;
+DELETE FROM invoices;
+DELETE FROM time_entries;
+DELETE FROM matter_contacts;
+DELETE FROM matters;
+DELETE FROM contacts WHERE law_firm_id IN (
+  '123e4567-e89b-12d3-a456-426614174000',
+  '234e4567-e89b-12d3-a456-426614174001'
+);
+-- Continue for other tables as needed
 ```
 
-### Multi-tenant Architecture
-- **Data Isolation**: Complete separation between law firms
-- **Security Enforcement**: RLS policies on all tables
-- **Performance Optimization**: Proper indexing for multi-tenant queries
+## Verification Tools
 
-## Next Steps for Development
+```bash
+# Verify schema
+node verify-migration.js
 
-1. **Connect Application**: Update service layers to use production database
-2. **Test Workflows**: Validate user journeys with real data
-3. **Performance Testing**: Monitor with actual data load
-4. **User Acceptance**: Law firm validation with realistic scenarios
+# Verify seed data
+node verify-seed-data.js
+```
 
-## Production Database Features
+## Troubleshooting
 
-### Brazilian Legal Compliance
-- ✅ CPF/CNPJ validation and formatting
-- ✅ Portuguese content and legal terminology
-- ✅ Brazilian court procedures and case types
-- ✅ Local currency formatting (BRL)
-
-### Business Intelligence Ready
-- ✅ Revenue analytics with subscription and case billing
-- ✅ Client profitability tracking
-- ✅ Time utilization and billing efficiency
-- ✅ Financial forecasting with historical data
-
-### Scalability & Performance
-- ✅ Optimized indexes for production workloads
-- ✅ Efficient foreign key relationships
-- ✅ Proper data types for large-scale operations
-- ✅ Query optimization for multi-tenant architecture
-
----
-
-**Database Environment**: Supabase Production Instance  
-**Security**: Row Level Security Enabled  
-**Data Isolation**: Multi-tenant Architecture  
-**Compliance**: Brazilian Legal Market Standards  
-**Status**: ✅ **PRODUCTION READY**
+| Issue | Solution |
+|-------|----------|
+| "Missing required tables" | Apply migration scripts first |
+| "Table does not exist" | Optional billing tables — continue with core seeding |
+| "Permission denied" | Ensure SUPABASE_SERVICE_ROLE_KEY is set in .env.local |
+| "Duplicate key" | Seed data already applied, safe to ignore |

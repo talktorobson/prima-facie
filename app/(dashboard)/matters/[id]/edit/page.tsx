@@ -12,13 +12,15 @@ import {
   CalendarIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  TrashIcon
+  TrashIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useMatter, useUpdateMatter, useDeleteMatter } from '@/lib/queries/useMatters'
 import { useUsers } from '@/lib/queries/useAdmin'
 import { useMatterTypes } from '@/lib/queries/useSettings'
 import { useSupabase } from '@/components/providers'
+import { resolveCourtEndpoint } from '@/lib/integrations/datajud/api'
 
 const statusOptions = [
   { value: 'active', label: 'Ativo' },
@@ -46,6 +48,43 @@ const billingMethodOptions = [
   { value: 'contingency', label: 'Êxito' },
   { value: 'pro_bono', label: 'Pro Bono' }
 ]
+
+const CNJ_REGEX = /^\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}$/
+
+function formatCnj(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 20)
+  const d = digits
+  if (d.length <= 7) return d
+  if (d.length <= 9) return `${d.slice(0, 7)}-${d.slice(7)}`
+  if (d.length <= 13) return `${d.slice(0, 7)}-${d.slice(7, 9)}.${d.slice(9)}`
+  if (d.length <= 14) return `${d.slice(0, 7)}-${d.slice(7, 9)}.${d.slice(9, 13)}.${d.slice(13)}`
+  if (d.length <= 16) return `${d.slice(0, 7)}-${d.slice(7, 9)}.${d.slice(9, 13)}.${d.slice(13, 14)}.${d.slice(14)}`
+  return `${d.slice(0, 7)}-${d.slice(7, 9)}.${d.slice(9, 13)}.${d.slice(13, 14)}.${d.slice(14, 16)}.${d.slice(16)}`
+}
+
+function getTribunalFromCnj(cnj: string): string | null {
+  const digits = cnj.replace(/\D/g, '')
+  if (digits.length !== 20) return null
+  try {
+    return resolveCourtEndpoint(cnj).toUpperCase()
+  } catch {
+    return null
+  }
+}
+
+interface DataJudPreview {
+  found: boolean
+  tribunal?: string
+  courtName?: string
+  municipality?: string
+  state?: string
+  className?: string
+  filingDate?: string | null
+  caseValue?: number | null
+  subjects?: string[]
+  movementCount?: number
+  participantCount?: number
+}
 
 export default function EditMatterPage() {
   const params = useParams()
@@ -101,6 +140,49 @@ export default function EditMatterPage() {
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [datajudPreview, setDatajudPreview] = useState<DataJudPreview | null>(null)
+  const [isLookingUp, setIsLookingUp] = useState(false)
+
+  const tribunal = getTribunalFromCnj(formData.process_number)
+  const isCnjValid = CNJ_REGEX.test(formData.process_number)
+  const cnjDigits = formData.process_number.replace(/\D/g, '')
+  const showCnjWarning = cnjDigits.length > 0 && cnjDigits.length < 20
+
+  const handleCnjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCnj(e.target.value)
+    setFormData(prev => ({ ...prev, process_number: formatted }))
+    setDatajudPreview(null)
+    if (errors.process_number) {
+      setErrors(prev => ({ ...prev, process_number: '' }))
+    }
+  }
+
+  const handleDatajudLookup = async () => {
+    if (!isCnjValid) return
+    setIsLookingUp(true)
+    setDatajudPreview(null)
+    try {
+      const res = await fetch(`/api/datajud/lookup?processNumber=${encodeURIComponent(formData.process_number)}`)
+      const data: DataJudPreview = await res.json()
+      setDatajudPreview(data)
+    } catch {
+      setDatajudPreview({ found: false })
+    } finally {
+      setIsLookingUp(false)
+    }
+  }
+
+  const handleApplyPreview = () => {
+    if (!datajudPreview || !datajudPreview.found) return
+    setFormData(prev => ({
+      ...prev,
+      court_name: datajudPreview.courtName || prev.court_name,
+      court_city: datajudPreview.municipality
+        ? `${datajudPreview.municipality}${datajudPreview.state ? ` - ${datajudPreview.state}` : ''}`
+        : prev.court_city,
+      case_value: datajudPreview.caseValue ? datajudPreview.caseValue.toString() : prev.case_value,
+    }))
+  }
 
   // Populate form when matter data arrives
   useEffect(() => {
@@ -110,7 +192,7 @@ export default function EditMatterPage() {
       description: matter.description || '',
       matter_type_id: matter.matter_type_id || '',
       area_juridica: (matter.custom_fields as Record<string, string>)?.area_juridica || '',
-      process_number: matter.process_number || '',
+      process_number: matter.process_number ? formatCnj(matter.process_number) : '',
       court_name: matter.court_name || '',
       court_city: matter.court_city || '',
       client_id: (matter as Record<string, unknown>).contacts?.[0]?.contact?.id || '',
@@ -163,6 +245,10 @@ export default function EditMatterPage() {
     if (!formData.title.trim()) newErrors.title = 'Título é obrigatório'
     if (!formData.responsible_lawyer_id) {
       newErrors.responsible_lawyer_id = 'Advogado responsável é obrigatório'
+    }
+
+    if (formData.process_number && !CNJ_REGEX.test(formData.process_number)) {
+      newErrors.process_number = 'Formato CNJ inválido. Use: NNNNNNN-NN.NNNN.N.NN.NNNN'
     }
 
     if (formData.case_value && isNaN(parseFloat(formData.case_value))) {
@@ -411,19 +497,142 @@ export default function EditMatterPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+            <div className="md:col-span-2">
               <label htmlFor="process_number" className="block text-sm font-medium text-gray-700">
-                Número do Processo
+                Número do Processo (CNJ)
               </label>
-              <input
-                type="text"
-                id="process_number"
-                name="process_number"
-                value={formData.process_number}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                placeholder="Ex: 5001234-20.2024.5.02.0001"
-              />
+              <div className="mt-1 flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    id="process_number"
+                    name="process_number"
+                    value={formData.process_number}
+                    onChange={handleCnjChange}
+                    className={`block w-full border rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary ${
+                      errors.process_number ? 'border-red-300' : showCnjWarning ? 'border-yellow-300' : 'border-gray-300'
+                    }`}
+                    placeholder="NNNNNNN-NN.NNNN.N.NN.NNNN"
+                    maxLength={25}
+                  />
+                </div>
+                {tribunal && (
+                  <span className="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-bold bg-blue-100 text-blue-800 whitespace-nowrap">
+                    {tribunal}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleDatajudLookup}
+                  disabled={!isCnjValid || isLookingUp}
+                  className={`inline-flex items-center px-3 py-2 border text-sm font-medium rounded-md whitespace-nowrap ${
+                    isCnjValid && !isLookingUp
+                      ? 'border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100'
+                      : 'border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed'
+                  }`}
+                >
+                  {isLookingUp ? (
+                    <svg className="animate-spin h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  ) : (
+                    <MagnifyingGlassIcon className="h-4 w-4 mr-1.5" />
+                  )}
+                  Consultar DataJud
+                </button>
+              </div>
+              {errors.process_number && <p className="mt-1 text-sm text-red-600">{errors.process_number}</p>}
+              {showCnjWarning && <p className="mt-1 text-sm text-yellow-600">Formato incompleto. Esperado: 20 dígitos</p>}
+              {tribunal === null && cnjDigits.length === 20 && (
+                <p className="mt-1 text-sm text-yellow-600">Tribunal desconhecido para este número</p>
+              )}
+
+              {/* DataJud Preview Card */}
+              {datajudPreview && (
+                <div className="mt-3 border rounded-lg p-4 bg-gray-50">
+                  {datajudPreview.found ? (
+                    <>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-gray-900">Dados do DataJud</h4>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={handleApplyPreview}
+                            className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-green-100 text-green-800 hover:bg-green-200"
+                          >
+                            Preencher campos
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDatajudPreview(null)}
+                            className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-gray-200 text-gray-600 hover:bg-gray-300"
+                          >
+                            Fechar
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                        {datajudPreview.courtName && (
+                          <div>
+                            <span className="text-gray-500 text-xs">Vara/Tribunal</span>
+                            <p className="font-medium">{datajudPreview.courtName}</p>
+                          </div>
+                        )}
+                        {datajudPreview.municipality && (
+                          <div>
+                            <span className="text-gray-500 text-xs">Comarca</span>
+                            <p className="font-medium">{datajudPreview.municipality}{datajudPreview.state ? ` - ${datajudPreview.state}` : ''}</p>
+                          </div>
+                        )}
+                        {datajudPreview.className && (
+                          <div>
+                            <span className="text-gray-500 text-xs">Classe</span>
+                            <p className="font-medium">{datajudPreview.className}</p>
+                          </div>
+                        )}
+                        {datajudPreview.subjects && datajudPreview.subjects.length > 0 && (
+                          <div className="col-span-2 md:col-span-3">
+                            <span className="text-gray-500 text-xs">Assuntos</span>
+                            <p className="font-medium">{datajudPreview.subjects.join(', ')}</p>
+                          </div>
+                        )}
+                        {datajudPreview.filingDate && (
+                          <div>
+                            <span className="text-gray-500 text-xs">Data de Ajuizamento</span>
+                            <p className="font-medium">{new Date(datajudPreview.filingDate).toLocaleDateString('pt-BR')}</p>
+                          </div>
+                        )}
+                        {datajudPreview.caseValue != null && (
+                          <div>
+                            <span className="text-gray-500 text-xs">Valor da Causa</span>
+                            <p className="font-medium">R$ {datajudPreview.caseValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-gray-500 text-xs">Movimentações</span>
+                          <p className="font-medium">{datajudPreview.movementCount ?? 0}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 text-xs">Participantes</span>
+                          <p className="font-medium">{datajudPreview.participantCount ?? 0}</p>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-500">Processo não encontrado no DataJud.</p>
+                      <button
+                        type="button"
+                        onClick={() => setDatajudPreview(null)}
+                        className="text-xs text-gray-400 hover:text-gray-600"
+                      >
+                        Fechar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>

@@ -27,9 +27,25 @@ import {
   FormDescription,
 } from '@/components/ui/form'
 
+function formatCnj(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 20)
+  const d = digits
+  if (d.length <= 7) return d
+  if (d.length <= 9) return `${d.slice(0, 7)}-${d.slice(7)}`
+  if (d.length <= 13) return `${d.slice(0, 7)}-${d.slice(7, 9)}.${d.slice(9)}`
+  if (d.length <= 14) return `${d.slice(0, 7)}-${d.slice(7, 9)}.${d.slice(9, 13)}.${d.slice(13)}`
+  if (d.length <= 16) return `${d.slice(0, 7)}-${d.slice(7, 9)}.${d.slice(9, 13)}.${d.slice(13, 14)}.${d.slice(14)}`
+  return `${d.slice(0, 7)}-${d.slice(7, 9)}.${d.slice(9, 13)}.${d.slice(13, 14)}.${d.slice(14, 16)}.${d.slice(16)}`
+}
+
+const CNJ_REGEX = /^\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}$/
+
 const matterSchema = z.object({
   title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres'),
-  case_number: z.string().optional(),
+  case_number: z.string().optional().refine(
+    (val) => !val || val === '' || CNJ_REGEX.test(val),
+    { message: 'Formato CNJ inválido. Use: NNNNNNN-NN.NNNN.N.NN.NNNN' }
+  ),
   description: z.string().optional(),
   status: z.enum(['active', 'closed', 'on_hold', 'settled', 'dismissed']),
   matter_type_id: z.string().uuid('Selecione um tipo de processo'),
@@ -80,7 +96,7 @@ export function EditMatterDialog({ matter, open, onOpenChange }: EditMatterDialo
     if (matter) {
       form.reset({
         title: matter.title,
-        case_number: matter.case_number || '',
+        case_number: matter.case_number ? formatCnj(matter.case_number) : '',
         description: matter.description || '',
         status: matter.status,
         matter_type_id: matter.matter_type_id,
@@ -145,11 +161,14 @@ export function EditMatterDialog({ matter, open, onOpenChange }: EditMatterDialo
               name="case_number"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Número do Processo</FormLabel>
+                  <FormLabel>Número do Processo (CNJ)</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Ex: 0000000-00.0000.0.00.0000"
+                      placeholder="NNNNNNN-NN.NNNN.N.NN.NNNN"
+                      className="font-mono"
+                      maxLength={25}
                       {...field}
+                      onChange={(e) => field.onChange(formatCnj(e.target.value))}
                     />
                   </FormControl>
                   <FormDescription>

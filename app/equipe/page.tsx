@@ -5,30 +5,19 @@ import ScrollReveal from '@/components/landing/scroll-reveal'
 export const metadata: Metadata = {
   title: "Equipe | D'Avila Reis Advogados",
   description:
-    'Conheca os socios fundadores do escritorio D\'Avila Reis Advogados: Dr. Ruy D\'Avila Reis e Dra. Larissa D\'Avila Reis, com atuacao em Sao Paulo, Minas Gerais, Parana e Portugal.',
+    'Conheca a sócia fundadora do escritório D\'Avila Reis Advogados: Dra. Larissa D\'Avila Reis, com atuação em São Paulo, Minas Gerais e Portugal.',
 }
 
 const founders = [
   {
-    initials: 'RDR',
-    name: "Dr. Ruy D'Avila Reis",
-    title: 'Socio Fundador',
-    oab: 'OAB/SP',
-    bio: [
-      'Com mais de 20 anos de experiencia em direito trabalhista empresarial, o Dr. Ruy D\'Avila Reis e a forca motriz do escritorio. Sua trajetoria profissional foi construida na defesa de empresarios e empresas, com especial dedicacao ao contencioso trabalhista patronal e a blindagem patrimonial dos socios.',
-      'Ao longo de sua carreira, atuou em milhares de reclamacoes trabalhistas, desenvolvendo teses defensivas inovadoras e construindo uma reputacao solida junto a Justica do Trabalho. Sua abordagem combina profundo conhecimento tecnico com visao estrategica do negocio do cliente, garantindo que as decisoes juridicas estejam alinhadas aos objetivos empresariais.',
-      'Alem da atuacao contenciosa, o Dr. Ruy lidera os servicos de consultoria preventiva do escritorio, realizando auditorias trabalhistas e elaborando politicas internas que reduzem significativamente a exposicao das empresas a riscos juridicos.',
-    ],
-  },
-  {
     initials: 'LDR',
     name: "Dra. Larissa D'Avila Reis",
-    title: 'Socia Fundadora',
-    oab: 'OAB/SP \u00b7 OAB/MG \u00b7 OAB/PR \u00b7 Ordem dos Advogados de Portugal',
+    title: 'Sócia Fundadora',
+    oab: 'OAB/SP \u00b7 OAB/MG \u00b7 Ordem dos Advogados de Portugal',
     bio: [
-      'A Dra. Larissa D\'Avila Reis traz ao escritorio uma dimensao unica: a atuacao multijurisdicional. Inscrita em tres estados brasileiros \u2014 Sao Paulo, Minas Gerais e Parana \u2014 e tambem na Ordem dos Advogados de Portugal, sua formacao permite ao escritorio atender demandas com alcance interestadual e transfronteirico.',
-      'Sua experiencia internacional amplia a capacidade do escritorio em casos que envolvem operacoes empresariais entre Brasil e Europa, contratos internacionais e questoes trabalhistas com elementos de conexao em multiplas jurisdicoes. Essa versatilidade e especialmente valiosa para clientes com operacoes em diferentes estados ou com relacoes comerciais internacionais.',
-      'A Dra. Larissa atua diretamente na area de contratos empresariais e na recuperacao de creditos, trazendo uma abordagem pragmatica e orientada a resultados que complementa a expertise contenciosa do escritorio.',
+      'A Dra. Larissa D\'Avila Reis traz ao escritório uma dimensão única: a atuação multijurisdicional. Mais de 12 anos de experiência jurídica (1500+ processos) e inscrita em 2 estados brasileiros \u2014 Sao Paulo e Minas Gerais \u2014 e tambem na Ordem dos Advogados de Portugal, sua formacao permite ao escritorio atender demandas com alcance interestadual e transfronteiriço.',
+      'Sua experiência internacional amplia a capacidade do escritório em casos que envolvem operações empresariais entre Brasil e Europa, contratos internacionais e questões trabalhistas. Essa versatilidade e especialmente valiosa para clientes com operações em diferentes estados ou com relacoes comerciais internacionais.',
+      'A Dra. Larissa atua diretamente na area trabalhista (preventivo e contencioso), na area de contratos empresariais e na recuperacao de creditos, trazendo uma abordagem pragmatica e orientada a resultados.',
     ],
   },
 ]
@@ -111,21 +100,20 @@ export default function EquipePage() {
             <ScrollReveal delay="100ms">
               <div className="space-y-6 text-left">
                 <p className="text-landing-stone leading-relaxed text-lg">
-                  No D&apos;Avila Reis Advogados, acreditamos que a excelencia juridica nasce da
-                  combinacao entre conhecimento tecnico aprofundado e compreensao genuina dos
-                  desafios que nossos clientes enfrentam no dia a dia de seus negocios.
+                  No D&apos;Avila Reis Advogados, acreditamos que a excelência jurídica nasce da
+                  combinação entre conhecimento técnico aprofundado e compreensão genuina dos
+                  desafios que nossos clientes enfrentam no dia a dia de seus negócios.
                 </p>
                 <p className="text-landing-stone leading-relaxed text-lg">
-                  Nossa equipe opera com um modelo de atendimento proximo e personalizado, onde cada
-                  cliente tem acesso direto aos socios responsaveis pelo seu caso. Nao acreditamos
+                  Nossa equipe opera com um modelo de atendimento próximo e personalizado, onde cada
+                  cliente tem acesso direto à sócia responsável pelo seu caso. Não acreditamos
                   em advocacia de volume — preferimos manter uma carteira de clientes que nos
-                  permita oferecer atencao dedicada e estrategias sob medida.
+                  permita oferecer atenção dedicada e estratégias sob medida.
                 </p>
                 <p className="text-landing-stone leading-relaxed text-lg">
-                  A complementaridade entre os socios — a experiencia contenciosa do Dr. Ruy e a
-                  atuacao multijurisdicional da Dra. Larissa — cria uma sinergia que permite ao
-                  escritorio abordar cada desafio juridico sob multiplas perspectivas, entregando
-                  solucoes mais completas e eficazes.
+                  A complementaridade da equipe — a experiência contenciosa da Dra. Larissa — cria uma sinergia que permite ao
+                  escritório abordar cada desafio jurídico sob multiplas perspectivas, entregando
+                  soluções mais completas e eficazes.
                 </p>
               </div>
             </ScrollReveal>

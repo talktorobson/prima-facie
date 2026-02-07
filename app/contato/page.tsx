@@ -6,7 +6,7 @@ import ScrollReveal from '@/components/landing/scroll-reveal'
 
 export const metadata: Metadata = {
   title: 'Contato | D\'Avila Reis Advogados',
-  description: 'Entre em contato com o escritorio D\'Avila Reis Advogados. Advocacia empresarial e trabalhista preventiva em Cerquilho/SP.',
+  description: 'Entre em contato com o escritório D\'Avila Reis Advogados. Advocacia empresarial e trabalhista em Cerquilho/SP.',
 }
 
 const contactInfo = [
@@ -18,17 +18,17 @@ const contactInfo = [
   {
     icon: Mail,
     title: 'E-mail',
-    detail: 'financeiro@davilareisadvogados.com.br',
+    detail: 'recepcao@davilareisadvogados.com.br',
   },
   {
     icon: MapPin,
-    title: 'Endereco',
+    title: 'Endereço',
     detail: 'Av. Dr. Vinicio Gagliardi, 675\nCentro, Cerquilho/SP — CEP 18520-091',
   },
   {
     icon: Clock,
-    title: 'Horario',
-    detail: 'Seg a Sex, 8h as 18h',
+    title: 'Horário',
+    detail: 'Seg a Sex, 8h30 às 17h30',
   },
 ]
 
@@ -44,7 +44,7 @@ export default function ContatoPage() {
                   Entre em Contato
                 </h1>
                 <p className="text-landing-stone mt-8 text-lg max-w-2xl mx-auto">
-                  Preencha o formulario para direcionarmos seu atendimento de forma agil e personalizada.
+                  Preencha o formulário para direcionarmos seu atendimento de forma ágil e personalizada.
                 </p>
               </div>
             </ScrollReveal>

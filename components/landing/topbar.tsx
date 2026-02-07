@@ -11,7 +11,7 @@ export default function Topbar() {
   return (
     <div className="w-full h-9 bg-landing-ink flex items-center justify-center px-4 relative z-50">
       <p className="text-xs text-white/80 tracking-wide text-center">
-        Atuacao exclusiva para empresas (gestao/empregador). Conteudo informativo.
+        Atuação exclusiva para empresas e empresários. Conteúdo informativo.
       </p>
       <button
         type="button"

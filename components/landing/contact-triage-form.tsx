@@ -37,13 +37,12 @@ function ProgressDots({ current, total }: { current: number; total: number }) {
       {Array.from({ length: total }, (_, i) => (
         <div
           key={i}
-          className={`h-2 rounded-full transition-all duration-300 ${
-            i + 1 === current
+          className={`h-2 rounded-full transition-all duration-300 ${i + 1 === current
               ? 'w-8 bg-landing-gold'
               : i + 1 < current
                 ? 'w-2 bg-landing-gold/60'
                 : 'w-2 bg-landing-mist'
-          }`}
+            }`}
         />
       ))}
     </div>
@@ -60,38 +59,36 @@ function PreGate({ onContinue }: { onContinue: () => void }) {
     <div className="space-y-8">
       <div>
         <h3 className="text-xl font-serif font-semibold text-landing-ink mb-2">
-          Antes de comecar...
+          Antes de começar...
         </h3>
         <p className="text-sm text-landing-stone">
-          Responda duas perguntas rapidas para direcionarmos seu atendimento.
+          Responda duas perguntas rápidas para direcionarmos seu atendimento.
         </p>
       </div>
 
       {/* Question 1: Already a client? */}
       <div className="space-y-3">
-        <p className="text-sm font-medium text-landing-ink">Ja e cliente do escritorio?</p>
+        <p className="text-sm font-medium text-landing-ink">Já é cliente do escritório?</p>
         <div className="flex gap-3">
           <button
             type="button"
             onClick={() => setIsClient(true)}
-            className={`flex-1 px-4 py-3 text-sm font-medium border transition-colors ${
-              isClient === true
+            className={`flex-1 px-4 py-3 text-sm font-medium border transition-colors ${isClient === true
                 ? 'border-landing-gold bg-landing-gold/10 text-landing-gold'
                 : 'border-landing-mist text-landing-stone hover:border-landing-gold/50'
-            }`}
+              }`}
           >
             Sim
           </button>
           <button
             type="button"
             onClick={() => setIsClient(false)}
-            className={`flex-1 px-4 py-3 text-sm font-medium border transition-colors ${
-              isClient === false
+            className={`flex-1 px-4 py-3 text-sm font-medium border transition-colors ${isClient === false
                 ? 'border-landing-gold bg-landing-gold/10 text-landing-gold'
                 : 'border-landing-mist text-landing-stone hover:border-landing-gold/50'
-            }`}
+              }`}
           >
-            Nao
+            Não
           </button>
         </div>
         {isClient === true && (
@@ -113,36 +110,34 @@ function PreGate({ onContinue }: { onContinue: () => void }) {
       {/* Question 2: Is a company? */}
       {isClient === false && (
         <div className="space-y-3">
-          <p className="text-sm font-medium text-landing-ink">Voce e empresa?</p>
+          <p className="text-sm font-medium text-landing-ink">Você é empresário ou representa uma empresa?</p>
           <div className="flex gap-3">
             <button
               type="button"
               onClick={() => setIsCompany(true)}
-              className={`flex-1 px-4 py-3 text-sm font-medium border transition-colors ${
-                isCompany === true
+              className={`flex-1 px-4 py-3 text-sm font-medium border transition-colors ${isCompany === true
                   ? 'border-landing-gold bg-landing-gold/10 text-landing-gold'
                   : 'border-landing-mist text-landing-stone hover:border-landing-gold/50'
-              }`}
+                }`}
             >
               Sim
             </button>
             <button
               type="button"
               onClick={() => setIsCompany(false)}
-              className={`flex-1 px-4 py-3 text-sm font-medium border transition-colors ${
-                isCompany === false
+              className={`flex-1 px-4 py-3 text-sm font-medium border transition-colors ${isCompany === false
                   ? 'border-landing-gold bg-landing-gold/10 text-landing-gold'
                   : 'border-landing-mist text-landing-stone hover:border-landing-gold/50'
-              }`}
+                }`}
             >
-              Nao, sou pessoa fisica
+              Não, sou pessoa física
             </button>
           </div>
           {isCompany === false && (
             <div className="p-4 bg-amber-50 border border-amber-200">
               <p className="text-sm text-amber-800">
-                Nosso escritorio e especializado em atendimento a empresas. Para demandas de pessoa
-                fisica, recomendamos procurar um advogado especialista na area desejada.
+                Nosso escritório é especializado em atendimento a empresas. Para demandas de pessoa
+                física, recomendamos procurar um advogado especialista na área desejada.
               </p>
             </div>
           )}
@@ -156,7 +151,7 @@ function PreGate({ onContinue }: { onContinue: () => void }) {
           onClick={onContinue}
           className="w-full bg-landing-gold text-white py-3.5 text-sm font-medium tracking-wide hover:bg-landing-gold-light transition-colors flex items-center justify-center gap-2"
         >
-          Iniciar Formulario
+          Iniciar formulário
           <ArrowRight className="h-4 w-4" />
         </button>
       )}
@@ -186,7 +181,7 @@ function Step1Form({
         <h3 className="text-lg font-serif font-semibold text-landing-ink mb-1">
           Qual o assunto?
         </h3>
-        <p className="text-sm text-landing-stone mb-5">Selecione a area da sua necessidade.</p>
+        <p className="text-sm text-landing-stone mb-5">Selecione a área da sua necessidade.</p>
       </div>
 
       <div>
@@ -195,7 +190,7 @@ function Step1Form({
           <option value="">Selecione...</option>
           <option value="trabalhista">Trabalhista</option>
           <option value="contratos">Contratos</option>
-          <option value="cobranca">Cobranca</option>
+          <option value="cobranca">Cobrança</option>
           <option value="consultoria">Consultoria Empresarial</option>
           <option value="outro">Outro</option>
         </select>
@@ -215,11 +210,11 @@ function Step1Form({
 
       <div>
         <label className={labelClass}>
-          Funcao na empresa <span className="text-landing-stone">(opcional)</span>
+          Função na empresa <span className="text-landing-stone">(opcional)</span>
         </label>
         <select {...register('role')} className={selectClass}>
           <option value="">Selecione...</option>
-          <option value="socio">Socio / Proprietario</option>
+          <option value="socio">Sócio / Proprietário</option>
           <option value="diretor">Diretor / Gerente</option>
           <option value="rh">Recursos Humanos</option>
           <option value="financeiro">Financeiro</option>
@@ -231,7 +226,7 @@ function Step1Form({
         type="submit"
         className="w-full bg-landing-gold text-white py-3.5 text-sm font-medium tracking-wide hover:bg-landing-gold-light transition-colors flex items-center justify-center gap-2"
       >
-        Proximo
+        Próximo
         <ArrowRight className="h-4 w-4" />
       </button>
     </form>
@@ -259,13 +254,13 @@ function Step2Form({
           Sobre a empresa
         </h3>
         <p className="text-sm text-landing-stone mb-5">
-          Informacoes opcionais para melhor direcionamento.
+          Informações opcionais para melhor direcionamento.
         </p>
       </div>
 
       <div>
         <label className={labelClass}>
-          Razao Social <span className="text-landing-stone">(opcional)</span>
+          Razão Social <span className="text-landing-stone">(opcional)</span>
         </label>
         <input
           {...register('company_name')}
@@ -287,7 +282,7 @@ function Step2Form({
 
       <div>
         <label className={labelClass}>
-          N. de colaboradores <span className="text-landing-stone">(opcional)</span>
+          Número de colaboradores <span className="text-landing-stone">(opcional)</span>
         </label>
         <select {...register('employee_count')} className={selectClass}>
           <option value="">Selecione...</option>
@@ -304,7 +299,7 @@ function Step2Form({
         </label>
         <input
           {...register('segment')}
-          placeholder="Ex: Industria, Comercio, Servicos..."
+          placeholder="Ex: Industria, Comércio, Serviços..."
           className={inputClass}
         />
       </div>
@@ -322,7 +317,7 @@ function Step2Form({
           type="submit"
           className="flex-1 bg-landing-gold text-white py-3.5 text-sm font-medium tracking-wide hover:bg-landing-gold-light transition-colors flex items-center justify-center gap-2"
         >
-          Proximo
+          Próximo
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>
@@ -352,7 +347,7 @@ function Step3Form({
     <form onSubmit={handleSubmit(onNext)} className="space-y-5">
       <div>
         <h3 className="text-lg font-serif font-semibold text-landing-ink mb-1">
-          Urgencia e detalhes
+          Urgência e detalhes
         </h3>
         <p className="text-sm text-landing-stone mb-5">
           Nos ajude a priorizar seu atendimento.
@@ -429,7 +424,7 @@ function Step4Form({
           Seus dados de contato
         </h3>
         <p className="text-sm text-landing-stone mb-5">
-          Como podemos entrar em contato com voce?
+          Como podemos entrar em contato com você?
         </p>
       </div>
 
@@ -479,11 +474,11 @@ function Step4Form({
         </div>
         <div>
           <label className={labelClass}>
-            Horario preferido <span className="text-landing-stone">(opcional)</span>
+            Horário preferido <span className="text-landing-stone">(opcional)</span>
           </label>
           <select {...register('preferred_time')} className={selectClass}>
             <option value="">Selecione...</option>
-            <option value="manha">Manha (8h-12h)</option>
+            <option value="manha">Manhã (8h-12h)</option>
             <option value="tarde">Tarde (13h-18h)</option>
             <option value="sem_preferencia">Sem preferencia</option>
           </select>
@@ -503,7 +498,7 @@ function Step4Form({
           type="submit"
           className="flex-1 bg-landing-gold text-white py-3.5 text-sm font-medium tracking-wide hover:bg-landing-gold-light transition-colors flex items-center justify-center gap-2"
         >
-          Proximo
+          Próximo
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>
@@ -539,10 +534,10 @@ function Step5Form({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div>
         <h3 className="text-lg font-serif font-semibold text-landing-ink mb-1">
-          Confirmacao
+          Confirmação
         </h3>
         <p className="text-sm text-landing-stone mb-5">
-          Revise e confirme o envio do formulario.
+          Revise e confirme o envio do formulário.
         </p>
       </div>
 
@@ -576,7 +571,7 @@ function Step5Form({
             className="mt-0.5 h-4 w-4 border-landing-mist text-landing-gold focus:ring-landing-gold"
           />
           <span className="text-sm text-landing-stone">
-            Desejo receber alertas juridicos, novidades e conteudos do escritorio por e-mail.
+            Desejo receber alertas jurídicos, novidades e conteúdos do escritório por e-mail.
           </span>
         </label>
       </div>
@@ -611,7 +606,7 @@ function Step5Form({
       </div>
 
       <p className="text-xs text-landing-stone text-center">
-        Seus dados estao protegidos pela LGPD. Responderemos em ate 24 horas.
+        Seus dados estão protegidos pela LGPD. Responderemos em até 24 horas.
       </p>
     </form>
   )
@@ -628,8 +623,8 @@ function SuccessState() {
           Mensagem enviada com sucesso!
         </h3>
         <p className="text-sm text-landing-stone max-w-sm mx-auto">
-          Recebemos sua solicitacao e entraremos em contato em ate 24 horas uteis pelo canal
-          de sua preferencia.
+          Recebemos sua solicitação e entraremos em contato em até 24 horas úteis pelo canal
+          de sua preferência.
         </p>
       </div>
       <div className="pt-2">

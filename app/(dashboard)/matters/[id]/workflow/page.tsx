@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { 
+import {
   ArrowLeftIcon,
   ArrowRightIcon,
   CheckCircleIcon,
@@ -15,121 +15,53 @@ import {
   PlusIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
-
-// Mock matter data
-const mockMatter = {
-  id: '1',
-  matter_number: '2024/001',
-  title: 'Ação Trabalhista - Rescisão Indevida',
-  status: 'ativo',
-  priority: 'alta',
-  client_name: 'João Silva Santos',
-  responsible_lawyer: 'Maria Silva Santos'
-}
+import { useMatter, useUpdateMatter } from '@/lib/queries/useMatters'
+import { useUsers, useActivityLogs } from '@/lib/queries/useAdmin'
 
 // Status workflow definition
 const statusWorkflow = {
-  novo: {
-    label: 'Novo',
-    color: 'blue',
-    next: ['analise', 'cancelado'],
-    description: 'Processo recém-criado, aguardando análise inicial'
-  },
-  analise: {
-    label: 'Em Análise',
-    color: 'yellow',
-    next: ['ativo', 'aguardando_documentos', 'cancelado'],
-    description: 'Processo em análise técnica e jurídica'
-  },
-  ativo: {
+  active: {
     label: 'Ativo',
     color: 'green',
-    next: ['suspenso', 'aguardando_cliente', 'finalizado'],
+    next: ['on_hold', 'settled', 'closed', 'dismissed'],
     description: 'Processo em andamento normal'
   },
-  suspenso: {
+  on_hold: {
     label: 'Suspenso',
-    color: 'gray',
-    next: ['ativo', 'arquivado'],
+    color: 'yellow',
+    next: ['active', 'closed', 'dismissed'],
     description: 'Processo temporariamente suspenso'
   },
-  aguardando_cliente: {
-    label: 'Aguardando Cliente',
-    color: 'orange',
-    next: ['ativo', 'suspenso', 'cancelado'],
-    description: 'Aguardando resposta ou ação do cliente'
-  },
-  aguardando_documentos: {
-    label: 'Aguardando Documentos',
-    color: 'purple',
-    next: ['analise', 'ativo', 'cancelado'],
-    description: 'Aguardando documentação necessária'
-  },
-  finalizado: {
-    label: 'Finalizado',
+  settled: {
+    label: 'Acordo',
     color: 'emerald',
-    next: ['arquivado'],
-    description: 'Processo concluído com sucesso'
+    next: ['closed'],
+    description: 'Processo encerrado por acordo entre as partes'
   },
-  arquivado: {
-    label: 'Arquivado',
+  closed: {
+    label: 'Encerrado',
     color: 'slate',
     next: [],
-    description: 'Processo arquivado, sem ações pendentes'
+    description: 'Processo encerrado, sem ações pendentes'
   },
-  cancelado: {
-    label: 'Cancelado',
+  dismissed: {
+    label: 'Arquivado',
     color: 'red',
-    next: ['arquivado'],
-    description: 'Processo cancelado antes da conclusão'
+    next: ['active'],
+    description: 'Processo arquivado'
   }
 }
-
-// Mock workflow history
-const mockWorkflowHistory = [
-  {
-    id: '1',
-    from_status: null,
-    to_status: 'novo',
-    changed_by: 'Sistema',
-    changed_at: '2024-01-15T10:00:00',
-    reason: 'Processo criado no sistema',
-    notes: null
-  },
-  {
-    id: '2',
-    from_status: 'novo',
-    to_status: 'analise',
-    changed_by: 'Maria Silva Santos',
-    changed_at: '2024-01-15T14:30:00',
-    reason: 'Documentação inicial recebida',
-    notes: 'Cliente forneceu contrato de trabalho e últimos holerites'
-  },
-  {
-    id: '3',
-    from_status: 'analise',
-    to_status: 'ativo',
-    changed_by: 'Maria Silva Santos',
-    changed_at: '2024-01-16T09:15:00',
-    reason: 'Análise concluída, processo viável',
-    notes: 'Petição inicial preparada e protocolada'
-  }
-]
-
-// Mock team members for assignment
-const mockTeamMembers = [
-  { id: '1', name: 'Maria Silva Santos', role: 'Advogada Sênior', oab: 'OAB/SP 123456' },
-  { id: '2', name: 'João Santos Oliveira', role: 'Advogado Pleno', oab: 'OAB/SP 654321' },
-  { id: '3', name: 'Carlos Mendes Lima', role: 'Advogado Júnior', oab: 'OAB/SP 789012' },
-  { id: '4', name: 'Ana Paula Costa', role: 'Paralegal', oab: null }
-]
 
 export default function MatterWorkflowPage() {
   const params = useParams()
   const router = useRouter()
-  const [matter, setMatter] = useState(mockMatter)
-  const [workflowHistory, setWorkflowHistory] = useState(mockWorkflowHistory)
-  const [currentStatus, setCurrentStatus] = useState(mockMatter.status)
+  const matterId = params.id as string
+
+  const { data: matter, isLoading: matterLoading } = useMatter(matterId)
+  const updateMatter = useUpdateMatter()
+  const { data: users = [] } = useUsers()
+  const { data: activityLogs = [] } = useActivityLogs({ entity_type: 'matter' })
+
   const [showStatusChange, setShowStatusChange] = useState(false)
   const [showAssignment, setShowAssignment] = useState(false)
   const [selectedNewStatus, setSelectedNewStatus] = useState('')
@@ -139,8 +71,27 @@ export default function MatterWorkflowPage() {
   const [assignmentReason, setAssignmentReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const currentStatus = matter?.status || 'active'
+  const clientName = (matter as Record<string, unknown>)?.contacts?.[0]?.contact?.full_name || '-'
+  const responsibleLawyer = (matter as Record<string, unknown>)?.assigned_lawyer?.full_name || '-'
+
+  // Filter activity logs for this matter
+  const workflowHistory = useMemo(() => {
+    return activityLogs
+      .filter(log => log.entity_id === matterId)
+      .map(log => ({
+        id: log.id,
+        from_status: (log.old_values as Record<string, string>)?.status || null,
+        to_status: (log.new_values as Record<string, string>)?.status || log.action,
+        changed_by: (log as Record<string, unknown>).users?.full_name || 'Sistema',
+        changed_at: log.created_at,
+        reason: log.description || log.action,
+        notes: null as string | null
+      }))
+  }, [activityLogs, matterId])
+
   const getCurrentStatusInfo = () => statusWorkflow[currentStatus as keyof typeof statusWorkflow]
-  
+
   const getStatusColor = (status: string) => {
     const info = statusWorkflow[status as keyof typeof statusWorkflow]
     return info?.color || 'gray'
@@ -148,7 +99,7 @@ export default function MatterWorkflowPage() {
 
   const getStatusBadge = (status: string) => {
     const info = statusWorkflow[status as keyof typeof statusWorkflow]
-    const colorMap = {
+    const colorMap: Record<string, string> = {
       blue: 'bg-blue-100 text-blue-800',
       yellow: 'bg-yellow-100 text-yellow-800',
       green: 'bg-green-100 text-green-800',
@@ -161,7 +112,7 @@ export default function MatterWorkflowPage() {
     }
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorMap[info?.color as keyof typeof colorMap] || colorMap.gray}`}>
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorMap[info?.color || 'gray']}`}>
         {info?.label || status}
       </span>
     )
@@ -172,39 +123,22 @@ export default function MatterWorkflowPage() {
   }
 
   const handleStatusChange = async () => {
-    if (!selectedNewStatus || !statusChangeReason.trim()) {
-      return
-    }
+    if (!selectedNewStatus || !statusChangeReason.trim()) return
 
     setIsSubmitting(true)
 
     try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await updateMatter.mutateAsync({
+        id: matterId,
+        updates: {
+          status: selectedNewStatus as 'active' | 'closed' | 'on_hold' | 'settled' | 'dismissed',
+        }
+      })
 
-      // Add to history
-      const newHistoryEntry = {
-        id: (workflowHistory.length + 1).toString(),
-        from_status: currentStatus,
-        to_status: selectedNewStatus,
-        changed_by: 'Usuário Atual', // In real app, get from auth
-        changed_at: new Date().toISOString(),
-        reason: statusChangeReason,
-        notes: statusChangeNotes || null
-      }
-
-      setWorkflowHistory(prev => [...prev, newHistoryEntry])
-      setCurrentStatus(selectedNewStatus)
-      setMatter(prev => ({ ...prev, status: selectedNewStatus }))
-
-      // Reset form
       setShowStatusChange(false)
       setSelectedNewStatus('')
       setStatusChangeReason('')
       setStatusChangeNotes('')
-
-      console.log('Status changed:', { from: currentStatus, to: selectedNewStatus, reason: statusChangeReason })
-
     } catch (error) {
       console.error('Error changing status:', error)
     } finally {
@@ -213,46 +147,53 @@ export default function MatterWorkflowPage() {
   }
 
   const handleAssignment = async () => {
-    if (!selectedTeamMember || !assignmentReason.trim()) {
-      return
-    }
+    if (!selectedTeamMember || !assignmentReason.trim()) return
 
     setIsSubmitting(true)
 
     try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await updateMatter.mutateAsync({
+        id: matterId,
+        updates: {
+          responsible_lawyer_id: selectedTeamMember,
+        }
+      })
 
-      const member = mockTeamMembers.find(m => m.id === selectedTeamMember)
-      
-      // Update matter assignment
-      setMatter(prev => ({ ...prev, responsible_lawyer: member?.name || prev.responsible_lawyer }))
-
-      // Add to history as assignment change
-      const newHistoryEntry = {
-        id: (workflowHistory.length + 1).toString(),
-        from_status: currentStatus,
-        to_status: currentStatus,
-        changed_by: 'Usuário Atual',
-        changed_at: new Date().toISOString(),
-        reason: `Processo reatribuído para ${member?.name}`,
-        notes: assignmentReason
-      }
-
-      setWorkflowHistory(prev => [...prev, newHistoryEntry])
-
-      // Reset form
       setShowAssignment(false)
       setSelectedTeamMember('')
       setAssignmentReason('')
-
-      console.log('Assignment changed:', { to: member?.name, reason: assignmentReason })
-
     } catch (error) {
       console.error('Error changing assignment:', error)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (matterLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <svg className="animate-spin h-8 w-8 text-primary mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-gray-500">Carregando workflow...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!matter) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-gray-500">Processo não encontrado.</p>
+          <Link href="/matters" className="text-primary hover:underline mt-2 inline-block">
+            Voltar para lista
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -261,7 +202,7 @@ export default function MatterWorkflowPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Link
-            href={`/matters/${params.id}`}
+            href={`/matters/${matterId}`}
             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-1" />
@@ -308,11 +249,11 @@ export default function MatterWorkflowPage() {
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Responsável</dt>
-            <dd className="mt-1 text-sm text-gray-900">{matter.responsible_lawyer}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{responsibleLawyer}</dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Cliente</dt>
-            <dd className="mt-1 text-sm text-gray-900">{matter.client_name}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{clientName}</dd>
           </div>
         </div>
 
@@ -326,17 +267,14 @@ export default function MatterWorkflowPage() {
       {/* Status Workflow Diagram */}
       <div className="bg-white shadow rounded-lg p-6">
         <h2 className="text-lg font-medium text-gray-900 mb-6">Fluxo de Status Disponíveis</h2>
-        
+
         <div className="flex flex-wrap gap-4 mb-6">
-          {getCurrentStatusInfo()?.next.map((nextStatus) => {
-            const statusInfo = statusWorkflow[nextStatus as keyof typeof statusWorkflow]
-            return (
-              <div key={nextStatus} className="flex items-center space-x-2">
-                <ArrowRightIcon className="h-4 w-4 text-gray-400" />
-                {getStatusBadge(nextStatus)}
-              </div>
-            )
-          })}
+          {getCurrentStatusInfo()?.next.map((nextStatus) => (
+            <div key={nextStatus} className="flex items-center space-x-2">
+              <ArrowRightIcon className="h-4 w-4 text-gray-400" />
+              {getStatusBadge(nextStatus)}
+            </div>
+          ))}
           {getCurrentStatusInfo()?.next.length === 0 && (
             <p className="text-sm text-gray-500">Nenhuma transição disponível para este status.</p>
           )}
@@ -348,8 +286,8 @@ export default function MatterWorkflowPage() {
             <div
               key={status}
               className={`p-3 rounded-lg border-2 ${
-                status === currentStatus 
-                  ? 'border-primary bg-primary/5' 
+                status === currentStatus
+                  ? 'border-primary bg-primary/5'
                   : 'border-gray-200 bg-gray-50'
               }`}
             >
@@ -369,58 +307,62 @@ export default function MatterWorkflowPage() {
       <div className="bg-white shadow rounded-lg p-6">
         <h2 className="text-lg font-medium text-gray-900 mb-6">Histórico de Mudanças</h2>
 
-        <div className="flow-root">
-          <ul className="-mb-8">
-            {workflowHistory.map((entry, entryIdx) => (
-              <li key={entry.id}>
-                <div className="relative pb-8">
-                  {entryIdx !== workflowHistory.length - 1 ? (
-                    <span
-                      className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
-                      aria-hidden="true"
-                    />
-                  ) : null}
-                  <div className="relative flex space-x-3">
-                    <div>
-                      <span className={`bg-white h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white border-2 border-${getStatusColor(entry.to_status)}-500`}>
-                        {entry.from_status === null ? (
-                          <PlusIcon className="h-4 w-4 text-gray-500" />
-                        ) : entry.from_status === entry.to_status ? (
-                          <UserIcon className="h-4 w-4 text-blue-500" />
-                        ) : (
-                          <ArrowRightIcon className="h-4 w-4 text-green-500" />
-                        )}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1 pt-1.5">
-                      <div className="flex justify-between">
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            {entry.from_status && entry.from_status !== entry.to_status && (
-                              <>
-                                {getStatusBadge(entry.from_status)}
-                                <ArrowRightIcon className="h-3 w-3 text-gray-400" />
-                              </>
-                            )}
-                            {getStatusBadge(entry.to_status)}
-                          </div>
-                          <p className="mt-1 text-sm text-gray-900 font-medium">{entry.reason}</p>
-                          {entry.notes && (
-                            <p className="mt-1 text-sm text-gray-500">{entry.notes}</p>
+        {workflowHistory.length === 0 ? (
+          <p className="text-sm text-gray-500">Nenhuma alteração registrada para este processo.</p>
+        ) : (
+          <div className="flow-root">
+            <ul className="-mb-8">
+              {workflowHistory.map((entry, entryIdx) => (
+                <li key={entry.id}>
+                  <div className="relative pb-8">
+                    {entryIdx !== workflowHistory.length - 1 ? (
+                      <span
+                        className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
+                        aria-hidden="true"
+                      />
+                    ) : null}
+                    <div className="relative flex space-x-3">
+                      <div>
+                        <span className="bg-white h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white border-2 border-gray-300">
+                          {entry.from_status === null ? (
+                            <PlusIcon className="h-4 w-4 text-gray-500" />
+                          ) : entry.from_status === entry.to_status ? (
+                            <UserIcon className="h-4 w-4 text-blue-500" />
+                          ) : (
+                            <ArrowRightIcon className="h-4 w-4 text-green-500" />
                           )}
-                        </div>
-                        <div className="text-right text-sm text-gray-500 whitespace-nowrap">
-                          <time dateTime={entry.changed_at}>{formatDateTime(entry.changed_at)}</time>
-                          <p className="text-xs text-gray-400">{entry.changed_by}</p>
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-1 pt-1.5">
+                        <div className="flex justify-between">
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              {entry.from_status && entry.from_status !== entry.to_status && (
+                                <>
+                                  {getStatusBadge(entry.from_status)}
+                                  <ArrowRightIcon className="h-3 w-3 text-gray-400" />
+                                </>
+                              )}
+                              {getStatusBadge(entry.to_status)}
+                            </div>
+                            <p className="mt-1 text-sm text-gray-900 font-medium">{entry.reason}</p>
+                            {entry.notes && (
+                              <p className="mt-1 text-sm text-gray-500">{entry.notes}</p>
+                            )}
+                          </div>
+                          <div className="text-right text-sm text-gray-500 whitespace-nowrap">
+                            <time dateTime={entry.changed_at}>{formatDateTime(entry.changed_at)}</time>
+                            <p className="text-xs text-gray-400">{entry.changed_by}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Status Change Modal */}
@@ -531,7 +473,7 @@ export default function MatterWorkflowPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Responsável Atual</label>
-                  <div className="mt-1 text-sm text-gray-900">{matter.responsible_lawyer}</div>
+                  <div className="mt-1 text-sm text-gray-900">{responsibleLawyer}</div>
                 </div>
 
                 <div>
@@ -542,9 +484,9 @@ export default function MatterWorkflowPage() {
                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                   >
                     <option value="">Selecione um membro da equipe</option>
-                    {mockTeamMembers.map((member) => (
+                    {users.map((member) => (
                       <option key={member.id} value={member.id}>
-                        {member.name} - {member.role} {member.oab && `(${member.oab})`}
+                        {member.full_name} - {member.user_type} {member.oab_number ? `(${member.oab_number})` : ''}
                       </option>
                     ))}
                   </select>

@@ -16,7 +16,9 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Globe
+  Globe,
+  Kanban,
+  MessageSquare
 } from 'lucide-react'
 import { useAuthContext } from '@/lib/providers/auth-provider'
 
@@ -37,6 +39,8 @@ const navigation: NavItem[] = [
   { name: 'Documentos', href: '/documents', icon: FileText },
   { name: 'Tarefas', href: '/tasks', icon: CheckSquare },
   { name: 'Relatórios', href: '/reports', icon: BarChart3 },
+  { name: 'Pipeline', href: '/pipeline', icon: Kanban },
+  { name: 'Mensagens', href: '/messages', icon: MessageSquare },
   { name: 'Configurações', href: '/settings', icon: Settings },
 ]
 

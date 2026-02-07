@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { 
+import { useQuery } from '@tanstack/react-query'
+import {
   ArrowLeftIcon,
   UserIcon,
   DocumentTextIcon,
@@ -13,93 +14,24 @@ import {
   CheckCircleIcon,
   TrashIcon
 } from '@heroicons/react/24/outline'
-
-// Mock data - in real app this would come from API
-const mockMatter = {
-  id: '1',
-  matter_number: '2024/001',
-  title: 'Ação Trabalhista - Rescisão Indevida',
-  description: 'Processo trabalhista referente à rescisão indevida do contrato de trabalho do cliente João Silva Santos. O cliente foi demitido sem justa causa após 5 anos de trabalho na empresa XYZ Ltda.',
-  matter_type_id: '1',
-  area_juridica: 'Trabalhista',
-  
-  // Legal Information
-  processo_numero: '5001234-20.2024.5.02.0001',
-  vara_tribunal: '1ª Vara do Trabalho de São Paulo',
-  comarca: 'São Paulo',
-  
-  // Client Information
-  client_id: '1',
-  client_name: 'João Silva Santos',
-  client_cpf_cnpj: '123.456.789-00',
-  
-  // Case Details
-  opposing_party: 'XYZ Empresa Ltda',
-  opposing_party_lawyer: 'José Advocacia & Associados',
-  case_value: 25000.00,
-  
-  // Dates
-  opened_date: '2024-01-15',
-  statute_limitations: '2026-01-15',
-  next_hearing_date: '2024-02-20T14:00:00',
-  
-  // Status & Workflow
-  status: 'ativo',
-  priority: 'alta',
-  probability_success: 75,
-  
-  // Assignment
-  responsible_lawyer_id: '1',
-  
-  // Financial
-  hourly_rate: 300.00,
-  fixed_fee: null,
-  retainer_amount: 5000.00,
-  billing_method: 'hourly',
-  
-  // Notes
-  internal_notes: 'Cliente relatou que foi demitido logo após solicitar férias. Possível retaliação.',
-  next_action: 'Aguardar resposta da empresa à petição inicial. Prazo até 15/02/2024.'
-}
-
-// Reuse the same mock data from new matter page
-const mockClients = [
-  { id: '1', name: 'João Silva Santos', email: 'joao@email.com' },
-  { id: '2', name: 'Ana Costa Pereira', email: 'ana@email.com' },
-  { id: '3', name: 'Pedro Rodrigues', email: 'pedro@email.com' },
-  { id: '4', name: 'Empresa ABC Ltda', email: 'contato@abc.com.br' }
-]
-
-const mockLawyers = [
-  { id: '1', name: 'Maria Silva Santos', oab: 'OAB/SP 123456' },
-  { id: '2', name: 'João Santos Oliveira', oab: 'OAB/SP 654321' },
-  { id: '3', name: 'Carlos Mendes Lima', oab: 'OAB/SP 789012' }
-]
-
-const mockMatterTypes = [
-  { id: '1', name: 'Ação Trabalhista', area: 'Trabalhista', hourly_rate: 300.00 },
-  { id: '2', name: 'Ação Civil', area: 'Civil', hourly_rate: 250.00 },
-  { id: '3', name: 'Consultoria Empresarial', area: 'Empresarial', hourly_rate: 400.00 },
-  { id: '4', name: 'Direito de Família', area: 'Família', hourly_rate: 280.00 }
-]
+import { useMatter, useUpdateMatter, useDeleteMatter } from '@/lib/queries/useMatters'
+import { useUsers } from '@/lib/queries/useAdmin'
+import { useMatterTypes } from '@/lib/queries/useSettings'
+import { useSupabase } from '@/components/providers'
 
 const statusOptions = [
-  { value: 'novo', label: 'Novo' },
-  { value: 'analise', label: 'Em Análise' },
-  { value: 'ativo', label: 'Ativo' },
-  { value: 'suspenso', label: 'Suspenso' },
-  { value: 'aguardando_cliente', label: 'Aguardando Cliente' },
-  { value: 'aguardando_documentos', label: 'Aguardando Documentos' },
-  { value: 'finalizado', label: 'Finalizado' },
-  { value: 'arquivado', label: 'Arquivado' },
-  { value: 'cancelado', label: 'Cancelado' }
+  { value: 'active', label: 'Ativo' },
+  { value: 'on_hold', label: 'Suspenso' },
+  { value: 'settled', label: 'Acordo' },
+  { value: 'closed', label: 'Encerrado' },
+  { value: 'dismissed', label: 'Arquivado' }
 ]
 
 const priorityOptions = [
-  { value: 'baixa', label: 'Baixa' },
-  { value: 'media', label: 'Média' },
-  { value: 'alta', label: 'Alta' },
-  { value: 'urgente', label: 'Urgente' }
+  { value: 'low', label: 'Baixa' },
+  { value: 'medium', label: 'Média' },
+  { value: 'high', label: 'Alta' },
+  { value: 'urgent', label: 'Urgente' }
 ]
 
 const areaJuridicaOptions = [
@@ -109,79 +41,101 @@ const areaJuridicaOptions = [
 
 const billingMethodOptions = [
   { value: 'hourly', label: 'Por Hora' },
-  { value: 'fixed', label: 'Valor Fixo' },
+  { value: 'flat_fee', label: 'Valor Fixo' },
   { value: 'contingency', label: 'Êxito' },
-  { value: 'retainer', label: 'Honorários Antecipados' }
+  { value: 'pro_bono', label: 'Pro Bono' }
 ]
 
 export default function EditMatterPage() {
   const params = useParams()
   const router = useRouter()
+  const matterId = params.id as string
+  const supabase = useSupabase()
+
+  const { data: matter, isLoading: matterLoading } = useMatter(matterId)
+  const updateMatter = useUpdateMatter()
+  const deleteMatter = useDeleteMatter()
+  const { data: lawyers = [] } = useUsers({ user_type: 'lawyer' })
+  const { data: matterTypes = [] } = useMatterTypes()
+  const { data: contacts = [] } = useQuery({
+    queryKey: ['contacts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('id, full_name, contact_type, email, phone, cpf, cnpj')
+        .order('full_name')
+      if (error) throw error
+      return data
+    },
+  })
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  
-  // Initialize form with existing matter data
+
   const [formData, setFormData] = useState({
-    title: mockMatter.title,
-    description: mockMatter.description,
-    matter_type_id: mockMatter.matter_type_id,
-    area_juridica: mockMatter.area_juridica,
-    
-    // Legal Information
-    processo_numero: mockMatter.processo_numero,
-    vara_tribunal: mockMatter.vara_tribunal,
-    comarca: mockMatter.comarca,
-    
-    // Client Information
-    client_id: mockMatter.client_id,
-    client_name: mockMatter.client_name,
-    client_cpf_cnpj: mockMatter.client_cpf_cnpj,
-    
-    // Case Details
-    opposing_party: mockMatter.opposing_party,
-    opposing_party_lawyer: mockMatter.opposing_party_lawyer,
-    case_value: mockMatter.case_value.toString(),
-    
-    // Dates
-    opened_date: mockMatter.opened_date,
-    statute_limitations: mockMatter.statute_limitations,
-    next_hearing_date: mockMatter.next_hearing_date,
-    
-    // Status & Workflow
-    status: mockMatter.status,
-    priority: mockMatter.priority,
-    probability_success: mockMatter.probability_success?.toString() || '',
-    
-    // Assignment
-    responsible_lawyer_id: mockMatter.responsible_lawyer_id,
-    
-    // Financial
-    hourly_rate: mockMatter.hourly_rate?.toString() || '',
-    fixed_fee: mockMatter.fixed_fee?.toString() || '',
-    retainer_amount: mockMatter.retainer_amount?.toString() || '',
-    billing_method: mockMatter.billing_method,
-    
-    // Notes
-    internal_notes: mockMatter.internal_notes,
-    next_action: mockMatter.next_action
+    title: '',
+    description: '',
+    matter_type_id: '',
+    area_juridica: '',
+    process_number: '',
+    court_name: '',
+    court_city: '',
+    client_id: '',
+    client_name: '',
+    client_cpf_cnpj: '',
+    opposing_party: '',
+    case_value: '',
+    opened_date: '',
+    statute_of_limitations: '',
+    next_court_date: '',
+    status: 'active',
+    priority: 'medium',
+    responsible_lawyer_id: '',
+    hourly_rate: '',
+    flat_fee: '',
+    billing_method: 'hourly',
+    notes: '',
   })
 
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
+  // Populate form when matter data arrives
   useEffect(() => {
-    // In real app, fetch matter data by ID
-    console.log('Loading matter for edit:', params.id)
-  }, [params.id])
+    if (!matter) return
+    setFormData({
+      title: matter.title || '',
+      description: matter.description || '',
+      matter_type_id: matter.matter_type_id || '',
+      area_juridica: (matter.custom_fields as Record<string, string>)?.area_juridica || '',
+      process_number: matter.process_number || '',
+      court_name: matter.court_name || '',
+      court_city: matter.court_city || '',
+      client_id: (matter as Record<string, unknown>).contacts?.[0]?.contact?.id || '',
+      client_name: (matter as Record<string, unknown>).contacts?.[0]?.contact?.full_name || '',
+      client_cpf_cnpj: (matter as Record<string, unknown>).contacts?.[0]?.contact?.cpf || (matter as Record<string, unknown>).contacts?.[0]?.contact?.cnpj || '',
+      opposing_party: matter.opposing_party || '',
+      case_value: matter.flat_fee?.toString() || '',
+      opened_date: matter.opened_date || '',
+      statute_of_limitations: matter.statute_of_limitations || '',
+      next_court_date: matter.next_court_date ? matter.next_court_date.slice(0, 16) : '',
+      status: matter.status || 'active',
+      priority: matter.priority || 'medium',
+      responsible_lawyer_id: matter.responsible_lawyer_id || '',
+      hourly_rate: matter.hourly_rate?.toString() || '',
+      flat_fee: matter.flat_fee?.toString() || '',
+      billing_method: matter.billing_method || 'hourly',
+      notes: matter.notes || '',
+    })
+  }, [matter])
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: value
     }))
-    
-    // Clear error when user starts typing
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -190,66 +144,66 @@ export default function EditMatterPage() {
     }
   }
 
-  const handleMatterTypeChange = (e) => {
+  const handleMatterTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const typeId = e.target.value
-    const selectedType = mockMatterTypes.find(type => type.id === typeId)
-    
+    const selectedType = matterTypes.find(type => type.id === typeId)
+
     setFormData(prev => ({
       ...prev,
       matter_type_id: typeId,
-      area_juridica: selectedType?.area || '',
-      hourly_rate: selectedType?.hourly_rate?.toString() || ''
+      hourly_rate: selectedType?.default_hourly_rate?.toString() || prev.hourly_rate
     }))
   }
 
   const validateForm = () => {
-    const newErrors = {}
+    const newErrors: Record<string, string> = {}
 
-    // Required fields
     if (!formData.title.trim()) newErrors.title = 'Título é obrigatório'
-    if (!formData.area_juridica) newErrors.area_juridica = 'Área jurídica é obrigatória'
-    if (!formData.client_id && !formData.client_name.trim()) {
-      newErrors.client_name = 'Cliente é obrigatório'
-    }
     if (!formData.responsible_lawyer_id) {
       newErrors.responsible_lawyer_id = 'Advogado responsável é obrigatório'
     }
 
-    // Validate dates
-    if (formData.statute_limitations && formData.statute_limitations < formData.opened_date) {
-      newErrors.statute_limitations = 'Data de prescrição deve ser posterior à data de abertura'
-    }
-
-    // Validate values
     if (formData.case_value && isNaN(parseFloat(formData.case_value))) {
       newErrors.case_value = 'Valor deve ser numérico'
-    }
-    if (formData.probability_success && (formData.probability_success < 0 || formData.probability_success > 100)) {
-      newErrors.probability_success = 'Probabilidade deve estar entre 0 e 100'
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!validateForm()) {
-      return
-    }
+
+    if (!validateForm()) return
 
     setIsSubmitting(true)
 
     try {
-      // Mock submission - in real app, this would call the API
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      console.log('Updating matter with data:', formData)
-      
-      // Redirect to matter detail with success message
-      router.push(`/matters/${params.id}?updated=true`)
-      
+      await updateMatter.mutateAsync({
+        id: matterId,
+        updates: {
+          title: formData.title,
+          description: formData.description || undefined,
+          matter_type_id: formData.matter_type_id || undefined,
+          process_number: formData.process_number || undefined,
+          court_name: formData.court_name || undefined,
+          court_city: formData.court_city || undefined,
+          opposing_party: formData.opposing_party || undefined,
+          opened_date: formData.opened_date || undefined,
+          statute_of_limitations: formData.statute_of_limitations || undefined,
+          next_court_date: formData.next_court_date || undefined,
+          status: formData.status as 'active' | 'closed' | 'on_hold' | 'settled' | 'dismissed',
+          priority: formData.priority as 'low' | 'medium' | 'high' | 'urgent',
+          responsible_lawyer_id: formData.responsible_lawyer_id || undefined,
+          hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : undefined,
+          flat_fee: formData.flat_fee ? parseFloat(formData.flat_fee) : undefined,
+          billing_method: formData.billing_method as 'hourly' | 'flat_fee' | 'contingency' | 'pro_bono',
+          notes: formData.notes || undefined,
+          custom_fields: formData.area_juridica ? { area_juridica: formData.area_juridica } : undefined,
+        }
+      })
+
+      router.push(`/matters/${matterId}?updated=true`)
     } catch (error) {
       console.error('Error updating matter:', error)
       setErrors({ submit: 'Erro ao atualizar processo. Tente novamente.' })
@@ -262,14 +216,8 @@ export default function EditMatterPage() {
     setIsDeleting(true)
 
     try {
-      // Mock deletion - in real app, this would call the API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      console.log('Deleting matter:', params.id)
-      
-      // Redirect to matters list with success message
+      await deleteMatter.mutateAsync(matterId)
       router.push('/matters?deleted=true')
-      
     } catch (error) {
       console.error('Error deleting matter:', error)
       setErrors({ delete: 'Erro ao excluir processo. Tente novamente.' })
@@ -279,13 +227,40 @@ export default function EditMatterPage() {
     }
   }
 
+  if (matterLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <svg className="animate-spin h-8 w-8 text-primary mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-gray-500">Carregando processo...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!matter) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-gray-500">Processo não encontrado.</p>
+          <Link href="/matters" className="text-primary hover:underline mt-2 inline-block">
+            Voltar para lista
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Link
-            href={`/matters/${params.id}`}
+            href={`/matters/${matterId}`}
             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-1" />
@@ -296,7 +271,7 @@ export default function EditMatterPage() {
 
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Editar Processo - {mockMatter.matter_number}
+          Editar Processo - {matter.matter_number}
         </h1>
         <p className="mt-2 text-gray-600">
           Atualize as informações do processo jurídico
@@ -343,9 +318,9 @@ export default function EditMatterPage() {
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               >
                 <option value="">Selecione um tipo</option>
-                {mockMatterTypes.map((type) => (
+                {matterTypes.map((type) => (
                   <option key={type.id} value={type.id}>
-                    {type.name} - {type.area}
+                    {type.name}
                   </option>
                 ))}
               </select>
@@ -353,16 +328,14 @@ export default function EditMatterPage() {
 
             <div>
               <label htmlFor="area_juridica" className="block text-sm font-medium text-gray-700">
-                Área Jurídica *
+                Área Jurídica
               </label>
               <select
                 id="area_juridica"
                 name="area_juridica"
                 value={formData.area_juridica}
                 onChange={handleInputChange}
-                className={`mt-1 block w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary ${
-                  errors.area_juridica ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               >
                 <option value="">Selecione a área</option>
                 {areaJuridicaOptions.map((area) => (
@@ -371,7 +344,6 @@ export default function EditMatterPage() {
                   </option>
                 ))}
               </select>
-              {errors.area_juridica && <p className="mt-1 text-sm text-red-600">{errors.area_juridica}</p>}
             </div>
 
             <div>
@@ -438,14 +410,14 @@ export default function EditMatterPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="processo_numero" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="process_number" className="block text-sm font-medium text-gray-700">
                 Número do Processo
               </label>
               <input
                 type="text"
-                id="processo_numero"
-                name="processo_numero"
-                value={formData.processo_numero}
+                id="process_number"
+                name="process_number"
+                value={formData.process_number}
                 onChange={handleInputChange}
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                 placeholder="Ex: 5001234-20.2024.5.02.0001"
@@ -453,14 +425,14 @@ export default function EditMatterPage() {
             </div>
 
             <div>
-              <label htmlFor="vara_tribunal" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="court_name" className="block text-sm font-medium text-gray-700">
                 Vara/Tribunal
               </label>
               <input
                 type="text"
-                id="vara_tribunal"
-                name="vara_tribunal"
-                value={formData.vara_tribunal}
+                id="court_name"
+                name="court_name"
+                value={formData.court_name}
                 onChange={handleInputChange}
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                 placeholder="Ex: 1ª Vara do Trabalho de São Paulo"
@@ -468,14 +440,14 @@ export default function EditMatterPage() {
             </div>
 
             <div>
-              <label htmlFor="comarca" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="court_city" className="block text-sm font-medium text-gray-700">
                 Comarca
               </label>
               <input
                 type="text"
-                id="comarca"
-                name="comarca"
-                value={formData.comarca}
+                id="court_city"
+                name="court_city"
+                value={formData.court_city}
                 onChange={handleInputChange}
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                 placeholder="Ex: São Paulo"
@@ -520,41 +492,6 @@ export default function EditMatterPage() {
                 placeholder="Nome da parte contrária"
               />
             </div>
-
-            <div>
-              <label htmlFor="opposing_party_lawyer" className="block text-sm font-medium text-gray-700">
-                Advogado da Parte Contrária
-              </label>
-              <input
-                type="text"
-                id="opposing_party_lawyer"
-                name="opposing_party_lawyer"
-                value={formData.opposing_party_lawyer}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                placeholder="Nome do advogado da parte contrária"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="probability_success" className="block text-sm font-medium text-gray-700">
-                Probabilidade de Êxito (%)
-              </label>
-              <input
-                type="number"
-                id="probability_success"
-                name="probability_success"
-                value={formData.probability_success}
-                onChange={handleInputChange}
-                className={`mt-1 block w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary ${
-                  errors.probability_success ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="0-100"
-                min="0"
-                max="100"
-              />
-              {errors.probability_success && <p className="mt-1 text-sm text-red-600">{errors.probability_success}</p>}
-            </div>
           </div>
         </div>
 
@@ -578,9 +515,9 @@ export default function EditMatterPage() {
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               >
                 <option value="">Selecione um cliente existente</option>
-                {mockClients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name} - {client.email}
+                {contacts.map((contact) => (
+                  <option key={contact.id} value={contact.id}>
+                    {contact.full_name} {contact.email ? `- ${contact.email}` : ''}
                   </option>
                 ))}
               </select>
@@ -588,7 +525,7 @@ export default function EditMatterPage() {
 
             <div>
               <label htmlFor="client_name" className="block text-sm font-medium text-gray-700">
-                Nome do Cliente *
+                Nome do Cliente
               </label>
               <input
                 type="text"
@@ -596,26 +533,9 @@ export default function EditMatterPage() {
                 name="client_name"
                 value={formData.client_name}
                 onChange={handleInputChange}
-                className={`mt-1 block w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary ${
-                  errors.client_name ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="Nome completo do cliente"
-              />
-              {errors.client_name && <p className="mt-1 text-sm text-red-600">{errors.client_name}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="client_cpf_cnpj" className="block text-sm font-medium text-gray-700">
-                CPF/CNPJ do Cliente
-              </label>
-              <input
-                type="text"
-                id="client_cpf_cnpj"
-                name="client_cpf_cnpj"
-                value={formData.client_cpf_cnpj}
-                onChange={handleInputChange}
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                placeholder="Nome completo do cliente"
+                readOnly
               />
             </div>
           </div>
@@ -644,31 +564,28 @@ export default function EditMatterPage() {
             </div>
 
             <div>
-              <label htmlFor="statute_limitations" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="statute_of_limitations" className="block text-sm font-medium text-gray-700">
                 Prazo Prescricional
               </label>
               <input
                 type="date"
-                id="statute_limitations"
-                name="statute_limitations"
-                value={formData.statute_limitations}
+                id="statute_of_limitations"
+                name="statute_of_limitations"
+                value={formData.statute_of_limitations}
                 onChange={handleInputChange}
-                className={`mt-1 block w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary ${
-                  errors.statute_limitations ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               />
-              {errors.statute_limitations && <p className="mt-1 text-sm text-red-600">{errors.statute_limitations}</p>}
             </div>
 
             <div>
-              <label htmlFor="next_hearing_date" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="next_court_date" className="block text-sm font-medium text-gray-700">
                 Próxima Audiência
               </label>
               <input
                 type="datetime-local"
-                id="next_hearing_date"
-                name="next_hearing_date"
-                value={formData.next_hearing_date}
+                id="next_court_date"
+                name="next_court_date"
+                value={formData.next_court_date}
                 onChange={handleInputChange}
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               />
@@ -698,9 +615,9 @@ export default function EditMatterPage() {
                 }`}
               >
                 <option value="">Selecione o advogado responsável</option>
-                {mockLawyers.map((lawyer) => (
+                {lawyers.map((lawyer) => (
                   <option key={lawyer.id} value={lawyer.id}>
-                    {lawyer.name} - {lawyer.oab}
+                    {lawyer.full_name} {lawyer.oab_number ? `- ${lawyer.oab_number}` : ''}
                   </option>
                 ))}
               </select>
@@ -758,7 +675,7 @@ export default function EditMatterPage() {
             </div>
 
             <div>
-              <label htmlFor="fixed_fee" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="flat_fee" className="block text-sm font-medium text-gray-700">
                 Valor Fixo
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -767,30 +684,9 @@ export default function EditMatterPage() {
                 </div>
                 <input
                   type="number"
-                  id="fixed_fee"
-                  name="fixed_fee"
-                  value={formData.fixed_fee}
-                  onChange={handleInputChange}
-                  className="block w-full pl-10 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                  placeholder="0,00"
-                  step="0.01"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="retainer_amount" className="block text-sm font-medium text-gray-700">
-                Honorários Antecipados
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">R$</span>
-                </div>
-                <input
-                  type="number"
-                  id="retainer_amount"
-                  name="retainer_amount"
-                  value={formData.retainer_amount}
+                  id="flat_fee"
+                  name="flat_fee"
+                  value={formData.flat_fee}
                   onChange={handleInputChange}
                   className="block w-full pl-10 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                   placeholder="0,00"
@@ -805,36 +701,19 @@ export default function EditMatterPage() {
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-6">Observações</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="internal_notes" className="block text-sm font-medium text-gray-700">
-                Notas Internas
-              </label>
-              <textarea
-                id="internal_notes"
-                name="internal_notes"
-                rows={4}
-                value={formData.internal_notes}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                placeholder="Observações internas sobre o processo..."
-              />
-            </div>
-
-            <div>
-              <label htmlFor="next_action" className="block text-sm font-medium text-gray-700">
-                Próxima Ação
-              </label>
-              <textarea
-                id="next_action"
-                name="next_action"
-                rows={4}
-                value={formData.next_action}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                placeholder="Descreva a próxima ação a ser tomada..."
-              />
-            </div>
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+              Notas Internas
+            </label>
+            <textarea
+              id="notes"
+              name="notes"
+              rows={4}
+              value={formData.notes}
+              onChange={handleInputChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+              placeholder="Observações internas sobre o processo..."
+            />
           </div>
         </div>
 
@@ -866,7 +745,7 @@ export default function EditMatterPage() {
 
             <div className="flex space-x-4">
               <Link
-                href={`/matters/${params.id}`}
+                href={`/matters/${matterId}`}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
                 Cancelar

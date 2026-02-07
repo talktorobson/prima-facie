@@ -5,16 +5,20 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useAuthContext } from '@/lib/providers/auth-provider'
 import { StaffOnly, ClientOnly } from '@/components/auth/role-guard'
 import { clientService, type ClientStats } from '@/lib/clients/client-service'
 import { matterService, type MatterStats } from '@/lib/matters/matter-service'
-import { 
-  FolderIcon, 
-  UsersIcon, 
-  DollarSignIcon, 
+import { useActivityLogs } from '@/lib/queries/useAdmin'
+import { useTasks } from '@/lib/queries/useTasks'
+import { formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import {
+  FolderIcon,
+  UsersIcon,
+  DollarSignIcon,
   ClockIcon,
   TrendingUpIcon,
   AlertTriangleIcon
@@ -68,17 +72,17 @@ interface RecentItemProps {
   title: string
   subtitle: string
   time: string
-  type: 'matter' | 'client' | 'task' | 'document'
+  type: string
+}
+
+const entityTypeColors: Record<string, string> = {
+  matter: 'bg-blue-100 text-blue-800',
+  client: 'bg-green-100 text-green-800',
+  task: 'bg-yellow-100 text-yellow-800',
+  document: 'bg-purple-100 text-purple-800',
 }
 
 function RecentItem({ title, subtitle, time, type }: RecentItemProps) {
-  const typeColors = {
-    matter: 'bg-blue-100 text-blue-800',
-    client: 'bg-green-100 text-green-800', 
-    task: 'bg-yellow-100 text-yellow-800',
-    document: 'bg-purple-100 text-purple-800'
-  }
-
   return (
     <div className="flex items-center py-3">
       <div className="flex-1 min-w-0">
@@ -90,7 +94,7 @@ function RecentItem({ title, subtitle, time, type }: RecentItemProps) {
         </p>
       </div>
       <div className="flex items-center space-x-2">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeColors[type]}`}>
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${entityTypeColors[type] ?? 'bg-gray-100 text-gray-800'}`}>
           {type}
         </span>
         <span className="text-xs text-gray-400">
@@ -104,8 +108,6 @@ function RecentItem({ title, subtitle, time, type }: RecentItemProps) {
 interface DashboardStats {
   clientStats: ClientStats | null
   matterStats: MatterStats | null
-  recentActivity: any[]
-  upcomingTasks: any[]
 }
 
 export default function DashboardPage() {
@@ -115,11 +117,23 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({
     clientStats: null,
     matterStats: null,
-    recentActivity: [],
-    upcomingTasks: []
   })
 
   const isSuperAdmin = profile?.user_type === 'super_admin'
+
+  const { data: activityLogs, isLoading: logsLoading } = useActivityLogs()
+  const { data: tasks, isLoading: tasksLoading } = useTasks()
+
+  const recentLogs = useMemo(() => (activityLogs ?? []).slice(0, 5), [activityLogs])
+
+  const upcomingTasks = useMemo(() => {
+    if (!tasks) return []
+    const now = new Date()
+    return tasks
+      .filter((t) => t.due_date && new Date(t.due_date) >= now && t.status !== 'completed')
+      .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
+      .slice(0, 5)
+  }, [tasks])
 
   useEffect(() => {
     if (profile?.law_firm_id && !isSuperAdmin) {
@@ -134,60 +148,15 @@ export default function DashboardPage() {
 
     try {
       setLoading(true)
-      
-      // Fetch real statistics from database
+
       const [clientStats, matterStats] = await Promise.all([
         clientService.getClientStats(profile.law_firm_id),
         matterService.getMatterStats(profile.law_firm_id)
       ])
 
-      // TODO: Fetch recent activity and upcoming tasks
-      // For now, using sample data until those services are implemented
-      const sampleRecentActivity = [
-        {
-          title: "Novo caso: Revisão Contratual",
-          subtitle: "Cliente: Empresa ABC Ltda",
-          time: "2h atrás",
-          type: "matter" as const
-        },
-        {
-          title: "Documento enviado",
-          subtitle: "Contrato revisado.pdf",
-          time: "4h atrás",
-          type: "document" as const
-        },
-        {
-          title: "Cliente cadastrado",
-          subtitle: "João Silva Santos",
-          time: "1 dia atrás",
-          type: "client" as const
-        }
-      ]
-
-      const sampleUpcomingTasks = [
-        {
-          title: "Audiência de Conciliação",
-          subtitle: "Caso: Indenização por Danos Morais",
-          time: "Amanhã 14:00",
-          color: "yellow"
-        },
-        {
-          title: "Entrega de Petição",
-          subtitle: "Caso: Reclamatória Trabalhista",
-          time: "15 Nov",
-          color: "blue"
-        }
-      ]
-
-      setStats({
-        clientStats,
-        matterStats,
-        recentActivity: sampleRecentActivity,
-        upcomingTasks: sampleUpcomingTasks
-      })
+      setStats({ clientStats, matterStats })
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
-      // Keep default empty state on error
     } finally {
       setLoading(false)
     }
@@ -292,32 +261,25 @@ export default function DashboardPage() {
             </h2>
           </div>
           <div className="px-6 py-4">
-            <div className="space-y-1">
-              <RecentItem
-                title="Novo caso: Revisão Contratual"
-                subtitle="Cliente: Empresa ABC Ltda"
-                time="2h atrás"
-                type="matter"
-              />
-              <RecentItem
-                title="Documento enviado"
-                subtitle="Contrato revisado.pdf"
-                time="4h atrás"
-                type="document"
-              />
-              <RecentItem
-                title="Cliente cadastrado"
-                subtitle="João Silva Santos"
-                time="1 dia atrás"
-                type="client"
-              />
-              <RecentItem
-                title="Tarefa concluída"
-                subtitle="Análise de viabilidade"
-                time="2 dias atrás"
-                type="task"
-              />
-            </div>
+            {logsLoading ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+              </div>
+            ) : recentLogs.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">Nenhuma atividade recente.</p>
+            ) : (
+              <div className="space-y-1">
+                {recentLogs.map((log) => (
+                  <RecentItem
+                    key={log.id}
+                    title={log.description || `${log.action} em ${log.entity_type}`}
+                    subtitle={log.entity_type}
+                    time={formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale: ptBR })}
+                    type={log.entity_type as 'matter' | 'client' | 'task' | 'document'}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -329,49 +291,35 @@ export default function DashboardPage() {
             </h2>
           </div>
           <div className="px-6 py-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    Audiência de Conciliação
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Caso: Indenização por Danos Morais
-                  </p>
-                </div>
-                <span className="text-xs text-yellow-700 font-medium">
-                  Amanhã 14:00
-                </span>
+            {tasksLoading ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
               </div>
-              
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    Entrega de Petição
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Caso: Reclamatória Trabalhista
-                  </p>
-                </div>
-                <span className="text-xs text-blue-700 font-medium">
-                  15 Nov
-                </span>
+            ) : upcomingTasks.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">Nenhuma tarefa próxima.</p>
+            ) : (
+              <div className="space-y-3">
+                {upcomingTasks.map((task) => (
+                  <div key={task.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {task.title}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {(task as Record<string, unknown>).matter
+                          ? `Caso: ${((task as Record<string, unknown>).matter as { title: string }).title}`
+                          : task.description ?? ''}
+                      </p>
+                    </div>
+                    <span className="text-xs text-blue-700 font-medium whitespace-nowrap ml-2">
+                      {task.due_date
+                        ? new Date(task.due_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+                        : ''}
+                    </span>
+                  </div>
+                ))}
               </div>
-
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    Reunião com Cliente
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Maria Silva - Consultoria
-                  </p>
-                </div>
-                <span className="text-xs text-green-700 font-medium">
-                  18 Nov 10:00
-                </span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

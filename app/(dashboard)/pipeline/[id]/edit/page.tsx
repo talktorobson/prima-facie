@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,10 +12,11 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthContext } from '@/lib/providers/auth-provider'
-import { usePipelineStages, useCreatePipelineCard } from '@/lib/queries/usePipeline'
+import { usePipelineStages, usePipelineCards, useUpdatePipelineCard } from '@/lib/queries/usePipeline'
 import { useMatterTypes } from '@/lib/queries/useSettings'
 import { useToast } from '@/components/ui/toast-provider'
 import { pipelineCardSchema, type PipelineCardFormData } from '@/lib/schemas/pipeline-schema'
+import { useEffect } from 'react'
 
 const sourceOptions = [
   { value: 'website', label: 'Site' },
@@ -27,19 +28,25 @@ const sourceOptions = [
   { value: 'outros', label: 'Outros' },
 ]
 
-export default function NewLeadPage() {
+export default function EditLeadPage() {
   const { profile } = useAuthContext()
   const router = useRouter()
+  const params = useParams()
   const toast = useToast()
+  const cardId = params.id as string
 
   const { data: stages = [], isLoading: stagesLoading } = usePipelineStages()
   const { data: matterTypes = [], isLoading: matterTypesLoading } = useMatterTypes()
-  const createCard = useCreatePipelineCard()
+  const { data: allCards = [], isLoading: cardsLoading } = usePipelineCards()
+  const updateCard = useUpdatePipelineCard()
+
+  const card = allCards.find((c) => c.id === cardId)
 
   const {
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<PipelineCardFormData>({
     resolver: zodResolver(pipelineCardSchema),
@@ -56,6 +63,25 @@ export default function NewLeadPage() {
     },
   })
 
+  useEffect(() => {
+    if (card) {
+      reset({
+        pipeline_stage_id: card.pipeline_stage_id ?? '',
+        title: card.title ?? '',
+        description: card.description ?? '',
+        estimated_value: card.estimated_value ?? undefined,
+        probability: card.probability ?? 20,
+        expected_close_date: card.expected_close_date ?? '',
+        next_follow_up_date: card.next_follow_up_date ?? '',
+        source: card.source ?? 'website',
+        contact_id: card.contact_id ?? '',
+        matter_type_id: card.matter_type_id ?? '',
+        assigned_to: card.assigned_to ?? '',
+        notes: card.notes ?? '',
+      })
+    }
+  }, [card, reset])
+
   const probabilityValue = watch('probability') ?? 0
 
   const onSubmit = async (data: PipelineCardFormData) => {
@@ -65,25 +91,27 @@ export default function NewLeadPage() {
     }
 
     try {
-      await createCard.mutateAsync({
-        ...data,
-        law_firm_id: profile.law_firm_id,
-        estimated_value: data.estimated_value ?? undefined,
-        expected_close_date: data.expected_close_date || undefined,
-        next_follow_up_date: data.next_follow_up_date || undefined,
-        contact_id: data.contact_id || undefined,
-        matter_type_id: data.matter_type_id || undefined,
-        assigned_to: data.assigned_to || undefined,
-        notes: data.notes || undefined,
+      await updateCard.mutateAsync({
+        id: cardId,
+        updates: {
+          ...data,
+          estimated_value: data.estimated_value ?? undefined,
+          expected_close_date: data.expected_close_date || undefined,
+          next_follow_up_date: data.next_follow_up_date || undefined,
+          contact_id: data.contact_id || undefined,
+          matter_type_id: data.matter_type_id || undefined,
+          assigned_to: data.assigned_to || undefined,
+          notes: data.notes || undefined,
+        },
       })
-      toast.success('Lead criado com sucesso!')
+      toast.success('Lead atualizado com sucesso!')
       router.push('/pipeline')
     } catch {
-      toast.error('Erro ao criar lead. Tente novamente.')
+      toast.error('Erro ao atualizar lead. Tente novamente.')
     }
   }
 
-  const isLoadingDeps = stagesLoading || matterTypesLoading
+  const isLoadingDeps = stagesLoading || matterTypesLoading || cardsLoading
 
   if (isLoadingDeps) {
     return (
@@ -93,9 +121,19 @@ export default function NewLeadPage() {
     )
   }
 
+  if (!card) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-lg font-medium text-gray-900">Lead nao encontrado</h2>
+        <Link href="/pipeline" className="text-primary hover:underline mt-2 inline-block">
+          Voltar para Pipeline
+        </Link>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Link
@@ -109,13 +147,12 @@ export default function NewLeadPage() {
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Novo Lead</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Editar Lead</h1>
         <p className="mt-2 text-gray-600">
-          Adicione um novo lead ao pipeline de vendas
+          Atualize as informacoes do lead
         </p>
       </div>
 
-      {/* Form */}
       <div className="bg-white shadow rounded-lg">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-6">
           {/* Basic Information */}
@@ -340,12 +377,12 @@ export default function NewLeadPage() {
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Criando...
+                  Salvando...
                 </>
               ) : (
                 <>
                   <CheckCircleIcon className="w-4 h-4 mr-2" />
-                  Criar Lead
+                  Salvar Alteracoes
                 </>
               )}
             </button>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useAuth } from '@/lib/hooks/use-auth'
+import { useAuthContext } from '@/lib/providers/auth-provider'
 import { clientService, Client, ClientStats } from '@/lib/clients/client-service'
 import { 
   PlusIcon, 
@@ -37,22 +37,14 @@ const typeOptions = [
   { value: 'pessoa_juridica', label: 'Pessoa Jurídica' }
 ]
 
-const relationshipManagerOptions = [
-  { value: '', label: 'Todos os Responsáveis' },
-  { value: 'Maria Silva Santos', label: 'Maria Silva Santos' },
-  { value: 'João Santos Oliveira', label: 'João Santos Oliveira' },
-  { value: 'Carlos Mendes Lima', label: 'Carlos Mendes Lima' }
-]
-
 export default function ClientsPage() {
-  const { user } = useAuth()
+  const { profile } = useAuthContext()
   const [clients, setClients] = useState<Client[]>([])
   const [filteredClients, setFilteredClients] = useState<Client[]>([])
   const [stats, setStats] = useState<ClientStats | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
-  const [managerFilter, setManagerFilter] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
@@ -62,15 +54,15 @@ export default function ClientsPage() {
   // Load clients from database
   useEffect(() => {
     const loadClients = async () => {
-      if (!user?.law_firm_id) return
+      if (!profile?.law_firm_id) return
       
       try {
         setIsLoading(true)
         setError(null)
         
         const [loadedClients, clientStats] = await Promise.all([
-          clientService.getClients(user.law_firm_id),
-          clientService.getClientStats(user.law_firm_id)
+          clientService.getClients(profile.law_firm_id!),
+          clientService.getClientStats(profile.law_firm_id!)
         ])
         
         setClients(loadedClients)
@@ -84,7 +76,7 @@ export default function ClientsPage() {
     }
 
     loadClients()
-  }, [user?.law_firm_id])
+  }, [profile?.law_firm_id])
 
   // Filter and search logic
   useEffect(() => {
@@ -111,14 +103,9 @@ export default function ClientsPage() {
       filtered = filtered.filter(client => client.type === typeFilter)
     }
 
-    // Manager filter
-    if (managerFilter) {
-      filtered = filtered.filter(client => client.relationship_manager === managerFilter)
-    }
-
     setFilteredClients(filtered)
     setCurrentPage(1) // Reset to first page when filtering
-  }, [searchTerm, statusFilter, typeFilter, managerFilter, clients])
+  }, [searchTerm, statusFilter, typeFilter, clients])
 
   // Pagination
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage)
@@ -166,7 +153,7 @@ export default function ClientsPage() {
     return new Date(dateString).toLocaleDateString('pt-BR')
   }
 
-  const formatDocument = (client: any) => {
+  const formatDocument = (client: Client) => {
     return client.type === 'pessoa_fisica' ? client.cpf : client.cnpj
   }
 
@@ -306,7 +293,7 @@ export default function ClientsPage() {
           {/* Filters */}
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700">
                     Status
@@ -342,35 +329,16 @@ export default function ClientsPage() {
                     ))}
                   </select>
                 </div>
-
-                <div>
-                  <label htmlFor="manager-filter" className="block text-sm font-medium text-gray-700">
-                    Responsável
-                  </label>
-                  <select
-                    id="manager-filter"
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                    value={managerFilter}
-                    onChange={(e) => setManagerFilter(e.target.value)}
-                  >
-                    {relationshipManagerOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
               {/* Clear Filters */}
-              {(searchTerm || statusFilter || typeFilter || managerFilter) && (
+              {(searchTerm || statusFilter || typeFilter) && (
                 <div className="mt-4">
                   <button
                     onClick={() => {
                       setSearchTerm('')
                       setStatusFilter('')
                       setTypeFilter('')
-                      setManagerFilter('')
                     }}
                     className="text-sm text-primary hover:text-primary/80"
                   >
@@ -423,17 +391,21 @@ export default function ClientsPage() {
                               <span>{client.email}</span>
                             </div>
                             <div className="mt-1 flex items-center text-sm text-gray-500 space-x-4">
-                              <span>Responsável: {client.relationship_manager}</span>
-                              <span>•</span>
-                              <span>Cliente desde: {formatDate(client.client_since)}</span>
-                              <span>•</span>
-                              <span>{client.address_city}/{client.address_state}</span>
+                              {client.client_since && (
+                                <span>Cliente desde: {formatDate(client.client_since)}</span>
+                              )}
+                              {client.address_city && (
+                                <>
+                                  <span>•</span>
+                                  <span>{client.address_city}{client.address_state ? `/${client.address_state}` : ''}</span>
+                                </>
+                              )}
                             </div>
-                            <div className="mt-1 flex items-center text-sm text-gray-500 space-x-4">
-                              <span>Processos: {client.active_matters} ativos de {client.total_matters} total</span>
-                              <span>•</span>
-                              <span>Último contato: {formatDate(client.last_contact_date)}</span>
-                            </div>
+                            {(client.active_matters !== undefined || client.total_matters !== undefined) && (
+                              <div className="mt-1 flex items-center text-sm text-gray-500 space-x-4">
+                                <span>Processos: {client.active_matters || 0} ativos de {client.total_matters || 0} total</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -471,11 +443,11 @@ export default function ClientsPage() {
               Nenhum cliente encontrado
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || statusFilter || typeFilter || managerFilter
+              {searchTerm || statusFilter || typeFilter
                 ? 'Tente ajustar os filtros de busca.'
                 : 'Comece criando um novo cliente.'}
             </p>
-            {!searchTerm && !statusFilter && !typeFilter && !managerFilter && (
+            {!searchTerm && !statusFilter && !typeFilter && (
               <div className="mt-6">
                 <Link
                   href="/clients/new"

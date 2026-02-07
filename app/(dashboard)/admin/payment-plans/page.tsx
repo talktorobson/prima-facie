@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useAuth } from '@/lib/hooks/use-auth'
+import { useState, useEffect, useCallback } from 'react'
+import { useAuthContext } from '@/lib/providers/auth-provider'
 import { 
   PlusIcon,
   CalendarDaysIcon,
@@ -9,7 +9,8 @@ import {
   PencilIcon,
   TrashIcon,
   BanknotesIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline'
 import { 
   PaymentPlan,
@@ -36,7 +37,7 @@ const initialFormData: PaymentPlanFormData = {
 }
 
 export default function PaymentPlansPage(): JSX.Element {
-  const { user: _user } = useAuth()
+  const { profile } = useAuthContext()
   const [plans, setPlans] = useState<PaymentPlan[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -46,23 +47,22 @@ export default function PaymentPlansPage(): JSX.Element {
   const [filterStatus, setFilterStatus] = useState<PaymentPlanStatus | 'all'>('all')
   const [sortBy, setSortBy] = useState<'name' | 'amount' | 'created' | 'due_date'>('created')
 
-  // Load payment plans on mount
-  useState(() => {
-    loadPaymentPlans()
-  })
-
-  const loadPaymentPlans = async () => {
+  const loadPaymentPlans = useCallback(async () => {
+    if (!profile?.law_firm_id) return
     try {
       setIsLoading(true)
-      const lawFirmId = 'firm-1' // Replace with actual law firm ID
-      const plansData = await paymentPlanService.getPaymentPlans(lawFirmId)
+      const plansData = await paymentPlanService.getPaymentPlans(profile.law_firm_id)
       setPlans(plansData)
     } catch (error) {
       console.error('Error loading payment plans:', error)
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [profile?.law_firm_id])
+
+  useEffect(() => {
+    loadPaymentPlans()
+  }, [loadPaymentPlans])
 
   // Filter and sort plans
   const filteredPlans = plans
@@ -141,9 +141,8 @@ export default function PaymentPlansPage(): JSX.Element {
       if (editingPlan) {
         await paymentPlanService.updatePaymentPlan(editingPlan.id, formData)
       } else {
-        const lawFirmId = 'firm-1' // Replace with actual law firm ID
-        const clientId = 'client-1' // Get from matter or form
-        await paymentPlanService.createPaymentPlan(lawFirmId, clientId, formData)
+        if (!profile?.law_firm_id) return
+        await paymentPlanService.createPaymentPlan(profile.law_firm_id, formData.matter_id, formData)
       }
       
       await loadPaymentPlans()
@@ -177,12 +176,13 @@ export default function PaymentPlansPage(): JSX.Element {
   }
 
   const calculateProgress = (plan: PaymentPlan) => {
-    // This would typically fetch actual payment data
-    // For now, using mock calculation
+    if (plan.status === 'completed') return 100
+    if (plan.status === 'cancelled' || plan.status === 'defaulted') return 0
     const now = new Date()
     const start = new Date(plan.start_date)
     const end = new Date(plan.end_date)
     const totalDuration = end.getTime() - start.getTime()
+    if (totalDuration <= 0) return 0
     const elapsed = now.getTime() - start.getTime()
     return Math.max(0, Math.min(100, (elapsed / totalDuration) * 100))
   }

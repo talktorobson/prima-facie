@@ -2,8 +2,11 @@
 
 import { AdminOnly } from '@/components/auth/role-guard'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useUsers, useActivityLogs } from '@/lib/queries/useAdmin'
+import { useLawFirm } from '@/lib/queries/useSettings'
+import { useMatters } from '@/lib/queries/useMatters'
 import Link from 'next/link'
-import { 
+import {
   BuildingOfficeIcon,
   UsersIcon,
   SwatchIcon,
@@ -11,69 +14,31 @@ import {
   ChartBarIcon,
   ShieldCheckIcon,
   CreditCardIcon,
-  BellIcon
+  BellIcon,
 } from '@heroicons/react/24/outline'
+import { formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 export default function AdminPage() {
   const { profile } = useAuthContext()
+  const { data: users } = useUsers()
+  const { data: lawFirm } = useLawFirm(profile?.law_firm_id ?? undefined)
+  const { data: matters } = useMatters()
+  const { data: activityLogs } = useActivityLogs()
+
+  const activeUsers = users?.filter(u => u.status === 'active').length ?? 0
+  const activeMatters = matters?.filter(m => m.status === 'active').length ?? 0
+  const recentLogs = (activityLogs ?? []).slice(0, 5)
 
   const adminSections = [
-    {
-      title: 'Configurações do Escritório',
-      description: 'Gerenciar informações básicas, endereço e contatos',
-      icon: BuildingOfficeIcon,
-      href: '/admin/law-firm',
-      color: 'bg-blue-50 text-blue-600 border-blue-200'
-    },
-    {
-      title: 'Gestão de Usuários',
-      description: 'Adicionar, editar e gerenciar usuários do sistema',
-      icon: UsersIcon,
-      href: '/admin/users',
-      color: 'bg-green-50 text-green-600 border-green-200'
-    },
-    {
-      title: 'Personalização',
-      description: 'Logo, cores, temas e identidade visual',
-      icon: SwatchIcon,
-      href: '/admin/branding',
-      color: 'bg-purple-50 text-purple-600 border-purple-200'
-    },
-    {
-      title: 'Configurações do Sistema',
-      description: 'Preferências gerais, notificações e integrações',
-      icon: CogIcon,
-      href: '/admin/settings',
-      color: 'bg-gray-50 text-gray-600 border-gray-200'
-    },
-    {
-      title: 'Relatórios e Analytics',
-      description: 'Estatísticas de uso e relatórios administrativos',
-      icon: ChartBarIcon,
-      href: '/admin/analytics',
-      color: 'bg-indigo-50 text-indigo-600 border-indigo-200'
-    },
-    {
-      title: 'Segurança',
-      description: 'Logs de acesso, permissões e auditoria',
-      icon: ShieldCheckIcon,
-      href: '/admin/security',
-      color: 'bg-red-50 text-red-600 border-red-200'
-    },
-    {
-      title: 'Planos e Cobrança',
-      description: 'Gerenciar plano atual e histórico de pagamentos',
-      icon: CreditCardIcon,
-      href: '/admin/billing',
-      color: 'bg-yellow-50 text-yellow-600 border-yellow-200'
-    },
-    {
-      title: 'Notificações',
-      description: 'Configurar alertas e comunicações automáticas',
-      icon: BellIcon,
-      href: '/admin/notifications',
-      color: 'bg-orange-50 text-orange-600 border-orange-200'
-    }
+    { title: 'Configuracoes do Escritorio', description: 'Gerenciar informacoes basicas, endereco e contatos', icon: BuildingOfficeIcon, href: '/admin/law-firm', color: 'bg-blue-50 text-blue-600 border-blue-200' },
+    { title: 'Gestao de Usuarios', description: 'Adicionar, editar e gerenciar usuarios do sistema', icon: UsersIcon, href: '/admin/users', color: 'bg-green-50 text-green-600 border-green-200' },
+    { title: 'Personalizacao', description: 'Logo, cores, temas e identidade visual', icon: SwatchIcon, href: '/admin/branding', color: 'bg-purple-50 text-purple-600 border-purple-200' },
+    { title: 'Configuracoes do Sistema', description: 'Preferencias gerais, notificacoes e integracoes', icon: CogIcon, href: '/admin/settings', color: 'bg-gray-50 text-gray-600 border-gray-200' },
+    { title: 'Analiticos', description: 'Estatisticas de uso e relatorios administrativos', icon: ChartBarIcon, href: '/admin/analytics', color: 'bg-indigo-50 text-indigo-600 border-indigo-200' },
+    { title: 'Seguranca', description: 'Logs de acesso, auditoria e permissoes', icon: ShieldCheckIcon, href: '/admin/security', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+    { title: 'Faturamento', description: 'Plano de assinatura e historico de pagamentos', icon: CreditCardIcon, href: '/admin/billing', color: 'bg-amber-50 text-amber-600 border-amber-200' },
+    { title: 'Notificacoes', description: 'Configurar alertas e comunicacoes automatizadas', icon: BellIcon, href: '/admin/notifications', color: 'bg-rose-50 text-rose-600 border-rose-200' },
   ]
 
   return (
@@ -83,7 +48,7 @@ export default function AdminPage() {
         <div className="border-b border-gray-200 pb-6">
           <h1 className="text-3xl font-bold text-gray-900">Painel Administrativo</h1>
           <p className="mt-2 text-gray-600">
-            Gerencie todas as configurações do escritório{profile?.law_firm?.name ? ` ${profile.law_firm.name}` : ''}
+            Gerencie todas as configuracoes do escritorio{lawFirm?.name ? ` ${lawFirm.name}` : ''}
           </p>
         </div>
 
@@ -93,40 +58,42 @@ export default function AdminPage() {
             <div className="flex items-center">
               <UsersIcon className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Usuários Ativos</p>
-                <p className="text-2xl font-semibold text-gray-900">--</p>
+                <p className="text-sm font-medium text-gray-600">Usuarios Ativos</p>
+                <p className="text-2xl font-semibold text-gray-900">{activeUsers}</p>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center">
               <ChartBarIcon className="h-8 w-8 text-green-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Casos Ativos</p>
-                <p className="text-2xl font-semibold text-gray-900">--</p>
+                <p className="text-2xl font-semibold text-gray-900">{activeMatters}</p>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center">
               <CreditCardIcon className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Plano Atual</p>
                 <p className="text-lg font-semibold text-gray-900 capitalize">
-                  {profile?.law_firm?.plan_type || 'Professional'}
+                  {lawFirm?.plan_type || 'Professional'}
                 </p>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center">
               <ShieldCheckIcon className="h-8 w-8 text-emerald-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Status</p>
-                <p className="text-lg font-semibold text-emerald-600">Ativo</p>
+                <p className="text-lg font-semibold text-emerald-600">
+                  {lawFirm?.subscription_active !== false ? 'Ativo' : 'Inativo'}
+                </p>
               </div>
             </div>
           </div>
@@ -167,29 +134,23 @@ export default function AdminPage() {
             <h2 className="text-lg font-semibold text-gray-900">Atividade Recente</h2>
           </div>
           <div className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0 w-2 h-2 bg-green-400 rounded-full"></div>
-                <p className="text-sm text-gray-600">
-                  Sistema de autenticação configurado com sucesso
-                </p>
-                <span className="text-xs text-gray-400">Agora</span>
+            {recentLogs.length === 0 ? (
+              <p className="text-sm text-gray-500">Nenhuma atividade recente registrada.</p>
+            ) : (
+              <div className="space-y-4">
+                {recentLogs.map((log) => (
+                  <div key={log.id} className="flex items-center space-x-3">
+                    <div className="flex-shrink-0 w-2 h-2 bg-blue-400 rounded-full" />
+                    <p className="text-sm text-gray-600 flex-1">
+                      {log.description || `${log.action} em ${log.entity_type}`}
+                    </p>
+                    <span className="text-xs text-gray-400">
+                      {formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale: ptBR })}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0 w-2 h-2 bg-blue-400 rounded-full"></div>
-                <p className="text-sm text-gray-600">
-                  Database configurado e pronto para uso
-                </p>
-                <span className="text-xs text-gray-400">2 min atrás</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0 w-2 h-2 bg-purple-400 rounded-full"></div>
-                <p className="text-sm text-gray-600">
-                  Painel administrativo criado
-                </p>
-                <span className="text-xs text-gray-400">5 min atrás</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

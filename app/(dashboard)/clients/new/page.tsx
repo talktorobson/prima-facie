@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { clientService, ClientFormData } from '@/lib/clients/client-service'
+import { useMatterTypes } from '@/lib/queries/useSettings'
+import { useUsers } from '@/lib/queries/useAdmin'
 import { 
   ArrowLeftIcon,
   UserIcon,
@@ -16,20 +18,6 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
-
-// Mock data for development
-const mockClientTypes = [
-  { id: '1', name: 'Pessoa Física', code: 'PF', category: 'pessoa_fisica', default_hourly_rate: 250.00 },
-  { id: '2', name: 'Pessoa Jurídica', code: 'PJ', category: 'pessoa_juridica', default_hourly_rate: 400.00 },
-  { id: '3', name: 'Cliente VIP', code: 'VIP', category: 'pessoa_fisica', default_hourly_rate: 350.00 },
-  { id: '4', name: 'Corporativo', code: 'CORP', category: 'pessoa_juridica', default_hourly_rate: 500.00 }
-]
-
-const mockRelationshipManagers = [
-  { id: '1', name: 'Maria Silva Santos', role: 'Advogada Sênior' },
-  { id: '2', name: 'João Santos Oliveira', role: 'Advogado Pleno' },
-  { id: '3', name: 'Carlos Mendes Lima', role: 'Advogado Júnior' }
-]
 
 const brazilianStates = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 
@@ -63,6 +51,8 @@ const paymentMethodOptions = [
 export default function NewClientPage() {
   const router = useRouter()
   const { profile } = useAuth()
+  const { data: matterTypes } = useMatterTypes()
+  const { data: lawyers } = useUsers({ user_type: 'lawyer' })
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   const [formData, setFormData] = useState({
@@ -159,14 +149,11 @@ export default function NewClientPage() {
     }
   }
 
-  const handleClientTypeChange = (e) => {
+  const handleClientTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const typeId = e.target.value
-    const selectedType = mockClientTypes.find(type => type.id === typeId)
-    
     setFormData(prev => ({
       ...prev,
-      client_type_id: typeId,
-      type: selectedType?.category || prev.type
+      client_type_id: typeId
     }))
   }
 
@@ -440,9 +427,7 @@ export default function NewClientPage() {
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               >
                 <option value="">Selecione uma categoria</option>
-                {mockClientTypes
-                  .filter(type => type.category === formData.type)
-                  .map((type) => (
+                {(matterTypes || []).map((type) => (
                     <option key={type.id} value={type.id}>
                       {type.name}
                     </option>
@@ -993,9 +978,9 @@ export default function NewClientPage() {
                 }`}
               >
                 <option value="">Selecione o responsável</option>
-                {mockRelationshipManagers.map((manager) => (
-                  <option key={manager.id} value={manager.id}>
-                    {manager.name} - {manager.role}
+                {(lawyers || []).map((lawyer) => (
+                  <option key={lawyer.id} value={lawyer.id}>
+                    {lawyer.full_name}{lawyer.position ? ` - ${lawyer.position}` : ''}
                   </option>
                 ))}
               </select>

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { 
+import {
   ArrowLeftIcon,
   PencilIcon,
   DocumentTextIcon,
@@ -19,150 +19,48 @@ import {
   TrashIcon,
   CircleStackIcon
 } from '@heroicons/react/24/outline'
+import { useQuery } from '@tanstack/react-query'
 
 // Import DataJud components
 import { DataJudEnrichmentPanel } from '@/components/features/datajud/enrichment-panel'
 import { DataJudTimelineEvents } from '@/components/features/datajud/timeline-events'
 
-// Mock data - in real app this would come from API
-const mockMatter = {
-  id: '1',
-  matter_number: '2024/001',
-  title: 'Ação Trabalhista - Rescisão Indevida',
-  description: 'Processo trabalhista referente à rescisão indevida do contrato de trabalho do cliente João Silva Santos. O cliente foi demitido sem justa causa após 5 anos de trabalho na empresa XYZ Ltda.',
-  area_juridica: 'Trabalhista',
-  status: 'ativo',
-  priority: 'alta',
-  
-  // Legal Information
-  processo_numero: '5001234-20.2024.5.02.0001',
-  vara_tribunal: '1ª Vara do Trabalho de São Paulo',
-  comarca: 'São Paulo',
-  
-  // Client Information
-  client_id: '1',
-  client_name: 'João Silva Santos',
-  client_cpf_cnpj: '123.456.789-00',
-  
-  // Case Details
-  opposing_party: 'XYZ Empresa Ltda',
-  opposing_party_lawyer: 'José Advocacia & Associados',
-  case_value: 25000.00,
-  
-  // Dates
-  opened_date: '2024-01-15',
-  statute_limitations: '2026-01-15',
-  next_hearing_date: '2024-02-20T14:00:00',
-  closed_date: null,
-  
-  // Assignment
-  responsible_lawyer_id: '1',
-  responsible_lawyer: 'Maria Silva Santos',
-  
-  // Financial
-  hourly_rate: 300.00,
-  fixed_fee: null,
-  retainer_amount: 5000.00,
-  billing_method: 'hourly',
-  
-  // Notes
-  internal_notes: 'Cliente relatou que foi demitido logo após solicitar férias. Possível retaliação.',
-  next_action: 'Aguardar resposta da empresa à petição inicial. Prazo até 15/02/2024.',
-  
-  // Metadata
-  created_at: '2024-01-15T10:00:00',
-  updated_at: '2024-01-20T15:30:00',
-  
-  // Additional calculated fields
-  days_open: 10,
-  total_time_logged: 15.5,
-  total_billed: 4650.00
-}
-
-const mockEvents = [
-  {
-    id: '1',
-    title: 'Petição Inicial Protocolada',
-    description: 'Protocolo da petição inicial na 1ª Vara do Trabalho',
-    event_type: 'peticao',
-    event_date: '2024-01-15T09:00:00',
-    status: 'concluido',
-    created_by: 'Maria Silva Santos'
-  },
-  {
-    id: '2',
-    title: 'Audiência de Conciliação',
-    description: 'Audiência de conciliação agendada',
-    event_type: 'audiencia',
-    event_date: '2024-02-20T14:00:00',
-    status: 'agendado',
-    court_location: '1ª Vara do Trabalho - São Paulo',
-    reminder_date: '2024-02-19T10:00:00'
-  },
-  {
-    id: '3',
-    title: 'Resposta da Empresa',
-    description: 'Prazo para resposta da empresa à petição',
-    event_type: 'prazo',
-    event_date: '2024-02-15T17:00:00',
-    status: 'agendado'
-  }
-]
-
-const mockDocuments = [
-  {
-    id: '1',
-    title: 'Petição Inicial',
-    description: 'Petição inicial do processo trabalhista',
-    document_type: 'peticao',
-    file_name: 'peticao_inicial_joao_silva.pdf',
-    file_size: 1024000,
-    created_at: '2024-01-15T09:00:00',
-    uploaded_by: 'Maria Silva Santos',
-    visible_to_client: true
-  },
-  {
-    id: '2',
-    title: 'Contrato de Trabalho',
-    description: 'Cópia do contrato de trabalho do cliente',
-    document_type: 'documento_pessoal',
-    file_name: 'contrato_trabalho_joao.pdf',
-    file_size: 512000,
-    created_at: '2024-01-15T08:30:00',
-    uploaded_by: 'Maria Silva Santos',
-    visible_to_client: false
-  },
-  {
-    id: '3',
-    title: 'Holerites',
-    description: 'Últimos 6 meses de holerites',
-    document_type: 'comprovante',
-    file_name: 'holerites_joao_6meses.pdf',
-    file_size: 2048000,
-    created_at: '2024-01-15T08:45:00',
-    uploaded_by: 'Maria Silva Santos',
-    visible_to_client: false
-  }
-]
+// Import hooks
+import { useMatter } from '@/lib/queries/useMatters'
+import { useDocuments } from '@/lib/queries/useDocuments'
+import { useSupabase } from '@/components/providers'
 
 export default function MatterDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const [matter, setMatter] = useState(mockMatter)
-  const [events, setEvents] = useState(mockEvents)
-  const [documents, setDocuments] = useState(mockDocuments)
   const [activeTab, setActiveTab] = useState('overview')
-  const [loading, setLoading] = useState(false)
 
-  // Simulate data loading
-  useEffect(() => {
-    // In real app, fetch matter data by ID
-    // const matterId = params.id
-    console.log('Loading matter:', params.id)
-  }, [params.id])
+  const matterId = params.id as string
+
+  // Fetch matter data
+  const { data: matter, isLoading: matterLoading, error: matterError } = useMatter(matterId)
+
+  // Fetch documents for this matter
+  const { data: documents = [], isLoading: docsLoading } = useDocuments({ matter_id: matterId })
+
+  // Fetch tasks for this matter
+  const supabase = useSupabase()
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['matter-tasks', matterId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*, assigned_user:users!tasks_assigned_to_fkey(id, full_name)')
+        .eq('matter_id', matterId)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data
+    },
+    enabled: !!matterId,
+  })
 
   const getStatusBadge = (status: string) => {
-    const statusStyles = {
+    const statusStyles: Record<string, string> = {
       novo: 'bg-blue-100 text-blue-800',
       analise: 'bg-yellow-100 text-yellow-800',
       ativo: 'bg-green-100 text-green-800',
@@ -174,7 +72,7 @@ export default function MatterDetailPage() {
       cancelado: 'bg-red-100 text-red-800'
     }
 
-    const statusLabels = {
+    const statusLabels: Record<string, string> = {
       novo: 'Novo',
       analise: 'Em Análise',
       ativo: 'Ativo',
@@ -187,21 +85,21 @@ export default function MatterDetailPage() {
     }
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[status as keyof typeof statusStyles] || 'bg-gray-100 text-gray-800'}`}>
-        {statusLabels[status as keyof typeof statusLabels] || status}
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[status] || 'bg-gray-100 text-gray-800'}`}>
+        {statusLabels[status] || status}
       </span>
     )
   }
 
   const getPriorityBadge = (priority: string) => {
-    const priorityStyles = {
+    const priorityStyles: Record<string, string> = {
       baixa: 'bg-gray-100 text-gray-600',
       media: 'bg-blue-100 text-blue-600',
       alta: 'bg-orange-100 text-orange-600',
       urgente: 'bg-red-100 text-red-600'
     }
 
-    const priorityLabels = {
+    const priorityLabels: Record<string, string> = {
       baixa: 'Baixa',
       media: 'Média',
       alta: 'Alta',
@@ -209,24 +107,27 @@ export default function MatterDetailPage() {
     }
 
     return (
-      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${priorityStyles[priority as keyof typeof priorityStyles] || 'bg-gray-100 text-gray-600'}`}>
-        {priorityLabels[priority as keyof typeof priorityLabels] || priority}
+      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${priorityStyles[priority] || 'bg-gray-100 text-gray-600'}`}>
+        {priorityLabels[priority] || priority}
       </span>
     )
   }
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value == null) return 'R$ 0,00'
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value)
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return '-'
     return new Date(dateString).toLocaleDateString('pt-BR')
   }
 
-  const formatDateTime = (dateString: string) => {
+  const formatDateTime = (dateString: string | null | undefined) => {
+    if (!dateString) return '-'
     return new Date(dateString).toLocaleString('pt-BR')
   }
 
@@ -239,7 +140,7 @@ export default function MatterDetailPage() {
   }
 
   const getEventIcon = (eventType: string) => {
-    const icons = {
+    const icons: Record<string, typeof CalendarIcon> = {
       audiencia: CalendarIcon,
       prazo: ClockIcon,
       peticao: DocumentTextIcon,
@@ -252,20 +153,63 @@ export default function MatterDetailPage() {
       documento: DocumentTextIcon,
       outro: DocumentTextIcon
     }
-    
-    const IconComponent = icons[eventType as keyof typeof icons] || DocumentTextIcon
+
+    const IconComponent = icons[eventType] || DocumentTextIcon
     return <IconComponent className="h-4 w-4" />
   }
 
   const getEventStatusColor = (status: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       agendado: 'text-blue-600',
       em_andamento: 'text-yellow-600',
       concluido: 'text-green-600',
       cancelado: 'text-red-600',
       adiado: 'text-orange-600'
     }
-    return colors[status as keyof typeof colors] || 'text-gray-600'
+    return colors[status] || 'text-gray-600'
+  }
+
+  // Derive display fields from real data
+  const clientName = matter?.contacts?.[0]?.contact?.full_name || '-'
+  const clientCpfCnpj = matter?.contacts?.[0]?.contact?.cpf_cnpj || ''
+  const areaJuridica = matter?.matter_type?.name || '-'
+  const responsibleLawyer = matter?.assigned_lawyer?.full_name || '-'
+
+  // Loading state
+  if (matterLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex flex-col items-center space-y-4">
+          <svg className="animate-spin h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <p className="text-gray-500">Carregando processo...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (matterError || !matter) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <ExclamationTriangleIcon className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900">Processo não encontrado</h3>
+          <p className="mt-2 text-gray-500">
+            {matterError?.message || 'Não foi possível carregar os dados do processo.'}
+          </p>
+          <Link
+            href="/matters"
+            className="mt-4 inline-flex items-center text-sm text-primary hover:text-primary/80"
+          >
+            <ArrowLeftIcon className="h-4 w-4 mr-1" />
+            Voltar para Processos
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -312,9 +256,9 @@ export default function MatterDetailPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-3">
-                <h1 className="text-2xl font-bold text-gray-900">{matter.matter_number}</h1>
-                {getPriorityBadge(matter.priority)}
-                {getStatusBadge(matter.status)}
+                <h1 className="text-2xl font-bold text-gray-900">{matter.process_number || matter.title}</h1>
+                {matter.priority && getPriorityBadge(matter.priority)}
+                {matter.status && getStatusBadge(matter.status)}
               </div>
               <h2 className="mt-1 text-lg text-gray-600">{matter.title}</h2>
             </div>
@@ -326,15 +270,15 @@ export default function MatterDetailPage() {
           <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-4">
             <div>
               <dt className="text-sm font-medium text-gray-500">Cliente</dt>
-              <dd className="mt-1 text-sm text-gray-900">{matter.client_name}</dd>
+              <dd className="mt-1 text-sm text-gray-900">{clientName}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Área Jurídica</dt>
-              <dd className="mt-1 text-sm text-gray-900">{matter.area_juridica}</dd>
+              <dd className="mt-1 text-sm text-gray-900">{areaJuridica}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Responsável</dt>
-              <dd className="mt-1 text-sm text-gray-900">{matter.responsible_lawyer}</dd>
+              <dd className="mt-1 text-sm text-gray-900">{responsibleLawyer}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Valor da Causa</dt>
@@ -395,28 +339,34 @@ export default function MatterDetailPage() {
                     Informações Jurídicas
                   </h4>
                   <dl className="space-y-2">
-                    {matter.processo_numero && (
+                    {matter.process_number && (
                       <div>
                         <dt className="text-sm font-medium text-gray-500">Processo Nº</dt>
-                        <dd className="text-sm text-gray-900">{matter.processo_numero}</dd>
+                        <dd className="text-sm text-gray-900">{matter.process_number}</dd>
                       </div>
                     )}
-                    {matter.vara_tribunal && (
+                    {matter.court_name && (
                       <div>
                         <dt className="text-sm font-medium text-gray-500">Vara/Tribunal</dt>
-                        <dd className="text-sm text-gray-900">{matter.vara_tribunal}</dd>
+                        <dd className="text-sm text-gray-900">{matter.court_name}</dd>
                       </div>
                     )}
-                    {matter.comarca && (
+                    {matter.jurisdiction && (
                       <div>
                         <dt className="text-sm font-medium text-gray-500">Comarca</dt>
-                        <dd className="text-sm text-gray-900">{matter.comarca}</dd>
+                        <dd className="text-sm text-gray-900">{matter.jurisdiction}</dd>
                       </div>
                     )}
                     {matter.opposing_party && (
                       <div>
                         <dt className="text-sm font-medium text-gray-500">Parte Contrária</dt>
                         <dd className="text-sm text-gray-900">{matter.opposing_party}</dd>
+                      </div>
+                    )}
+                    {matter.opposing_party_lawyer && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Advogado da Parte Contrária</dt>
+                        <dd className="text-sm text-gray-900">{matter.opposing_party_lawyer}</dd>
                       </div>
                     )}
                   </dl>
@@ -433,10 +383,10 @@ export default function MatterDetailPage() {
                       <dt className="text-sm font-medium text-gray-500">Abertura</dt>
                       <dd className="text-sm text-gray-900">{formatDate(matter.opened_date)}</dd>
                     </div>
-                    {matter.statute_limitations && (
+                    {matter.statute_of_limitations && (
                       <div>
                         <dt className="text-sm font-medium text-gray-500">Prescrição</dt>
-                        <dd className="text-sm text-gray-900">{formatDate(matter.statute_limitations)}</dd>
+                        <dd className="text-sm text-gray-900">{formatDate(matter.statute_of_limitations)}</dd>
                       </div>
                     )}
                     {matter.next_hearing_date && (
@@ -445,6 +395,12 @@ export default function MatterDetailPage() {
                         <dd className="text-sm text-orange-600 font-medium">
                           {formatDateTime(matter.next_hearing_date)}
                         </dd>
+                      </div>
+                    )}
+                    {matter.closed_date && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Encerramento</dt>
+                        <dd className="text-sm text-gray-900">{formatDate(matter.closed_date)}</dd>
                       </div>
                     )}
                   </dl>
@@ -458,15 +414,6 @@ export default function MatterDetailPage() {
                     <h4 className="text-md font-medium text-gray-900 mb-3">Notas Internas</h4>
                     <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
                       <p className="text-sm text-gray-700">{matter.internal_notes}</p>
-                    </div>
-                  </div>
-                )}
-
-                {matter.next_action && (
-                  <div>
-                    <h4 className="text-md font-medium text-gray-900 mb-3">Próxima Ação</h4>
-                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                      <p className="text-sm text-gray-700">{matter.next_action}</p>
                     </div>
                   </div>
                 )}
@@ -504,47 +451,53 @@ export default function MatterDetailPage() {
                 }}
               />
 
-              {/* Manual Events Section */}
+              {/* Tasks Section (replaces manual events) */}
               <div className="border-t pt-6">
-                <h4 className="text-md font-medium text-gray-900 mb-4">Eventos Manuais</h4>
-                <div className="flow-root">
-                  <ul className="-mb-8">
-                    {events.map((event, eventIdx) => (
-                      <li key={event.id}>
-                        <div className="relative pb-8">
-                          {eventIdx !== events.length - 1 ? (
-                            <span
-                              className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
-                              aria-hidden="true"
-                            />
-                          ) : null}
-                          <div className="relative flex space-x-3">
-                            <div>
-                              <span className={`bg-white h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${getEventStatusColor(event.status)}`}>
-                                {getEventIcon(event.event_type)}
-                              </span>
-                            </div>
-                            <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                <h4 className="text-md font-medium text-gray-900 mb-4">Tarefas do Processo</h4>
+                {tasks.length === 0 ? (
+                  <p className="text-sm text-gray-500">Nenhuma tarefa registrada.</p>
+                ) : (
+                  <div className="flow-root">
+                    <ul className="-mb-8">
+                      {tasks.map((task: Record<string, unknown>, taskIdx: number) => (
+                        <li key={task.id as string}>
+                          <div className="relative pb-8">
+                            {taskIdx !== tasks.length - 1 ? (
+                              <span
+                                className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
+                                aria-hidden="true"
+                              />
+                            ) : null}
+                            <div className="relative flex space-x-3">
                               <div>
-                                <p className="text-sm text-gray-900 font-medium">{event.title}</p>
-                                <p className="text-sm text-gray-500">{event.description}</p>
-                                {event.court_location && (
-                                  <p className="text-xs text-gray-400 mt-1">Local: {event.court_location}</p>
-                                )}
+                                <span className={`bg-white h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${getEventStatusColor((task.status as string) || '')}`}>
+                                  {getEventIcon((task.task_type as string) || 'outro')}
+                                </span>
                               </div>
-                              <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                                <time dateTime={event.event_date}>{formatDateTime(event.event_date)}</time>
-                                <div className={`text-xs ${getEventStatusColor(event.status)}`}>
-                                  {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                              <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                <div>
+                                  <p className="text-sm text-gray-900 font-medium">{task.title as string}</p>
+                                  <p className="text-sm text-gray-500">{task.description as string}</p>
+                                  {task.assigned_user && (
+                                    <p className="text-xs text-gray-400 mt-1">
+                                      Responsável: {(task.assigned_user as Record<string, string>).full_name}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="text-right text-sm whitespace-nowrap text-gray-500">
+                                  <time dateTime={task.created_at as string}>{formatDateTime(task.created_at as string)}</time>
+                                  <div className={`text-xs ${getEventStatusColor((task.status as string) || '')}`}>
+                                    {(task.status as string) || ''}
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -555,10 +508,9 @@ export default function MatterDetailPage() {
               <DataJudEnrichmentPanel
                 caseId={matter.id}
                 caseTitle={matter.title}
-                processNumber={matter.processo_numero}
+                processNumber={matter.process_number || ''}
                 onEnrichmentComplete={(result) => {
                   console.log('Enrichment completed:', result)
-                  // In real app, refresh matter data and update timeline
                 }}
               />
             </div>
@@ -575,46 +527,57 @@ export default function MatterDetailPage() {
                 </button>
               </div>
 
-              <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                <ul className="divide-y divide-gray-200">
-                  {documents.map((document) => (
-                    <li key={document.id}>
-                      <div className="px-4 py-4 hover:bg-gray-50">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                              <DocumentTextIcon className="h-8 w-8 text-gray-400" />
-                            </div>
-                            <div className="ml-4">
-                              <div className="flex items-center">
-                                <p className="text-sm font-medium text-gray-900">{document.title}</p>
-                                {document.visible_to_client && (
-                                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                    Visível ao Cliente
-                                  </span>
-                                )}
+              {docsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <svg className="animate-spin h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                </div>
+              ) : documents.length === 0 ? (
+                <p className="text-sm text-gray-500 py-4">Nenhum documento encontrado.</p>
+              ) : (
+                <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                  <ul className="divide-y divide-gray-200">
+                    {documents.map((document) => (
+                      <li key={document.id}>
+                        <div className="px-4 py-4 hover:bg-gray-50">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0">
+                                <DocumentTextIcon className="h-8 w-8 text-gray-400" />
                               </div>
-                              <p className="text-sm text-gray-500">{document.description}</p>
-                              <div className="mt-1 text-xs text-gray-400">
-                                {document.file_name} • {formatFileSize(document.file_size)} • 
-                                Enviado em {formatDateTime(document.created_at)} por {document.uploaded_by}
+                              <div className="ml-4">
+                                <div className="flex items-center">
+                                  <p className="text-sm font-medium text-gray-900">{document.title}</p>
+                                  {document.access_level === 'client' && (
+                                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                      Visível ao Cliente
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-gray-500">{document.description}</p>
+                                <div className="mt-1 text-xs text-gray-400">
+                                  {document.file_name} • {formatFileSize(document.file_size || 0)} •
+                                  Enviado em {formatDateTime(document.created_at)}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <button className="text-gray-400 hover:text-gray-600">
-                              <EyeIcon className="h-5 w-5" />
-                            </button>
-                            <button className="text-gray-400 hover:text-red-600">
-                              <TrashIcon className="h-5 w-5" />
-                            </button>
+                            <div className="flex items-center space-x-2">
+                              <button className="text-gray-400 hover:text-gray-600">
+                                <EyeIcon className="h-5 w-5" />
+                              </button>
+                              <button className="text-gray-400 hover:text-red-600">
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -632,7 +595,7 @@ export default function MatterDetailPage() {
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-blue-900">Horas Trabalhadas</p>
-                      <p className="text-lg font-semibold text-blue-900">{matter.total_time_logged}h</p>
+                      <p className="text-lg font-semibold text-blue-900">-</p>
                     </div>
                   </div>
                 </div>
@@ -644,7 +607,7 @@ export default function MatterDetailPage() {
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-green-900">Total Faturado</p>
-                      <p className="text-lg font-semibold text-green-900">{formatCurrency(matter.total_billed)}</p>
+                      <p className="text-lg font-semibold text-green-900">-</p>
                     </div>
                   </div>
                 </div>
@@ -673,6 +636,7 @@ export default function MatterDetailPage() {
                       {matter.billing_method === 'fixed' && 'Valor Fixo'}
                       {matter.billing_method === 'contingency' && 'Êxito'}
                       {matter.billing_method === 'retainer' && 'Honorários Antecipados'}
+                      {!matter.billing_method && '-'}
                     </dd>
                   </div>
                   {matter.hourly_rate && (

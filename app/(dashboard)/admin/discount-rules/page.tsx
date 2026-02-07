@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useAuth } from '@/lib/hooks/use-auth'
+import { useState, useEffect, useCallback } from 'react'
+import { useAuthContext } from '@/lib/providers/auth-provider'
 import {
   PlusIcon,
   PencilIcon,
@@ -50,7 +50,7 @@ const initialFormData: DiscountRuleFormData = {
 }
 
 export default function DiscountRulesPage(): JSX.Element {
-  const { user: _user } = useAuth()
+  const { profile } = useAuthContext()
   const [rules, setRules] = useState<DiscountRule[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -60,23 +60,22 @@ export default function DiscountRulesPage(): JSX.Element {
   const [filterType, setFilterType] = useState<DiscountRuleType | 'all'>('all')
   const [sortBy, setSortBy] = useState<'name' | 'priority' | 'created' | 'uses'>('priority')
 
-  // Load rules on mount
-  useState(() => {
-    loadDiscountRules()
-  })
-
-  const loadDiscountRules = async () => {
+  const loadDiscountRules = useCallback(async () => {
+    if (!profile?.law_firm_id) return
     try {
       setIsLoading(true)
-      const lawFirmId = 'firm-1' // Replace with actual law firm ID
-      const rulesData = await discountService.getDiscountRules(lawFirmId)
+      const rulesData = await discountService.getDiscountRules(profile.law_firm_id)
       setRules(rulesData)
     } catch (error) {
       console.error('Error loading discount rules:', error)
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [profile?.law_firm_id])
+
+  useEffect(() => {
+    loadDiscountRules()
+  }, [loadDiscountRules])
 
   // Filter and sort rules
   const filteredRules = rules
@@ -166,8 +165,8 @@ export default function DiscountRulesPage(): JSX.Element {
       if (editingRule) {
         await discountService.updateDiscountRule(editingRule.id, formData)
       } else {
-        const lawFirmId = 'firm-1' // Replace with actual law firm ID
-        await discountService.createDiscountRule(lawFirmId, formData)
+        if (!profile?.law_firm_id) return
+        await discountService.createDiscountRule(profile.law_firm_id, formData)
       }
       
       await loadDiscountRules()
@@ -201,10 +200,10 @@ export default function DiscountRulesPage(): JSX.Element {
   }
 
   const handleCreatePresetRules = async () => {
+    if (!profile?.law_firm_id) return
     try {
       setIsLoading(true)
-      const lawFirmId = 'firm-1' // Replace with actual law firm ID
-      await discountService.createPresetRules(lawFirmId)
+      await discountService.createPresetRules(profile.law_firm_id)
       await loadDiscountRules()
     } catch (error) {
       console.error('Error creating preset rules:', error)

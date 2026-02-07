@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { 
+import {
   ArrowLeftIcon,
   UserIcon,
   DocumentTextIcon,
@@ -12,71 +12,15 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline'
-
-// Mock clients data (from Phase 6 client management)
-const mockClients = [
-  {
-    id: '1',
-    client_number: 'CLI-2024-001',
-    name: 'João Silva Santos',
-    type: 'pessoa_fisica',
-    cpf: '123.456.789-00',
-    cnpj: null,
-    email: 'joao.silva@email.com',
-    phone: '(11) 9 8765-4321',
-    status: 'ativo'
-  },
-  {
-    id: '2',
-    client_number: 'CLI-2024-002',
-    name: 'Ana Costa Pereira',
-    type: 'pessoa_fisica',
-    cpf: '987.654.321-00',
-    cnpj: null,
-    email: 'ana.costa@email.com',
-    phone: '(11) 9 1234-5678',
-    status: 'ativo'
-  },
-  {
-    id: '3',
-    client_number: 'CLI-2024-003',
-    name: 'Empresa ABC Ltda',
-    type: 'pessoa_juridica',
-    cpf: null,
-    cnpj: '12.345.678/0001-90',
-    email: 'contato@empresaabc.com.br',
-    phone: '(11) 3456-7890',
-    status: 'ativo'
-  },
-  {
-    id: '4',
-    client_number: 'CLI-2024-004',
-    name: 'Pedro Rodrigues Oliveira',
-    type: 'pessoa_fisica',
-    cpf: '456.789.123-00',
-    cnpj: null,
-    email: 'pedro.rodrigues@email.com',
-    phone: '(11) 9 5555-4444',
-    status: 'potencial'
-  }
-]
-
-const mockLawyers = [
-  { id: '1', name: 'Maria Silva Santos', oab: 'OAB/SP 123456' },
-  { id: '2', name: 'João Santos Oliveira', oab: 'OAB/SP 654321' },
-  { id: '3', name: 'Carlos Mendes Lima', oab: 'OAB/SP 789012' }
-]
-
-const mockMatterTypes = [
-  { id: '1', name: 'Ação Trabalhista', area: 'Trabalhista', hourly_rate: 300.00 },
-  { id: '2', name: 'Ação Civil', area: 'Civil', hourly_rate: 250.00 },
-  { id: '3', name: 'Consultoria Empresarial', area: 'Empresarial', hourly_rate: 400.00 },
-  { id: '4', name: 'Direito de Família', area: 'Família', hourly_rate: 280.00 }
-]
+import { useQuery } from '@tanstack/react-query'
+import { useSupabase } from '@/components/providers'
+import { useUsers } from '@/lib/queries/useAdmin'
+import { useMatterTypes } from '@/lib/queries/useSettings'
+import { useCreateMatter } from '@/lib/queries/useMatters'
 
 const brazilianStates = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 
-  'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO',
+  'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI',
   'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ]
 
@@ -110,6 +54,28 @@ const billingMethodOptions = [
 
 export default function NewMatterPage() {
   const router = useRouter()
+  const supabase = useSupabase()
+  const createMatter = useCreateMatter()
+
+  // Fetch contacts from Supabase
+  const { data: contacts = [] } = useQuery({
+    queryKey: ['contacts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('id, full_name, contact_type, email, phone, cpf_cnpj')
+        .order('full_name')
+      if (error) throw error
+      return data
+    },
+  })
+
+  // Fetch lawyers
+  const { data: lawyers = [] } = useUsers({ user_type: 'lawyer' })
+
+  // Fetch matter types
+  const { data: matterTypes = [] } = useMatterTypes()
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     // Basic Information
@@ -117,56 +83,56 @@ export default function NewMatterPage() {
     description: '',
     matter_type_id: '',
     area_juridica: '',
-    
+
     // Legal Information
     processo_numero: '',
     vara_tribunal: '',
     comarca: '',
-    
+
     // Client Information
     client_id: '',
     client_name: '',
     client_cpf_cnpj: '',
-    
+
     // Case Details
     opposing_party: '',
     opposing_party_lawyer: '',
     case_value: '',
-    
+
     // Dates
     opened_date: new Date().toISOString().split('T')[0],
     statute_limitations: '',
     next_hearing_date: '',
-    
+
     // Status & Workflow
     status: 'novo',
     priority: 'media',
     probability_success: '',
-    
+
     // Assignment
     responsible_lawyer_id: '',
-    
+
     // Financial
     hourly_rate: '',
     fixed_fee: '',
     retainer_amount: '',
     billing_method: 'hourly',
-    
+
     // Notes
     internal_notes: '',
     next_action: ''
   })
 
-  const [errors, setErrors] = useState({})
-  const [selectedClient, setSelectedClient] = useState(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [selectedClient, setSelectedClient] = useState<Record<string, unknown> | null>(null)
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: value
     }))
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -176,29 +142,29 @@ export default function NewMatterPage() {
     }
   }
 
-  const handleMatterTypeChange = (e) => {
+  const handleMatterTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const typeId = e.target.value
-    const selectedType = mockMatterTypes.find(type => type.id === typeId)
-    
+    const selectedType = matterTypes.find(type => type.id === typeId)
+
     setFormData(prev => ({
       ...prev,
       matter_type_id: typeId,
-      area_juridica: selectedType?.area || '',
-      hourly_rate: selectedType?.hourly_rate?.toString() || ''
+      area_juridica: selectedType?.name || '',
+      hourly_rate: selectedType?.default_hourly_rate?.toString() || ''
     }))
   }
 
-  const handleClientChange = (e) => {
+  const handleClientChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const clientId = e.target.value
-    const client = mockClients.find(c => c.id === clientId)
-    
+    const client = contacts.find((c: Record<string, unknown>) => c.id === clientId)
+
     if (client) {
       setSelectedClient(client)
       setFormData(prev => ({
         ...prev,
         client_id: clientId,
-        client_name: client.name,
-        client_cpf_cnpj: client.type === 'pessoa_fisica' ? client.cpf : client.cnpj
+        client_name: (client.full_name as string) || '',
+        client_cpf_cnpj: (client.cpf_cnpj as string) || ''
       }))
     } else {
       setSelectedClient(null)
@@ -212,7 +178,7 @@ export default function NewMatterPage() {
   }
 
   const validateForm = () => {
-    const newErrors = {}
+    const newErrors: Record<string, string> = {}
 
     // Required fields
     if (!formData.title.trim()) newErrors.title = 'Título é obrigatório'
@@ -233,7 +199,7 @@ export default function NewMatterPage() {
     if (formData.case_value && isNaN(parseFloat(formData.case_value))) {
       newErrors.case_value = 'Valor deve ser numérico'
     }
-    if (formData.probability_success && (formData.probability_success < 0 || formData.probability_success > 100)) {
+    if (formData.probability_success && (Number(formData.probability_success) < 0 || Number(formData.probability_success) > 100)) {
       newErrors.probability_success = 'Probabilidade deve estar entre 0 e 100'
     }
 
@@ -241,9 +207,9 @@ export default function NewMatterPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
@@ -251,17 +217,30 @@ export default function NewMatterPage() {
     setIsSubmitting(true)
 
     try {
-      // Mock submission - in real app, this would call the API
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // In real implementation:
-      // const response = await createMatter(formData)
-      
-      console.log('Creating matter with data:', formData)
-      
-      // Redirect to matters list with success message
+      await createMatter.mutateAsync({
+        title: formData.title,
+        description: formData.description || undefined,
+        status: formData.status,
+        priority: formData.priority,
+        matter_type_id: formData.matter_type_id || undefined,
+        assigned_lawyer_id: formData.responsible_lawyer_id || undefined,
+        case_value: formData.case_value ? parseFloat(formData.case_value) : undefined,
+        billing_method: formData.billing_method,
+        hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : undefined,
+        fixed_fee: formData.fixed_fee ? parseFloat(formData.fixed_fee) : undefined,
+        retainer_amount: formData.retainer_amount ? parseFloat(formData.retainer_amount) : undefined,
+        process_number: formData.processo_numero || undefined,
+        court_name: formData.vara_tribunal || undefined,
+        jurisdiction: formData.comarca || undefined,
+        opposing_party: formData.opposing_party || undefined,
+        opposing_party_lawyer: formData.opposing_party_lawyer || undefined,
+        opened_date: formData.opened_date || undefined,
+        statute_of_limitations: formData.statute_limitations || undefined,
+        next_hearing_date: formData.next_hearing_date || undefined,
+        internal_notes: formData.internal_notes || undefined,
+      } as Record<string, unknown>)
+
       router.push('/matters?created=true')
-      
     } catch (error) {
       console.error('Error creating matter:', error)
       setErrors({ submit: 'Erro ao criar processo. Tente novamente.' })
@@ -332,9 +311,9 @@ export default function NewMatterPage() {
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               >
                 <option value="">Selecione um tipo</option>
-                {mockMatterTypes.map((type) => (
+                {matterTypes.map((type) => (
                   <option key={type.id} value={type.id}>
-                    {type.name} - {type.area}
+                    {type.name}
                   </option>
                 ))}
               </select>
@@ -578,13 +557,11 @@ export default function NewMatterPage() {
                 }`}
               >
                 <option value="">Selecione um cliente</option>
-                {mockClients
-                  .filter(client => client.status === 'ativo' || client.status === 'potencial')
-                  .map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name} - {client.client_number} ({client.type === 'pessoa_fisica' ? client.cpf : client.cnpj})
-                    </option>
-                  ))}
+                {contacts.map((client: Record<string, unknown>) => (
+                  <option key={client.id as string} value={client.id as string}>
+                    {client.full_name as string} {client.cpf_cnpj ? `(${client.cpf_cnpj})` : ''}
+                  </option>
+                ))}
               </select>
               {errors.client_id && <p className="mt-1 text-sm text-red-600">{errors.client_id}</p>}
             </div>
@@ -597,35 +574,27 @@ export default function NewMatterPage() {
                   <div>
                     <span className="text-gray-500">Tipo:</span>
                     <p className="font-medium">
-                      {selectedClient.type === 'pessoa_fisica' ? 'Pessoa Física' : 'Pessoa Jurídica'}
+                      {(selectedClient.contact_type as string) === 'individual' ? 'Pessoa Física' : 'Pessoa Jurídica'}
                     </p>
                   </div>
-                  <div>
-                    <span className="text-gray-500">
-                      {selectedClient.type === 'pessoa_fisica' ? 'CPF:' : 'CNPJ:'}
-                    </span>
-                    <p className="font-medium">
-                      {selectedClient.type === 'pessoa_fisica' ? selectedClient.cpf : selectedClient.cnpj}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">E-mail:</span>
-                    <p className="font-medium">{selectedClient.email}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Telefone:</span>
-                    <p className="font-medium">{selectedClient.phone}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Status:</span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                      selectedClient.status === 'ativo' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {selectedClient.status === 'ativo' ? 'Ativo' : 'Potencial'}
-                    </span>
-                  </div>
+                  {selectedClient.cpf_cnpj && (
+                    <div>
+                      <span className="text-gray-500">CPF/CNPJ:</span>
+                      <p className="font-medium">{selectedClient.cpf_cnpj as string}</p>
+                    </div>
+                  )}
+                  {selectedClient.email && (
+                    <div>
+                      <span className="text-gray-500">E-mail:</span>
+                      <p className="font-medium">{selectedClient.email as string}</p>
+                    </div>
+                  )}
+                  {selectedClient.phone && (
+                    <div>
+                      <span className="text-gray-500">Telefone:</span>
+                      <p className="font-medium">{selectedClient.phone as string}</p>
+                    </div>
+                  )}
                   <div className="md:col-span-1">
                     <Link
                       href={`/clients/${selectedClient.id}`}
@@ -675,21 +644,6 @@ export default function NewMatterPage() {
                       onChange={handleInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                       placeholder="000.000.000-00 ou 00.000.000/0000-00"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="client_email" className="block text-sm font-medium text-gray-700">
-                      E-mail
-                    </label>
-                    <input
-                      type="email"
-                      id="client_email"
-                      name="client_email"
-                      value={formData.client_email}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                      placeholder="cliente@email.com"
                     />
                   </div>
                 </div>
@@ -775,9 +729,9 @@ export default function NewMatterPage() {
                 }`}
               >
                 <option value="">Selecione o advogado responsável</option>
-                {mockLawyers.map((lawyer) => (
+                {lawyers.map((lawyer) => (
                   <option key={lawyer.id} value={lawyer.id}>
-                    {lawyer.name} - {lawyer.oab}
+                    {lawyer.full_name} {lawyer.oab_number ? `- ${lawyer.oab_number}` : ''}
                   </option>
                 ))}
               </select>

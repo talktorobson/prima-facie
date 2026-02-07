@@ -42,3 +42,22 @@ next-env.d.ts
 
 # OS
 Thumbs.db
+
+# Database backups & exports
+*.backup.gz
+*.storage.zip
+
+# Claude Code
+.claude/
+
+# Test/analysis report artifacts
+*-REPORT.json
+*-test-report.json
+*-report.json
+*analysis*.json
+
+# Test screenshots
+test-screenshots/
+
+# Supabase CLI temp
+supabase/.temp/

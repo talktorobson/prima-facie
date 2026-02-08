@@ -5,7 +5,7 @@ import { ToastComponent, Toast, ToastVariant } from "./toast"
 
 interface ToastContextValue {
   success: (message: string) => void
-  error: (message: string) => void
+  error: (message: string, action?: { label: string; onClick: () => void }) => void
   info: (message: string) => void
   warning: (message: string) => void
 }
@@ -23,9 +23,9 @@ export function useToast() {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<Toast[]>([])
 
-  const addToast = React.useCallback((message: string, variant: ToastVariant) => {
+  const addToast = React.useCallback((message: string, variant: ToastVariant, action?: { label: string; onClick: () => void }) => {
     const id = Math.random().toString(36).substring(2, 9)
-    setToasts((prev) => [...prev, { id, message, variant }])
+    setToasts((prev) => [...prev, { id, message, variant, action }])
   }, [])
 
   const removeToast = React.useCallback((id: string) => {
@@ -35,7 +35,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const contextValue = React.useMemo(
     () => ({
       success: (message: string) => addToast(message, 'success'),
-      error: (message: string) => addToast(message, 'error'),
+      error: (message: string, action?: { label: string; onClick: () => void }) => addToast(message, 'error', action),
       info: (message: string) => addToast(message, 'info'),
       warning: (message: string) => addToast(message, 'warning'),
     }),

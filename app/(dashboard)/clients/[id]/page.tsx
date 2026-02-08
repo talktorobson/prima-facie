@@ -208,8 +208,9 @@ export default function ClientDetailPage() {
       <div className="bg-white shadow rounded-lg">
         <div className="px-6 py-4">
           <div className="flex items-center space-x-3 mb-4">
-            <Link href="/clients" className="text-gray-400 hover:text-gray-600">
-              <ArrowLeftIcon className="h-6 w-6" />
+            <Link href="/clients" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+              <ArrowLeftIcon className="h-4 w-4" />
+              <span>Voltar para Clientes</span>
             </Link>
             <div className="flex-1">
               <div className="flex items-center justify-between">

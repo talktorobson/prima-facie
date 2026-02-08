@@ -14,6 +14,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import { EmptyState } from '@/components/ui/empty-state'
 
 interface CalendarEvent {
   id: string
@@ -280,7 +281,11 @@ export default function CalendarPage() {
           </div>
           <div className="p-6">
             {todayEvents.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">Nenhum evento para hoje</p>
+              <EmptyState
+                icon={<CalendarDaysIcon />}
+                title="Nenhum evento para hoje"
+                description="Eventos de tarefas, audiências e faturas aparecerão aqui."
+              />
             ) : (
               <div className="space-y-3">
                 {todayEvents.map((event) => (

@@ -19,6 +19,7 @@ import {
 import { matterService } from '@/lib/matters/matter-service'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { Matter, MatterWithRelations } from '@/types/database'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // Database-powered matter interface
 interface MatterDisplay {
@@ -254,10 +255,11 @@ export default function MattersPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-gray-500">Carregando processos...</p>
+        <div className="bg-white shadow overflow-hidden sm:rounded-md p-4">
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} variant="table-row" />
+            ))}
           </div>
         </div>
       </div>

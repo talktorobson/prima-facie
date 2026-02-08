@@ -20,6 +20,7 @@ import {
   ListBulletIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import { Skeleton } from '@/components/ui/skeleton'
 import KanbanBoard from '@/components/pipeline/kanban-board'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { usePipelineCards, usePipelineStages, useMovePipelineCard } from '@/lib/queries/usePipeline'
@@ -285,8 +286,18 @@ export default function PipelinePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <Skeleton variant="text" className="h-8 w-64 mb-2" />
+        <div className="flex gap-4 overflow-x-auto">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex-shrink-0 w-72 space-y-3">
+              <Skeleton variant="text" className="h-6 w-24" />
+              {Array.from({ length: 3 }).map((_, j) => (
+                <Skeleton key={j} variant="card" className="h-24" />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     )
   }

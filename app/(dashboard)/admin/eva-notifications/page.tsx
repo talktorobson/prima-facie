@@ -122,7 +122,7 @@ export default function EvaNotificationsPage() {
           <div className="flex items-center space-x-4">
             <Link href="/admin" className="flex items-center text-gray-500 hover:text-gray-700">
               <ArrowLeftIcon className="h-5 w-5 mr-1" />
-              Voltar
+              Voltar para Admin
             </Link>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">

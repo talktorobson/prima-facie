@@ -72,6 +72,12 @@ export function getDefaultWebsiteContent(firm: FirmInfo): DefaultWebsiteContent 
     color_charcoal: '#2D2D3F',
     font_serif: 'Georgia',
     font_sans: 'system-ui',
+    fontSerif: 'Cormorant Garamond',
+    fontSans: 'Inter',
+    fontDisplay: 'Outfit',
+    enableGrainTexture: false,
+    sectionSpacing: 'normal',
+    gradientPreset: 'royal',
   }
 
   const topbar: WebsiteTopbar = {

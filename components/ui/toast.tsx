@@ -10,6 +10,7 @@ export interface Toast {
   id: string
   message: string
   variant: ToastVariant
+  action?: { label: string; onClick: () => void }
 }
 
 interface ToastProps extends Toast {
@@ -30,17 +31,19 @@ const variantIcons: Record<ToastVariant, React.ReactNode> = {
   warning: <AlertTriangle className="h-5 w-5 text-yellow-600" />,
 }
 
-export function ToastComponent({ id, message, variant, onClose }: ToastProps) {
+export function ToastComponent({ id, message, variant, action, onClose }: ToastProps) {
   React.useEffect(() => {
     const timer = setTimeout(() => {
       onClose(id)
-    }, 5000)
+    }, action ? 8000 : 5000)
 
     return () => clearTimeout(timer)
-  }, [id, onClose])
+  }, [id, onClose, action])
 
   return (
     <div
+      role="alert"
+      aria-live="assertive"
       className={cn(
         "flex items-center gap-3 rounded-lg border p-4 shadow-lg",
         "animate-in slide-in-from-right-full duration-300",
@@ -52,6 +55,14 @@ export function ToastComponent({ id, message, variant, onClose }: ToastProps) {
         {variantIcons[variant]}
       </div>
       <p className="flex-1 text-sm font-medium">{message}</p>
+      {action && (
+        <button
+          onClick={() => { action.onClick(); onClose(id) }}
+          className="flex-shrink-0 text-sm font-medium underline underline-offset-2 hover:no-underline"
+        >
+          {action.label}
+        </button>
+      )}
       <button
         onClick={() => onClose(id)}
         className="flex-shrink-0 rounded-md p-1 hover:bg-black/5 transition-colors"

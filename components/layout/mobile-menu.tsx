@@ -70,14 +70,24 @@ export function MobileMenu() {
     item => !item.roles || item.roles.includes(userType)
   )
 
+  const currentSection = filteredNavigation.find(
+    item => pathname === item.href || pathname?.startsWith(`${item.href}/`)
+  )
+
   return (
     <>
       {/* Mobile menu button */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200">
         <div className="flex items-center justify-between h-16 px-4">
-          <div className="flex items-center gap-2">
-            <Scale className="h-6 w-6 text-primary" />
+          <div className="flex items-center gap-2 min-w-0">
+            <Scale className="h-6 w-6 text-primary flex-shrink-0" />
             <span className="text-lg font-bold text-gray-900">Prima Facie</span>
+            {currentSection && (
+              <>
+                <span className="text-gray-300 text-sm">/</span>
+                <span className="text-sm text-gray-600 truncate">{currentSection.name}</span>
+              </>
+            )}
           </div>
           <button
             onClick={() => setIsOpen(!isOpen)}

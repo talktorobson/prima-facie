@@ -7,6 +7,7 @@ import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { clientService, ClientFormData } from '@/lib/clients/client-service'
 import { useMatterTypes } from '@/lib/queries/useSettings'
 import { useUsers } from '@/lib/queries/useAdmin'
+import { useToast } from '@/components/ui/toast-provider'
 import { 
   ArrowLeftIcon,
   UserIcon,
@@ -50,6 +51,7 @@ const paymentMethodOptions = [
 
 export default function NewClientPage() {
   const router = useRouter()
+  const toast = useToast()
   const effectiveLawFirmId = useEffectiveLawFirmId()
   const { data: matterTypes } = useMatterTypes()
   const { data: lawyers } = useUsers(effectiveLawFirmId, { user_type: 'lawyer' })
@@ -304,8 +306,8 @@ export default function NewClientPage() {
       // Create client in database
       const newClient = await clientService.createClient(effectiveLawFirmId!, clientData)
       
-      // Redirect to clients list with success message
-      router.push('/clients?created=true')
+      toast.success('Cliente criado com sucesso!')
+      router.push('/clients')
       
     } catch (error) {
       console.error('Error creating client:', error)

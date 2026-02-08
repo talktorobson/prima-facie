@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useToast } from '@/components/ui/toast-provider'
 import {
   ArrowLeftIcon,
   UserIcon,
@@ -94,6 +95,7 @@ interface DataJudPreview {
 
 export default function NewMatterPage() {
   const router = useRouter()
+  const toast = useToast()
   const supabase = useSupabase()
   const effectiveLawFirmId = useEffectiveLawFirmId()
   const createMatter = useCreateMatter()
@@ -341,7 +343,8 @@ export default function NewMatterPage() {
         }).catch(() => {})
       }
 
-      router.push('/matters?created=true')
+      toast.success('Processo criado com sucesso!')
+      router.push('/matters')
     } catch (error) {
       console.error('Error creating matter:', error)
       setErrors({ submit: 'Erro ao criar processo. Tente novamente.' })

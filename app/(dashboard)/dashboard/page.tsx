@@ -14,6 +14,7 @@ import { clientService, type ClientStats } from '@/lib/clients/client-service'
 import { matterService, type MatterStats } from '@/lib/matters/matter-service'
 import { useActivityLogs } from '@/lib/queries/useAdmin'
 import { useTasks } from '@/lib/queries/useTasks'
+import { useInvoices } from '@/lib/queries/useInvoices'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
@@ -23,10 +24,14 @@ import {
   ClockIcon,
   TrendingUpIcon,
   AlertTriangleIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  AlertCircleIcon,
+  CalendarDaysIcon,
+  ReceiptIcon
 } from 'lucide-react'
 import { CreateTaskDialog } from '@/components/tasks/create-task-dialog'
 import { useNewProspects } from '@/lib/queries/usePipeline'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface StatCardProps {
   title: string
@@ -109,6 +114,51 @@ function RecentItem({ title, subtitle, time, type }: RecentItemProps) {
   )
 }
 
+interface AlertCardProps {
+  icon: React.ComponentType<{ className?: string }>
+  title: string
+  count: number
+  color: 'red' | 'amber' | 'orange'
+  href: string
+  items: { id: string; label: string; detail: string }[]
+}
+
+const alertColors = {
+  red: { bg: 'bg-red-50', border: 'border-red-200', itemBorder: 'border-red-100', badge: 'bg-red-200 text-red-800', icon: 'text-red-600', title: 'text-red-900', link: 'text-red-700 hover:text-red-900' },
+  amber: { bg: 'bg-amber-50', border: 'border-amber-200', itemBorder: 'border-amber-100', badge: 'bg-amber-200 text-amber-800', icon: 'text-amber-600', title: 'text-amber-900', link: 'text-amber-700 hover:text-amber-900' },
+  orange: { bg: 'bg-orange-50', border: 'border-orange-200', itemBorder: 'border-orange-100', badge: 'bg-orange-200 text-orange-800', icon: 'text-orange-600', title: 'text-orange-900', link: 'text-orange-700 hover:text-orange-900' },
+}
+
+function AlertCard({ icon: Icon, title, count, color, href, items }: AlertCardProps) {
+  const c = alertColors[color]
+  return (
+    <div className={`${c.bg} border ${c.border} rounded-lg p-4`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Icon className={`h-5 w-5 ${c.icon}`} />
+          <h3 className={`text-sm font-semibold ${c.title}`}>{title}</h3>
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${c.badge}`}>
+            {count}
+          </span>
+        </div>
+        <Link href={href} className={`text-sm font-medium ${c.link}`}>
+          Ver todas
+        </Link>
+      </div>
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div key={item.id} className={`flex items-center justify-between bg-white rounded-md px-3 py-2 border ${c.itemBorder}`}>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-gray-900 truncate">{item.label}</p>
+              <p className="text-xs text-gray-500 truncate">{item.detail}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 interface DashboardStats {
   clientStats: ClientStats | null
   matterStats: MatterStats | null
@@ -128,6 +178,7 @@ export default function DashboardPage() {
 
   const { data: activityLogs, isLoading: logsLoading } = useActivityLogs(effectiveLawFirmId)
   const { data: tasks, isLoading: tasksLoading } = useTasks(effectiveLawFirmId)
+  const { data: invoices, isLoading: invoicesLoading } = useInvoices(effectiveLawFirmId)
   const { data: newProspects } = useNewProspects(effectiveLawFirmId)
 
   const recentLogs = useMemo(() => (activityLogs ?? []).slice(0, 5), [activityLogs])
@@ -140,6 +191,24 @@ export default function DashboardPage() {
       .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
       .slice(0, 5)
   }, [tasks])
+
+  const overdueTasks = useMemo(() => {
+    if (!tasks) return []
+    const now = new Date()
+    return tasks.filter(t => t.due_date && new Date(t.due_date) < now && t.status !== 'completed')
+  }, [tasks])
+
+  const urgentDeadlines = useMemo(() => {
+    if (!tasks) return []
+    const now = new Date()
+    const threeDays = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+    return tasks.filter(t => t.due_date && new Date(t.due_date) >= now && new Date(t.due_date) <= threeDays && t.status !== 'completed')
+  }, [tasks])
+
+  const overdueInvoices = useMemo(() => {
+    if (!invoices) return []
+    return invoices.filter(inv => inv.status === 'overdue')
+  }, [invoices])
 
   useEffect(() => {
     if (effectiveLawFirmId) {
@@ -183,8 +252,20 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <div>
+          <Skeleton variant="text" className="h-8 w-64 mb-2" />
+          <Skeleton variant="text" className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} variant="card" className="h-24" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton variant="card" className="h-64" />
+          <Skeleton variant="card" className="h-64" />
+        </div>
       </div>
     )
   }
@@ -257,6 +338,52 @@ export default function DashboardPage() {
           />
         </div>
       </ClientOnly>
+
+      {/* Smart Alerts - Staff Only */}
+      <StaffOnly>
+        {overdueTasks.length > 0 && (
+          <AlertCard
+            icon={AlertCircleIcon}
+            title="Tarefas Atrasadas"
+            count={overdueTasks.length}
+            color="red"
+            href="/tasks"
+            items={overdueTasks.slice(0, 3).map(t => ({
+              id: t.id,
+              label: t.title,
+              detail: `Venceu ${formatDistanceToNow(new Date(t.due_date!), { addSuffix: true, locale: ptBR })}`,
+            }))}
+          />
+        )}
+        {urgentDeadlines.length > 0 && (
+          <AlertCard
+            icon={CalendarDaysIcon}
+            title="Prazos Urgentes"
+            count={urgentDeadlines.length}
+            color="amber"
+            href="/tasks"
+            items={urgentDeadlines.slice(0, 3).map(t => ({
+              id: t.id,
+              label: t.title,
+              detail: `Vence ${formatDistanceToNow(new Date(t.due_date!), { addSuffix: true, locale: ptBR })}`,
+            }))}
+          />
+        )}
+        {overdueInvoices.length > 0 && (
+          <AlertCard
+            icon={ReceiptIcon}
+            title="Faturas Vencidas"
+            count={overdueInvoices.length}
+            color="orange"
+            href="/billing/invoices"
+            items={overdueInvoices.slice(0, 3).map(inv => ({
+              id: inv.id,
+              label: inv.contacts?.full_name || inv.contacts?.company_name || `Fatura #${inv.invoice_number}`,
+              detail: inv.matters?.title || `R$ ${Number(inv.total_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            }))}
+          />
+        )}
+      </StaffOnly>
 
       {/* New Prospects Alert - Staff Only */}
       <StaffOnly>

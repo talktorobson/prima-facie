@@ -164,6 +164,10 @@ export default function StaffPortalLayout({ children }: StaffPortalLayoutProps) 
     .slice(0, 2)
     .toUpperCase()
 
+  const currentSection = navigation.find((item) =>
+    item.exact ? pathname === item.href : pathname?.startsWith(item.href)
+  )
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Desktop Sidebar */}
@@ -192,6 +196,12 @@ export default function StaffPortalLayout({ children }: StaffPortalLayoutProps) 
             <span className="text-sm font-medium text-white">PF</span>
           </div>
           <span className="ml-2 text-sm font-medium text-gray-900">Prima Facie</span>
+          {currentSection && (
+            <>
+              <span className="text-gray-300 text-sm ml-2">/</span>
+              <span className="text-sm text-gray-600 truncate ml-1">{currentSection.name}</span>
+            </>
+          )}
         </div>
       </div>
 

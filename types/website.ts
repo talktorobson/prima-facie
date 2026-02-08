@@ -14,6 +14,12 @@ export interface WebsiteTheme {
   color_charcoal: string
   font_serif: string
   font_sans: string
+  fontSerif?: string
+  fontSans?: string
+  fontDisplay?: string
+  enableGrainTexture?: boolean
+  sectionSpacing?: 'compact' | 'normal' | 'spacious'
+  gradientPreset?: string
 }
 
 // ----- Topbar -----

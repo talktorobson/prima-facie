@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
 import type { WebsiteHeader } from './types'
@@ -13,8 +13,18 @@ interface Props {
 
 export default function WebsiteHeaderSection({ data, slug, variant = 'solid' }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const isTransparent = variant === 'transparent'
   const base = `/site/${slug}`
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', handler, { passive: true })
+    return () => window.removeEventListener('scroll', handler)
+  }, [])
+
+  const showSolidBg = isTransparent && scrolled
+  const textDark = !isTransparent || scrolled
 
   function resolveHref(href: string) {
     if (href.startsWith('http') || href.startsWith('/login') || href.startsWith('/portal')) return href
@@ -23,9 +33,9 @@ export default function WebsiteHeaderSection({ data, slug, variant = 'solid' }: 
 
   return (
     <header
-      className={`w-full z-40 ${
+      className={`w-full z-40 transition-all duration-300 ${
         isTransparent
-          ? 'absolute top-0 left-0 right-0'
+          ? `absolute top-0 left-0 right-0 ${showSolidBg ? 'bg-white/95 backdrop-blur-sm shadow-sm' : ''}`
           : 'sticky top-0 bg-website-bg border-b border-website-mist'
       }`}
     >
@@ -40,8 +50,8 @@ export default function WebsiteHeaderSection({ data, slug, variant = 'solid' }: 
             />
           ) : (
             <span
-              className={`text-2xl md:text-3xl font-serif font-bold tracking-tight ${
-                isTransparent ? 'text-white' : 'text-website-ink'
+              className={`text-2xl md:text-3xl font-serif font-bold tracking-tight transition-colors duration-300 ${
+                textDark ? 'text-website-ink' : 'text-white'
               }`}
             >
               {data.firm_name}
@@ -49,8 +59,8 @@ export default function WebsiteHeaderSection({ data, slug, variant = 'solid' }: 
           )}
           {data.firm_suffix && (
             <span
-              className={`hidden sm:inline text-xs uppercase tracking-[0.2em] ${
-                isTransparent ? 'text-white/60' : 'text-website-stone'
+              className={`hidden sm:inline text-xs uppercase tracking-[0.2em] transition-colors duration-300 ${
+                textDark ? 'text-website-stone' : 'text-white/60'
               }`}
             >
               {data.firm_suffix}
@@ -64,10 +74,10 @@ export default function WebsiteHeaderSection({ data, slug, variant = 'solid' }: 
             <Link
               key={link.href}
               href={resolveHref(link.href)}
-              className={`text-sm tracking-wide transition-colors ${
-                isTransparent
-                  ? 'text-white/80 hover:text-white'
-                  : 'text-website-stone hover:text-website-ink'
+              className={`text-sm tracking-wide transition-colors duration-300 ${
+                textDark
+                  ? 'text-website-stone hover:text-website-ink'
+                  : 'text-white/80 hover:text-white'
               }`}
             >
               {link.label}
@@ -85,10 +95,10 @@ export default function WebsiteHeaderSection({ data, slug, variant = 'solid' }: 
             <Link
               href={data.cta_secondary_href || '/login'}
               target="_blank"
-              className={`text-sm font-medium px-5 py-2.5 border transition-colors tracking-wide ${
-                isTransparent
-                  ? 'border-white/40 text-white hover:bg-white/10'
-                  : 'border-website-ink text-website-ink hover:bg-website-ink hover:text-white'
+              className={`text-sm font-medium px-5 py-2.5 border transition-colors duration-300 tracking-wide ${
+                textDark
+                  ? 'border-website-ink text-website-ink hover:bg-website-ink hover:text-white'
+                  : 'border-white/40 text-white hover:bg-white/10'
               }`}
             >
               {data.cta_secondary_text}
@@ -100,7 +110,7 @@ export default function WebsiteHeaderSection({ data, slug, variant = 'solid' }: 
         <button
           type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
-          className={`md:hidden p-2 ${isTransparent ? 'text-white' : 'text-website-ink'}`}
+          className={`md:hidden p-2 transition-colors duration-300 ${textDark ? 'text-website-ink' : 'text-white'}`}
           aria-label="Menu"
         >
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -110,7 +120,7 @@ export default function WebsiteHeaderSection({ data, slug, variant = 'solid' }: 
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="md:hidden bg-website-bg border-t border-website-mist">
-          <nav className="container mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4">
+          <nav role="navigation" aria-label="Menu principal" className="container mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4">
             {data.nav_links.map((link) => (
               <Link
                 key={link.href}

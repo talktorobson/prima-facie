@@ -163,7 +163,7 @@ export default function StaffMatterDetailPage({ params }: { params: { id: string
             href="/portal/staff"
             className="text-sm font-medium text-primary hover:text-primary/80"
           >
-            Voltar ao painel
+            Voltar para Processos
           </Link>
         </div>
       </div>
@@ -184,7 +184,7 @@ export default function StaffMatterDetailPage({ params }: { params: { id: string
         className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
       >
         <ArrowLeftIcon className="h-4 w-4 mr-1" />
-        Voltar ao painel
+        Voltar para Processos
       </Link>
 
       {/* Header */}

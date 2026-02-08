@@ -10,6 +10,7 @@ import {
   ChartBarIcon,
 } from '@heroicons/react/24/outline'
 import { FinancialTab, MattersTab, TeamTab, ClientsTab } from '@/components/reports/report-tabs'
+import { EmptyState } from '@/components/ui/empty-state'
 
 type TabId = 'financial' | 'matters' | 'team' | 'clients'
 
@@ -31,13 +32,11 @@ export default function ReportsPage() {
 
   if (!effectiveLawFirmId) {
     return (
-      <div className="text-center py-12">
-        <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">Sem acesso</h3>
-        <p className="mt-1 text-sm text-gray-500">
-          Voce precisa estar vinculado a um escritorio para visualizar relatorios.
-        </p>
-      </div>
+      <EmptyState
+        icon={<ChartBarIcon />}
+        title="Sem acesso"
+        description="Você precisa estar vinculado a um escritório para visualizar relatórios."
+      />
     )
   }
 

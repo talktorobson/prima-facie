@@ -13,6 +13,7 @@ import {
   VideoCameraIcon,
   CogIcon
 } from '@heroicons/react/24/outline'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function MessagesPage() {
   const { profile } = useAuthContext()
@@ -67,9 +68,16 @@ export default function MessagesPage() {
   if (!profile || !lawFirmId || !userId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
+        <div className="space-y-3 w-80">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-3">
+              <Skeleton variant="circle" className="h-10 w-10" />
+              <div className="flex-1 space-y-2">
+                <Skeleton variant="text" className="h-4 w-32" />
+                <Skeleton variant="text" className="h-3 w-48" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     )

@@ -26,7 +26,7 @@ export default function Founders() {
               <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-6">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/larissa-davila-reis.jpg"
+                  src="https://noebijrasxsucelvycka.supabase.co/storage/v1/object/public/website-assets/123e4567-e89b-12d3-a456-426614174000/founders/1770498951097.JPG"
                   alt="Dra. Larissa D'Avila Reis"
                   className="w-full h-full object-cover object-top"
                 />

@@ -23,9 +23,58 @@ export async function buildContextInfo(
       return buildClientContext(supabase, entityId, lawFirmId)
     case 'task':
       return buildTaskContext(supabase, entityId, lawFirmId)
+    case 'conversation':
+      return buildConversationContext(supabase, entityId, lawFirmId)
     default:
       return undefined
   }
+}
+
+export async function buildConversationContext(
+  supabase: SupabaseClient,
+  conversationId: string,
+  lawFirmId: string
+): Promise<string | undefined> {
+  // Fetch conversation details
+  const { data: conversation } = await supabase
+    .from('conversations')
+    .select('title, topic, conversation_type')
+    .eq('id', conversationId)
+    .eq('law_firm_id', lawFirmId)
+    .single()
+
+  if (!conversation) return undefined
+
+  // Fetch last 20 messages with sender info
+  const { data: messages } = await supabase
+    .from('messages')
+    .select('content, sender_type, created_at, sender_id')
+    .eq('conversation_id', conversationId)
+    .eq('law_firm_id', lawFirmId)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  if (!messages?.length) {
+    return `Conversa: ${conversation.title || 'Sem titulo'}\nTipo: ${conversation.conversation_type || 'chat'}\nNenhuma mensagem anterior.`
+  }
+
+  // Build message history (chronological order, truncate long messages)
+  const MAX_MSG_LENGTH = 500
+  const lines = messages.reverse().map((msg) => {
+    const sender = msg.sender_type === 'contact' ? 'Cliente' : 'Escritorio'
+    const time = new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    const content = msg.content.length > MAX_MSG_LENGTH
+      ? msg.content.slice(0, MAX_MSG_LENGTH) + '...'
+      : msg.content
+    return `[${time}] ${sender}: ${content}`
+  })
+
+  return `Conversa: ${conversation.title || 'Sem titulo'}
+Topico: ${conversation.topic || 'geral'}
+Tipo: ${conversation.conversation_type || 'chat'}
+
+### Historico recente (ultimas ${messages.length} mensagens):
+${lines.join('\n')}`
 }
 
 async function buildMatterContext(

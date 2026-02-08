@@ -8,7 +8,8 @@ import {
   EllipsisVerticalIcon,
   UserIcon,
   PhoneIcon,
-  VideoCameraIcon
+  VideoCameraIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline'
 import { useConversationMessages, useSendMessage, useMarkAsRead } from '@/lib/queries/useMessages'
 import { useConversationRealtime, useTypingBroadcast, formatMessageTime, isMessageFromCurrentUser } from '@/lib/supabase/realtime'
@@ -18,6 +19,13 @@ import MessageStatusIndicator from './message-status-indicator'
 import { useToast } from '@/components/ui/toast-provider'
 
 const COMMON_EMOJIS = ['😀', '😂', '👍', '❤️', '🙏', '👋', '✅', '⚖️', '📄', '📎', '🔔', '⏰', '📅', '💼', '🏛️', '📝', '🤝', '👏', '🎉', '✨']
+
+const EVA_MENTION_RE = /^@eva\s+([\s\S]+)/i
+
+function extractEvaQuery(text: string): string | null {
+  const match = text.match(EVA_MENTION_RE)
+  return match ? match[1].trim() : null
+}
 
 interface ChatInterfaceProps {
   conversation: Conversation
@@ -167,6 +175,8 @@ export default function ChatInterface({
   const toast = useToast()
   const [newMessage, setNewMessage] = useState('')
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [isEvaProcessing, setIsEvaProcessing] = useState(false)
+  const [evaDraft, setEvaDraft] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
@@ -218,10 +228,55 @@ export default function ChatInterface({
     }, 3000)
   }
 
-  // Send message
+  // Send message (with @eva ghost-write support)
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || sendMessageMutation.isPending) return
+    if (!newMessage.trim() || sendMessageMutation.isPending || isEvaProcessing) return
 
+    const evaQuery = extractEvaQuery(newMessage.trim())
+
+    if (evaQuery && !isClient) {
+      // @eva ghost-write flow — fetch draft, show preview before sending
+      setIsEvaProcessing(true)
+      setNewMessage('')
+      sendTyping(false)
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000)
+
+      try {
+        const response = await fetch('/api/ai/chat-ghost', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: evaQuery,
+            conversationId: conversation.id,
+          }),
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}))
+          throw new Error(errData.error || 'Erro ao processar')
+        }
+
+        const { content } = await response.json()
+        setEvaDraft(content)
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          toast.error('A operacao excedeu o tempo limite. Tente novamente.')
+        } else {
+          const msg = err instanceof Error ? err.message : 'Erro desconhecido'
+          toast.error(`EVA nao conseguiu processar: ${msg}`)
+        }
+      } finally {
+        clearTimeout(timeoutId)
+        setIsEvaProcessing(false)
+      }
+      return
+    }
+
+    // Normal message flow
     sendMessageMutation.mutate(
       {
         law_firm_id: lawFirmId,
@@ -346,6 +401,78 @@ export default function ChatInterface({
         ) : (
           <>
             {renderedMessages}
+            {isEvaProcessing && (
+              <div className="flex justify-start mb-4">
+                <div className="flex max-w-xs">
+                  <div className="flex-shrink-0 mr-2">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <SparklesIcon className="h-5 w-5 text-primary" />
+                    </div>
+                  </div>
+                  <div className="ml-2">
+                    <p className="text-xs text-primary font-medium mb-1">EVA esta preparando uma resposta...</p>
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* EVA draft preview — user can edit, send, or discard */}
+            {evaDraft && (
+              <div className="flex justify-start mb-4">
+                <div className="max-w-sm">
+                  <div className="flex items-center gap-1 mb-1">
+                    <SparklesIcon className="h-4 w-4 text-primary" />
+                    <p className="text-xs text-primary font-medium">Rascunho da EVA — revise antes de enviar</p>
+                  </div>
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+                    <textarea
+                      value={evaDraft}
+                      onChange={(e) => setEvaDraft(e.target.value)}
+                      className="w-full bg-transparent text-sm text-gray-900 resize-none border-none focus:outline-none focus:ring-0 p-0"
+                      rows={Math.min(6, evaDraft.split('\n').length + 1)}
+                    />
+                    <div className="flex justify-end gap-2 mt-2">
+                      <button
+                        onClick={() => setEvaDraft(null)}
+                        className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded"
+                      >
+                        Descartar
+                      </button>
+                      <button
+                        onClick={() => {
+                          const content = evaDraft.trim()
+                          if (!content) return
+                          sendMessageMutation.mutate(
+                            {
+                              law_firm_id: lawFirmId,
+                              conversation_id: conversation.id,
+                              content,
+                              message_type: 'text',
+                              sender_id: currentUserId,
+                              sender_type: 'user',
+                              status: 'sent',
+                            },
+                            {
+                              onError: () => toast.error('Erro ao enviar a resposta da EVA.'),
+                            }
+                          )
+                          setEvaDraft(null)
+                        }}
+                        className="text-xs bg-primary text-white px-3 py-1 rounded hover:bg-primary/90"
+                      >
+                        Enviar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <TypingIndicatorComponent typing={typingUsers} />
             <div ref={messagesEndRef} />
           </>
@@ -360,6 +487,7 @@ export default function ChatInterface({
             disabled={sendMessageMutation.isPending}
             className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50"
             title="Enviar arquivo"
+            aria-label="Enviar arquivo"
           >
             {sendMessageMutation.isPending ? (
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
@@ -376,8 +504,9 @@ export default function ChatInterface({
                 handleTyping()
               }}
               onKeyPress={handleKeyPress}
-              placeholder="Digite sua mensagem..."
-              className="w-full resize-none border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder={isClient ? 'Digite sua mensagem...' : 'Digite sua mensagem ou @eva para usar a assistente de IA...'}
+              disabled={isEvaProcessing}
+              className="w-full resize-none border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-50"
               rows={1}
               style={{ maxHeight: '120px' }}
             />
@@ -387,6 +516,7 @@ export default function ChatInterface({
             <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              aria-label="Selecionar emoji"
             >
               <FaceSmileIcon className="h-5 w-5" />
             </button>
@@ -410,8 +540,9 @@ export default function ChatInterface({
 
           <button
             onClick={handleSendMessage}
-            disabled={!newMessage.trim() || sendMessageMutation.isPending}
+            disabled={!newMessage.trim() || sendMessageMutation.isPending || isEvaProcessing}
             className="p-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Enviar mensagem"
           >
             <PaperAirplaneIcon className="h-5 w-5" />
           </button>

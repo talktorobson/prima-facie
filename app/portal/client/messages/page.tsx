@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useMyMessages } from '@/lib/queries/useClientPortal'
 import { useSupabase } from '@/components/providers'
 import { useAuthContext } from '@/lib/providers/auth-provider'
@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import {
   ChatBubbleLeftRightIcon,
   PaperAirplaneIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline'
 
 const formatDateTime = (dateString: string) => {
@@ -38,9 +39,12 @@ export default function ClientMessagesPage() {
 
   const [newMessage, setNewMessage] = useState('')
   const [sending, setSending] = useState(false)
+  const [isEvaMode, setIsEvaMode] = useState(false)
+  const [isEvaProcessing, setIsEvaProcessing] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const messageList = (messages ?? []) as MessageRow[]
+  const reversedMessages = useMemo(() => [...messageList].reverse(), [messageList])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -65,7 +69,8 @@ export default function ClientMessagesPage() {
         return
       }
 
-      const { error } = await supabase.from('messages').insert({
+      // Always save the client's question as a regular message
+      const { error: msgError } = await supabase.from('messages').insert({
         content: trimmed,
         contact_id: contact.id,
         law_firm_id: contact.law_firm_id,
@@ -74,11 +79,44 @@ export default function ClientMessagesPage() {
         status: 'sent',
       })
 
-      if (error) throw error
+      if (msgError) throw msgError
 
       setNewMessage('')
       queryClient.invalidateQueries({ queryKey: ['portal', 'my-messages'] })
-      toast.success('Mensagem enviada!')
+
+      if (isEvaMode) {
+        // EVA Q&A flow — server inserts the response message via admin client
+        setIsEvaProcessing(true)
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 30_000)
+        try {
+          const response = await fetch('/api/ai/client-qa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: trimmed }),
+            signal: controller.signal,
+          })
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}))
+            throw new Error(errData.error || 'Erro ao processar')
+          }
+
+          // Server already inserted the response into messages table
+          queryClient.invalidateQueries({ queryKey: ['portal', 'my-messages'] })
+        } catch (err) {
+          const msg = err instanceof Error
+            ? (err.name === 'AbortError' ? 'Tempo limite excedido' : err.message)
+            : 'Erro desconhecido'
+          toast.error(`EVA nao conseguiu processar: ${msg}`)
+        } finally {
+          clearTimeout(timeout)
+          setIsEvaProcessing(false)
+          setIsEvaMode(false)
+        }
+      } else {
+        toast.success('Mensagem enviada!')
+      }
     } catch {
       toast.error('Erro ao enviar mensagem. Tente novamente.')
     } finally {
@@ -121,16 +159,16 @@ export default function ClientMessagesPage() {
             </div>
           ) : (
             <>
-              {[...messageList].reverse().map((msg) => {
-                const isClient = msg.sender_type === 'contact'
+              {reversedMessages.map((msg) => {
+                const isClientMsg = msg.sender_type === 'contact'
                 return (
                   <div
                     key={msg.id}
-                    className={`flex ${isClient ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${isClientMsg ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
                       className={`max-w-[75%] rounded-lg px-4 py-3 ${
-                        isClient
+                        isClientMsg
                           ? 'bg-primary text-white'
                           : 'bg-gray-100 text-gray-900'
                       }`}
@@ -138,16 +176,34 @@ export default function ClientMessagesPage() {
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                       <p
                         className={`text-xs mt-1 ${
-                          isClient ? 'text-white/70' : 'text-gray-400'
+                          isClientMsg ? 'text-white/70' : 'text-gray-400'
                         }`}
                       >
                         {formatDateTime(msg.created_at)}
-                        {msg.read_at && !isClient && ' - Lida'}
+                        {msg.read_at && !isClientMsg && ' - Lida'}
                       </p>
                     </div>
                   </div>
                 )
               })}
+
+              {/* EVA processing indicator */}
+              {isEvaProcessing && (
+                <div className="flex justify-start">
+                  <div className="max-w-[75%] rounded-lg px-4 py-3 bg-primary/5 border border-primary/20">
+                    <div className="flex items-center space-x-2">
+                      <SparklesIcon className="h-4 w-4 text-primary animate-pulse" />
+                      <p className="text-sm text-primary font-medium">EVA esta buscando informacoes...</p>
+                    </div>
+                    <div className="flex space-x-1 mt-2">
+                      <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div ref={bottomRef} />
             </>
           )}
@@ -158,12 +214,28 @@ export default function ClientMessagesPage() {
           onSubmit={handleSend}
           className="border-t border-gray-200 p-4 flex items-end gap-3"
         >
+          <button
+            type="button"
+            onClick={() => setIsEvaMode(!isEvaMode)}
+            disabled={sending || isEvaProcessing}
+            className={`flex-shrink-0 p-2 rounded-md transition-colors ${
+              isEvaMode
+                ? 'bg-primary text-white'
+                : 'text-gray-400 hover:text-primary hover:bg-primary/10'
+            } disabled:opacity-50`}
+            title={isEvaMode ? 'Modo EVA ativo - clique para desativar' : 'Perguntar a EVA'}
+            aria-label={isEvaMode ? 'Desativar modo EVA' : 'Ativar modo EVA'}
+          >
+            <SparklesIcon className="h-5 w-5" />
+          </button>
+
           <textarea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Digite sua mensagem..."
+            placeholder={isEvaMode ? 'Pergunte a EVA sobre seus processos...' : 'Digite sua mensagem...'}
             rows={2}
-            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm resize-none"
+            disabled={isEvaProcessing}
+            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm resize-none disabled:opacity-50 disabled:bg-gray-50"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
@@ -173,16 +245,27 @@ export default function ClientMessagesPage() {
           />
           <button
             type="submit"
-            disabled={sending || !newMessage.trim()}
+            disabled={sending || isEvaProcessing || !newMessage.trim()}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 disabled:opacity-50"
+            aria-label="Enviar mensagem"
           >
-            {sending ? (
+            {sending || isEvaProcessing ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
             ) : (
               <PaperAirplaneIcon className="h-5 w-5" />
             )}
           </button>
         </form>
+
+        {/* EVA mode indicator */}
+        {isEvaMode && !isEvaProcessing && (
+          <div className="px-4 pb-3 -mt-1">
+            <p className="text-xs text-primary flex items-center gap-1">
+              <SparklesIcon className="h-3 w-3" />
+              Modo EVA ativo — sua proxima mensagem sera respondida pela assistente de IA.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

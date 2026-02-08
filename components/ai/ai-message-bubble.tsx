@@ -6,6 +6,12 @@ import { AIToolCard } from './ai-tool-card'
 import type { AIMessage } from '@/types/database'
 import { useState } from 'react'
 
+const SOURCE_LABELS: Record<string, string> = {
+  chat_ghost: 'via Chat',
+  client_portal: 'via Portal do Cliente',
+  proactive: 'Notificacao Automatica',
+}
+
 interface AIMessageBubbleProps {
   message: AIMessage
   onFeedback?: (messageId: string, rating: 'positive' | 'negative') => void
@@ -21,6 +27,10 @@ export function AIMessageBubble({ message, onFeedback }: AIMessageBubbleProps) {
     onFeedback?.(message.id, rating)
   }
 
+  const sourceLabel = message.source_type && message.source_type !== 'widget'
+    ? SOURCE_LABELS[message.source_type]
+    : null
+
   return (
     <div className={cn('flex gap-3 px-4 py-2', isUser ? 'justify-end' : 'justify-start')}>
       {/* Avatar for assistant */}
@@ -31,6 +41,13 @@ export function AIMessageBubble({ message, onFeedback }: AIMessageBubbleProps) {
       )}
 
       <div className={cn('max-w-[85%] space-y-2')}>
+        {/* Source label for non-widget messages */}
+        {sourceLabel && (
+          <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+            {sourceLabel}
+          </span>
+        )}
+
         {/* Message content */}
         {message.content && (
           <div

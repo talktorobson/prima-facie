@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-const ALLOWED_ROLES = ['super_admin', 'admin', 'lawyer', 'staff']
+const DEFAULT_ALLOWED_ROLES = ['super_admin', 'admin', 'lawyer', 'staff']
 
-export async function verifyAIUser() {
+export async function verifyAIUser(allowedRoles?: string[]) {
+  const roles = allowedRoles || DEFAULT_ALLOWED_ROLES
   const supabase = createClient()
 
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -22,8 +23,8 @@ export async function verifyAIUser() {
     return { error: NextResponse.json({ error: 'Perfil não encontrado' }, { status: 403 }) }
   }
 
-  if (!ALLOWED_ROLES.includes(profile.user_type)) {
-    return { error: NextResponse.json({ error: 'Acesso restrito. Clientes não podem usar a assistente de IA.' }, { status: 403 }) }
+  if (!roles.includes(profile.user_type)) {
+    return { error: NextResponse.json({ error: 'Acesso restrito. Seu perfil não tem permissão para usar a assistente de IA.' }, { status: 403 }) }
   }
 
   return { profile, session }

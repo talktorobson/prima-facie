@@ -27,6 +27,37 @@ import {
   CASE_CATEGORY_OPTIONS
 } from '@/lib/billing/case-billing-types'
 
+// Mock Supabase client — everything inside factory to avoid TDZ issues with jest.mock hoisting
+jest.mock('@/lib/supabase/client', () => {
+  const mock: Record<string, any> = {}
+  Object.assign(mock, {
+    from: jest.fn(() => mock),
+    select: jest.fn(() => mock),
+    insert: jest.fn(() => mock),
+    update: jest.fn(() => mock),
+    delete: jest.fn(() => mock),
+    eq: jest.fn(() => mock),
+    neq: jest.fn(() => mock),
+    gte: jest.fn(() => mock),
+    lte: jest.fn(() => mock),
+    order: jest.fn(() => mock),
+    limit: jest.fn(() => mock),
+    in: jest.fn(() => mock),
+    is: jest.fn(() => mock),
+    or: jest.fn(() => mock),
+    filter: jest.fn(() => mock),
+    single: jest.fn(() => ({ data: null, error: null })),
+    maybeSingle: jest.fn(() => ({ data: null, error: null })),
+    data: null,
+    error: null,
+  })
+  return { createClient: () => mock }
+})
+
+// Get reference to the mock object created inside the factory
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const mockSupabase = require('@/lib/supabase/client').createClient() as Record<string, any>
+
 // Mock data for testing
 const mockLawFirmId = 'test-law-firm-123'
 const mockMatterId = 'test-matter-123'
@@ -211,7 +242,14 @@ describe('Phase 8.5: Case Billing System Types and Enums', () => {
 })
 
 describe('Phase 8.5: Case Billing Service Layer', () => {
-  
+
+  beforeEach(() => {
+    mockSupabase.single.mockReset().mockReturnValue({ data: null, error: null })
+    mockSupabase.maybeSingle.mockReset().mockReturnValue({ data: null, error: null })
+    mockSupabase.data = null
+    mockSupabase.error = null
+  })
+
   describe('Service Instance', () => {
     it('should create service instance', () => {
       expect(caseBillingService).toBeInstanceOf(CaseBillingService)
@@ -266,6 +304,7 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
   
   describe('Case Type Management', () => {
     it('should get case types for law firm', async () => {
+      mockSupabase.data = [{ id: 'ct-1', law_firm_id: 'firm-1', name: 'Trabalhista', code: 'TRAB', category: 'labor', default_billing_method: 'percentage', default_hourly_rate: 300, default_percentage_rate: 20, default_success_fee_rate: 15, complexity_multiplier: 1.2, estimated_hours_range: '40-80', minimum_fee_hourly: 1500, minimum_fee_percentage: 2500, minimum_fee_fixed: 2000, is_active: true, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' }]
       const caseTypes = await caseBillingService.getCaseTypes('firm-1')
       
       expect(Array.isArray(caseTypes)).toBe(true)
@@ -283,6 +322,7 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
     })
     
     it('should create new case type', async () => {
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'ct-new', law_firm_id: mockLawFirmId, ...mockCaseTypeData, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' }, error: null })
       const newCaseType = await caseBillingService.createCaseType(mockLawFirmId, mockCaseTypeData)
       
       expect(newCaseType.id).toBeDefined()
@@ -300,7 +340,8 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
         complexity_multiplier: 1.5,
         is_active: false
       }
-      
+
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'ct-1', law_firm_id: mockLawFirmId, ...mockCaseTypeData, ...updates, updated_at: new Date().toISOString() }, error: null })
       const updatedCaseType = await caseBillingService.updateCaseType('ct-1', updates)
       
       expect(updatedCaseType.name).toBe(updates.name)
@@ -309,6 +350,9 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
     })
     
     it('should create all preset case types', async () => {
+      PRESET_CASE_TYPES.forEach((preset, i) => {
+        mockSupabase.single.mockReturnValueOnce({ data: { id: `ct-preset-${i}`, law_firm_id: mockLawFirmId, ...preset, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' }, error: null })
+      })
       const createdCaseTypes = await caseBillingService.createPresetCaseTypes(mockLawFirmId)
       
       expect(createdCaseTypes.length).toBe(PRESET_CASE_TYPES.length)
@@ -339,6 +383,10 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
   
   describe('Case Billing Method Management', () => {
     it('should create new billing method', async () => {
+      // First .single(): getCaseType lookup
+      mockSupabase.single.mockReturnValueOnce({ data: { minimum_fee_hourly: 1500, minimum_fee_percentage: 2500, minimum_fee_fixed: 2000 }, error: null })
+      // Second .single(): insert returns the created billing method
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'bm-new', matter_id: mockBillingMethodData.matter_id, case_type_id: mockBillingMethodData.case_type_id, billing_type: mockBillingMethodData.billing_type, percentage_rate: mockBillingMethodData.percentage_rate, success_fee_percentage: mockBillingMethodData.success_fee_percentage, success_fee_applies_to: mockBillingMethodData.success_fee_applies_to, minimum_fee: 2500, minimum_fee_source: 'case_type', has_subscription_discount: false, discount_percentage: 0, discount_amount: 0, status: 'draft', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' }, error: null })
       const newBillingMethod = await caseBillingService.createCaseBillingMethod(
         mockLawFirmId,
         mockBillingMethodData
@@ -367,6 +415,7 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
     
     it('should approve billing method', async () => {
       const approverUserId = 'approver-123'
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'bm-1', status: 'approved', approved_by: approverUserId, approved_at: new Date().toISOString(), updated_at: new Date().toISOString() }, error: null })
       const approvedMethod = await caseBillingService.approveCaseBillingMethod('bm-1', approverUserId)
       
       expect(approvedMethod.status).toBe('approved')
@@ -375,6 +424,7 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
     })
     
     it('should activate billing method', async () => {
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'bm-1', status: 'active', updated_at: new Date().toISOString() }, error: null })
       const activatedMethod = await caseBillingService.activateCaseBillingMethod('bm-1')
       
       expect(activatedMethod.status).toBe('active')
@@ -385,7 +435,11 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
         total_discount_amount: 1500.00,
         discount_percentage: 15.0
       }
-      
+
+      // First .single(): getCaseBillingMethod lookup
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'bm-1', final_amount: 10000, minimum_fee: 2000 }, error: null })
+      // Second .single(): updateCaseBillingMethod returns updated method
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'bm-1', has_subscription_discount: true, discount_amount: 1500, discount_percentage: 15, original_amount: 10000, final_amount: 8500 }, error: null })
       const updatedMethod = await caseBillingService.applyDiscountToBillingMethod('bm-1', discountDetails)
       
       expect(updatedMethod.has_subscription_discount).toBe(true)
@@ -499,6 +553,8 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
     })
     
     it('should apply subscription discount when eligible', async () => {
+      // getClientContext .single() for discount check (active subscriber)
+      mockSupabase.single.mockReturnValueOnce({ data: null, error: null })
       const billingMethod: CaseBillingMethod = {
         id: 'bm-with-discount',
         matter_id: mockMatterId,
@@ -576,6 +632,11 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
   
   describe('Case Outcome Management', () => {
     it('should create case outcome with success fee calculation', async () => {
+      // getCaseBillingMethods returns array (non-single chain)
+      mockSupabase.data = [{ id: 'bm-1', success_fee_percentage: 15.0 }]
+      // createCaseOutcome insert .single()
+      const expectedFeeAmount = mockCaseOutcomeData.effective_value_redeemed! * (15 / 100)
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'co-new', ...mockCaseOutcomeData, success_fee_percentage: 15, success_fee_amount: expectedFeeAmount, success_fee_calculation_method: 'percentage', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' }, error: null })
       const newOutcome = await caseBillingService.createCaseOutcome(mockLawFirmId, mockCaseOutcomeData)
       
       expect(newOutcome.id).toBeDefined()
@@ -605,7 +666,8 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
         success_percentage: 80.0,
         notes: 'Updated outcome notes'
       }
-      
+
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'co-1', ...updates, updated_at: new Date().toISOString() }, error: null })
       const updatedOutcome = await caseBillingService.updateCaseOutcome('co-1', updates)
       
       expect(updatedOutcome.effective_value_redeemed).toBe(updates.effective_value_redeemed)
@@ -616,12 +678,14 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
   
   describe('Cross-selling Integration', () => {
     it('should check cross-selling opportunity for non-subscriber', async () => {
+      // getClientContext queries contacts table (.single()) — returns null → uses default context
+      mockSupabase.single.mockReturnValueOnce({ data: null, error: null })
       const opportunity = await caseBillingService.checkCrossSellingOpportunity(
         mockMatterId,
         75000.00,
         'corporate'
       )
-      
+
       expect(opportunity).toBeDefined()
       expect(opportunity.potential_discount_percentage).toBeGreaterThan(0)
       expect(opportunity.projected_savings).toBeGreaterThan(0)
@@ -632,6 +696,7 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
   
   describe('Business Parameters', () => {
     it('should get business parameters for law firm', async () => {
+      mockSupabase.data = [{ id: 'bp-1', law_firm_id: 'firm-1', parameter_category: 'billing_rates', parameter_name: 'Junior Lawyer Rate', parameter_key: 'junior_lawyer_rate', parameter_value: '150.00', parameter_type: 'currency' }]
       const parameters = await caseBillingService.getBusinessParameters('firm-1')
       
       expect(Array.isArray(parameters)).toBe(true)
@@ -649,6 +714,7 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
     })
     
     it('should get business parameters by category', async () => {
+      mockSupabase.data = [{ id: 'bp-1', law_firm_id: 'firm-1', parameter_category: 'billing_rates', parameter_name: 'Junior Lawyer Rate', parameter_key: 'junior_lawyer_rate', parameter_value: '150.00', parameter_type: 'currency' }]
       const billingRates = await caseBillingService.getBusinessParameters('firm-1', 'billing_rates')
       
       expect(Array.isArray(billingRates)).toBe(true)
@@ -659,6 +725,7 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
     
     it('should update business parameter', async () => {
       const newValue = '350.00'
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'bp-1', law_firm_id: 'firm-1', parameter_key: 'junior_lawyer_rate', parameter_value: newValue, updated_at: new Date().toISOString() }, error: null })
       const updatedParam = await caseBillingService.updateBusinessParameter(
         'firm-1',
         'junior_lawyer_rate',
@@ -693,7 +760,14 @@ describe('Phase 8.5: Case Billing Service Layer', () => {
 })
 
 describe('Phase 8.5: Business Logic Validation', () => {
-  
+
+  beforeEach(() => {
+    mockSupabase.single.mockReset().mockReturnValue({ data: null, error: null })
+    mockSupabase.maybeSingle.mockReset().mockReturnValue({ data: null, error: null })
+    mockSupabase.data = null
+    mockSupabase.error = null
+  })
+
   describe('Brazilian Legal Market Specifics', () => {
     it('should support all Brazilian case categories', () => {
       const brazilianCategories = ['labor', 'corporate', 'criminal', 'family', 'civil', 'tax', 'consumer']
@@ -721,6 +795,10 @@ describe('Phase 8.5: Business Logic Validation', () => {
   
   describe('Revenue Optimization Logic', () => {
     it('should incentivize subscription adoption through discounts', async () => {
+      // Mock: 2x calculateCaseBilling calls → each triggers discountService for active subs
+      // getClientContext .single() for each call
+      mockSupabase.single.mockReturnValueOnce({ data: null, error: null })
+      mockSupabase.single.mockReturnValueOnce({ data: null, error: null })
       const nonSubscriberCalculation: CaseBillingCalculationInput = {
         matter_id: 'matter-non-subscriber',
         case_value: 100000.00,
@@ -773,6 +851,8 @@ describe('Phase 8.5: Business Logic Validation', () => {
     })
     
     it('should maintain profitability through minimum fee enforcement', async () => {
+      // getClientContext .single() for discount check (active subscriber)
+      mockSupabase.single.mockReturnValueOnce({ data: null, error: null })
       const billingMethod: CaseBillingMethod = {
         id: 'bm-profitability',
         matter_id: mockMatterId,
@@ -806,6 +886,8 @@ describe('Phase 8.5: Business Logic Validation', () => {
   
   describe('Risk Management', () => {
     it('should prevent excessive discounts', async () => {
+      // getClientContext .single() for discount check (active subscriber)
+      mockSupabase.single.mockReturnValueOnce({ data: null, error: null })
       const billingMethod: CaseBillingMethod = {
         id: 'bm-risk',
         matter_id: mockMatterId,
@@ -871,9 +953,28 @@ describe('Phase 8.5: Business Logic Validation', () => {
 })
 
 describe('Phase 8.5: Integration Tests', () => {
-  
+
   describe('End-to-End Case Billing Flow', () => {
     it('should complete full case billing lifecycle', async () => {
+      // Mock: 1. createCaseType .single()
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'ct-e2e', law_firm_id: mockLawFirmId, ...mockCaseTypeData, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' }, error: null })
+      // Mock: 2. createCaseBillingMethod → getCaseType .single() + insert .single()
+      mockSupabase.single.mockReturnValueOnce({ data: { minimum_fee_percentage: 2500 }, error: null })
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'bm-e2e', matter_id: mockBillingMethodData.matter_id, billing_type: 'percentage', percentage_rate: 20, success_fee_percentage: 15, success_fee_applies_to: 'recovered', minimum_fee: 2500, minimum_fee_source: 'case_type', has_subscription_discount: false, discount_percentage: 0, discount_amount: 0, status: 'draft', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' }, error: null })
+      // Mock: 3. approveCaseBillingMethod .single()
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'bm-e2e', status: 'approved', approved_by: 'approver-123', approved_at: new Date().toISOString() }, error: null })
+      // Mock: 4. activateCaseBillingMethod .single()
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'bm-e2e', status: 'active', billing_type: 'percentage', percentage_rate: 20, success_fee_percentage: 15, success_fee_applies_to: 'recovered', minimum_fee: 2500, has_subscription_discount: false, discount_percentage: 0, discount_amount: 0 }, error: null })
+      // Mock: 5. calculateCaseBilling → discountService queries (.single() for getClientContext)
+      mockSupabase.single.mockReturnValueOnce({ data: null, error: null })
+      // Mock: 6. createCaseOutcome → getCaseBillingMethods (non-single, uses mockSupabase.data)
+      // We'll set data after calculateCaseBilling, but since it's async chain, set now
+      mockSupabase.data = [{ id: 'bm-e2e', success_fee_percentage: 15 }]
+      // Mock: 6b. createCaseOutcome insert .single()
+      mockSupabase.single.mockReturnValueOnce({ data: { id: 'co-e2e', ...mockCaseOutcomeData, success_fee_percentage: 15, success_fee_amount: 11250, success_fee_calculation_method: 'percentage' }, error: null })
+      // Mock: 7. checkCrossSellingOpportunity → getClientContext .single()
+      mockSupabase.single.mockReturnValueOnce({ data: null, error: null })
+
       // 1. Create case type
       const caseType = await caseBillingService.createCaseType(mockLawFirmId, mockCaseTypeData)
       expect(caseType.id).toBeDefined()
@@ -930,6 +1031,8 @@ describe('Phase 8.5: Integration Tests', () => {
   
   describe('Integration with Discount Engine', () => {
     it('should integrate seamlessly with discount service', async () => {
+      // Mock: discountService.calculateDiscount → getDiscountRules (non-single) + getClientContext .single()
+      mockSupabase.single.mockReturnValueOnce({ data: null, error: null })
       const billingMethod: CaseBillingMethod = {
         id: 'bm-integration',
         matter_id: mockMatterId,

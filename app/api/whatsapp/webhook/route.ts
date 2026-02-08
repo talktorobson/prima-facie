@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { WhatsAppService, whatsappUtils } from '@/lib/whatsapp/api'
-import { createClient } from '@/lib/supabase/client'
-
-const supabase = createClient()
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // Mock WhatsApp configuration - in production, this would come from environment variables
 const whatsappConfig = {
@@ -79,6 +77,7 @@ async function handleIncomingMessage(message: {
   filename?: string
 }) {
   try {
+    const supabase = createAdminClient()
     console.log('Processing incoming WhatsApp message:', message)
 
     // Find or create conversation for this WhatsApp number
@@ -90,39 +89,33 @@ async function handleIncomingMessage(message: {
     }
 
     // Handle media download if needed
-    let fileUrl = undefined
-    let fileName = message.filename
-    let fileSize = undefined
-    let fileType = undefined
+    const attachments: { name?: string; size?: number; type?: string; url: string }[] = []
 
     if (message.mediaId && (message.type === 'document' || message.type === 'image')) {
       const mediaResult = await whatsappService.downloadMedia(message.mediaId)
       if (mediaResult.success && mediaResult.data) {
-        // In production, upload to Supabase Storage or another service
-        // For now, we'll store the media ID as a reference
-        fileUrl = `whatsapp://media/${message.mediaId}`
-        fileSize = mediaResult.data.byteLength
-        fileType = message.type === 'image' ? 'image/jpeg' : 'application/octet-stream'
+        attachments.push({
+          name: message.filename,
+          size: mediaResult.data.byteLength,
+          type: message.type === 'image' ? 'image/jpeg' : 'application/octet-stream',
+          url: `whatsapp://media/${message.mediaId}`,
+        })
       }
     }
 
     // Save message to database
     const messageData = {
+      law_firm_id: conversation.law_firm_id,
       conversation_id: conversation.id,
-      sender_client_id: conversation.client_id, // WhatsApp messages come from clients
-      message_type: message.type === 'text' ? 'text' as const : 
-                   message.type === 'document' ? 'document' as const :
-                   message.type === 'image' ? 'image' as const : 'whatsapp' as const,
+      contact_id: conversation.contact_id,
+      sender_id: conversation.contact_id,
+      sender_type: 'contact' as const,
+      message_type: message.type === 'text' ? 'text' as const : 'file' as const,
       content: message.content,
-      file_url: fileUrl,
-      file_name: fileName,
-      file_size: fileSize,
-      file_type: fileType,
-      whatsapp_message_id: message.messageId,
-      whatsapp_status: 'delivered',
-      whatsapp_timestamp: new Date(parseInt(message.timestamp) * 1000).toISOString(),
-      is_edited: false,
-      is_deleted: false
+      external_message_id: message.messageId,
+      external_platform: 'whatsapp',
+      status: 'delivered' as const,
+      attachments: attachments.length > 0 ? attachments : [],
     }
 
     const { data: savedMessage, error } = await supabase
@@ -156,40 +149,27 @@ async function handleMessageStatus(status: {
   recipientId: string
 }) {
   try {
+    const supabase = createAdminClient()
     console.log('Processing WhatsApp message status:', status)
 
     // Update message status in database
+    const updateData: Record<string, string> = {
+      status: status.status,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (status.status === 'read') {
+      updateData.read_at = new Date(parseInt(status.timestamp) * 1000).toISOString()
+    }
+
     const { error } = await supabase
       .from('messages')
-      .update({
-        whatsapp_status: status.status,
-        updated_at: new Date().toISOString()
-      })
-      .eq('whatsapp_message_id', status.messageId)
+      .update(updateData)
+      .eq('external_message_id', status.messageId)
 
     if (error) {
       console.error('Error updating message status:', error)
       return
-    }
-
-    // Also update message_status table for read receipts
-    if (status.status === 'read') {
-      const { data: message } = await supabase
-        .from('messages')
-        .select('conversation_id, sender_user_id')
-        .eq('whatsapp_message_id', status.messageId)
-        .single()
-
-      if (message && message.sender_user_id) {
-        await supabase
-          .from('message_status')
-          .upsert({
-            message_id: status.messageId,
-            user_id: message.sender_user_id,
-            status: 'read',
-            timestamp: new Date(parseInt(status.timestamp) * 1000).toISOString()
-          })
-      }
     }
 
     console.log('WhatsApp message status updated')
@@ -199,74 +179,48 @@ async function handleMessageStatus(status: {
 }
 
 // Find or create conversation for WhatsApp number
-async function findOrCreateWhatsAppConversation(whatsappPhone: string) {
+async function findOrCreateWhatsAppConversation(whatsappPhone: string): Promise<{ id: string; law_firm_id: string; contact_id?: string } | null> {
   try {
-    // First, try to find existing conversation by WhatsApp phone
+    const supabase = createAdminClient()
+
+    // Find contact by phone number (contacts table has phone + mobile columns)
+    const cleanPhone = whatsappPhone.replace(/\D/g, '')
+    const { data: contact } = await supabase
+      .from('contacts')
+      .select('*')
+      .or(`phone.ilike.%${cleanPhone}%,mobile.ilike.%${cleanPhone}%`)
+      .single()
+
+    if (!contact) {
+      console.error('No contact found for WhatsApp number:', whatsappPhone)
+      return null
+    }
+
+    // Check for existing active whatsapp conversation with this contact
     const { data: existingConversation } = await supabase
       .from('conversations')
       .select('*')
-      .eq('whatsapp_phone', whatsappPhone)
+      .eq('contact_id', contact.id)
+      .eq('conversation_type', 'whatsapp')
       .eq('status', 'active')
       .single()
 
     if (existingConversation) {
-      return existingConversation
+      return { ...existingConversation, contact_id: contact.id }
     }
-
-    // Try to find client by phone number
-    const cleanPhone = whatsappPhone.replace(/\D/g, '')
-    const { data: client } = await supabase
-      .from('clients')
-      .select('*')
-      .or(`phone.ilike.%${cleanPhone}%,mobile.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`)
-      .single()
-
-    if (!client) {
-      console.error('No client found for WhatsApp number:', whatsappPhone)
-      return null
-    }
-
-    // Get default law firm and topic
-    const { data: lawFirm } = await supabase
-      .from('law_firms')
-      .select('id')
-      .limit(1)
-      .single()
-
-    // Determine topic based on message content
-    let topicName = 'Geral' // Default topic
-    
-    const messageContent = message.content.toLowerCase()
-    if (messageContent.includes('urgente') || messageContent.includes('emergency')) {
-      topicName = 'Urgente'
-    } else if (messageContent.includes('documento') || messageContent.includes('arquivo')) {
-      topicName = 'Documentos'
-    } else if (messageContent.includes('audiencia') || messageContent.includes('prazo')) {
-      topicName = 'Audiências'
-    } else if (messageContent.includes('consulta') || messageContent.includes('duvida')) {
-      topicName = 'Consulta Jurídica'
-    }
-
-    const { data: defaultTopic } = await supabase
-      .from('conversation_topics')
-      .select('id')
-      .eq('name', topicName)
-      .limit(1)
-      .single()
 
     // Create new WhatsApp conversation
     const { data: newConversation, error } = await supabase
       .from('conversations')
       .insert({
-        law_firm_id: lawFirm?.id,
-        topic_id: defaultTopic?.id,
-        client_id: client.id,
-        title: `WhatsApp - ${client.name}`,
+        law_firm_id: contact.law_firm_id,
+        contact_id: contact.id,
+        title: `WhatsApp - ${contact.full_name || contact.first_name || whatsappPhone}`,
+        description: `Conversa WhatsApp iniciada pelo contato ${whatsappPhone}`,
         conversation_type: 'whatsapp',
         status: 'active',
         priority: 'normal',
-        is_whatsapp_enabled: true,
-        whatsapp_phone: whatsappPhone
+        topic: 'Geral',
       })
       .select()
       .single()
@@ -276,22 +230,21 @@ async function findOrCreateWhatsAppConversation(whatsappPhone: string) {
       return null
     }
 
-    // Add client as participant
+    // Add contact as participant
     await supabase
       .from('conversation_participants')
       .insert({
         conversation_id: newConversation.id,
-        client_id: client.id,
-        participant_type: 'client',
-        role: 'participant'
+        contact_id: contact.id,
+        role: 'participant',
       })
 
-    // Add default lawyer as participant (get first lawyer from the firm)
+    // Add default lawyer as participant (first lawyer from the firm)
     const { data: lawyer } = await supabase
       .from('users')
       .select('id')
-      .eq('law_firm_id', lawFirm?.id)
-      .eq('role', 'lawyer')
+      .eq('law_firm_id', contact.law_firm_id)
+      .eq('user_type', 'lawyer')
       .limit(1)
       .single()
 
@@ -301,13 +254,12 @@ async function findOrCreateWhatsAppConversation(whatsappPhone: string) {
         .insert({
           conversation_id: newConversation.id,
           user_id: lawyer.id,
-          participant_type: 'lawyer',
-          role: 'moderator'
+          role: 'moderator',
         })
     }
 
     console.log('Created new WhatsApp conversation:', newConversation)
-    return newConversation
+    return { ...newConversation, contact_id: contact.id }
 
   } catch (error) {
     console.error('Error finding/creating WhatsApp conversation:', error)
@@ -316,8 +268,9 @@ async function findOrCreateWhatsAppConversation(whatsappPhone: string) {
 }
 
 // Send auto-reply for messages outside business hours
-async function sendAutoReply(to: string, conversation: any) {
+async function sendAutoReply(to: string, conversation: { id: string; law_firm_id: string; contact_id?: string }) {
   try {
+    const supabase = createAdminClient()
     const autoReplyMessage = `Olá! Recebemos sua mensagem fora do horário de atendimento.
 
 📞 Horário de Atendimento:
@@ -331,18 +284,21 @@ Obrigado!
 Dávila Reis Advocacia`
 
     const result = await whatsappService.sendTextMessage(to, autoReplyMessage)
-    
+
     if (result.success) {
       // Save auto-reply to database
       await supabase
         .from('messages')
         .insert({
+          law_firm_id: conversation.law_firm_id,
           conversation_id: conversation.id,
-          sender_user_id: null, // System message
+          sender_id: null,
+          sender_type: 'system',
           message_type: 'system',
           content: 'Mensagem automática enviada (fora do horário)',
-          whatsapp_message_id: result.messageId,
-          whatsapp_status: 'sent'
+          external_message_id: result.messageId,
+          external_platform: 'whatsapp',
+          status: 'sent',
         })
     }
   } catch (error) {

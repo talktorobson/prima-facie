@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import type { WebsiteContentPreview } from './types'
 
 interface Props {
@@ -11,7 +12,38 @@ interface Props {
 
 export default function WebsiteContentPreviewSection({ data, slug }: Props) {
   const [email, setEmail] = useState('')
+  const [subscribing, setSubscribing] = useState(false)
+  const [subscribeMsg, setSubscribeMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const base = `/site/${slug}`
+
+  async function handleSubscribe() {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setSubscribeMsg({ type: 'error', text: 'Por favor, informe um e-mail valido.' })
+      return
+    }
+
+    setSubscribing(true)
+    setSubscribeMsg(null)
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || 'Erro ao processar inscricao.')
+      }
+
+      setSubscribeMsg({ type: 'success', text: 'Inscricao realizada com sucesso!' })
+      setEmail('')
+    } catch (err) {
+      setSubscribeMsg({ type: 'error', text: err instanceof Error ? err.message : 'Erro ao processar inscricao.' })
+    } finally {
+      setSubscribing(false)
+    }
+  }
 
   return (
     <section className="py-24 bg-website-charcoal">
@@ -60,11 +92,22 @@ export default function WebsiteContentPreviewSection({ data, slug }: Props) {
               />
               <button
                 type="button"
-                className="px-6 py-3 bg-website-accent text-white font-medium text-sm tracking-wide hover:opacity-90 transition-opacity whitespace-nowrap"
+                onClick={handleSubscribe}
+                disabled={subscribing}
+                className="px-6 py-3 bg-website-accent text-white font-medium text-sm tracking-wide hover:opacity-90 transition-opacity whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {data.newsletter.button_text}
+                {subscribing ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" />Enviando...</>
+                ) : (
+                  data.newsletter.button_text
+                )}
               </button>
             </div>
+            {subscribeMsg && (
+              <p className={`text-sm mt-1 ${subscribeMsg.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                {subscribeMsg.text}
+              </p>
+            )}
             <p className="text-xs text-gray-500">{data.newsletter.disclaimer}</p>
           </div>
         )}

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { MapPin, Phone, Mail, Clock, MessageCircle } from 'lucide-react'
+import { useState, type FormEvent } from 'react'
+import { MapPin, Phone, Mail, Clock, MessageCircle, Loader2 } from 'lucide-react'
 import ScrollReveal from '@/components/landing/scroll-reveal'
 
 const contactInfo = [
@@ -35,9 +35,51 @@ export default function Contact() {
     company: '',
     message: '',
   })
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState('')
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    setError('')
+
+    if (!form.name || !form.email || !form.phone || !form.message) {
+      setError('Por favor, preencha todos os campos obrigatorios.')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          company_name: form.company || undefined,
+          subject: 'consultoria' as const,
+          urgency: 'normal' as const,
+          details: { description: form.message },
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || 'Erro ao enviar mensagem.')
+      }
+
+      setSubmitted(true)
+      setForm({ name: '', email: '', phone: '', company: '', message: '' })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao enviar mensagem. Tente novamente.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const inputClass =
@@ -90,11 +132,27 @@ export default function Contact() {
 
           {/* Right: form */}
           <ScrollReveal delay="100ms">
-            <form className="bg-white border border-landing-mist/60 p-8 md:p-10">
+            <form onSubmit={handleSubmit} className="bg-white border border-landing-mist/60 p-8 md:p-10">
               <h3 className="text-xl font-serif font-semibold text-landing-ink mb-6">
                 Como podemos ajudar?
               </h3>
+
+              {submitted ? (
+                <div className="text-center py-8">
+                  <div className="text-landing-gold text-4xl mb-4">&#10003;</div>
+                  <h4 className="text-lg font-semibold text-landing-ink mb-2">Mensagem enviada!</h4>
+                  <p className="text-sm text-landing-stone mb-6">Responderemos em ate 24 horas.</p>
+                  <button type="button" onClick={() => setSubmitted(false)} className="text-sm text-landing-gold hover:underline">
+                    Enviar outra mensagem
+                  </button>
+                </div>
+              ) : (
               <div className="space-y-4">
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
+                    {error}
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-medium text-landing-ink mb-1.5">
                     Nome Completo *
@@ -105,6 +163,7 @@ export default function Contact() {
                     onChange={handleChange}
                     placeholder="Seu nome completo"
                     className={inputClass}
+                    required
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -119,6 +178,7 @@ export default function Contact() {
                       onChange={handleChange}
                       placeholder="seu@email.com"
                       className={inputClass}
+                      required
                     />
                   </div>
                   <div>
@@ -131,6 +191,7 @@ export default function Contact() {
                       onChange={handleChange}
                       placeholder="(15) 99999-9999"
                       className={inputClass}
+                      required
                     />
                   </div>
                 </div>
@@ -157,18 +218,25 @@ export default function Contact() {
                     placeholder="Descreva sua necessidade jurídica..."
                     rows={4}
                     className={inputClass}
+                    required
                   />
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-landing-gold text-white py-3.5 text-sm font-medium tracking-wide hover:bg-landing-gold-light transition-colors"
+                  disabled={submitting}
+                  className="w-full bg-landing-gold text-white py-3.5 text-sm font-medium tracking-wide hover:bg-landing-gold-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Enviar Mensagem
+                  {submitting ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" />Enviando...</>
+                  ) : (
+                    'Enviar Mensagem'
+                  )}
                 </button>
                 <p className="text-xs text-landing-stone text-center">
                   Seus dados estao protegidos pela LGPD. Responderemos em ate 24 horas.
                 </p>
               </div>
+              )}
             </form>
           </ScrollReveal>
         </div>

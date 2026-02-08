@@ -286,60 +286,80 @@ class ChatNotificationService {
     return notification
   }
 
-  // Send email notification
+  // Send email notification via server API (uses Nodemailer on the backend)
   private async sendEmailNotification(
     notification: ChatNotification,
     preferences: NotificationPreference
   ): Promise<void> {
     try {
-      // In production, integrate with SendGrid or similar service
-      console.log('Sending email notification:', {
-        to: preferences.user_id || preferences.client_id,
-        subject: notification.title,
-        content: notification.content
+      const recipientId = preferences.user_id || preferences.client_id
+      if (!recipientId) return
+
+      // Look up recipient email from users table
+      const { data: user } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', recipientId)
+        .single()
+
+      if (!user?.email) {
+        console.warn('No email found for recipient:', recipientId)
+        return
+      }
+
+      await fetch('/api/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          channel: 'email',
+          to: user.email,
+          subject: notification.title,
+          content: notification.content,
+        }),
       })
-      
-      // Mock email sending
-      await new Promise(resolve => setTimeout(resolve, 100))
     } catch (error) {
       console.error('Error sending email notification:', error)
     }
   }
 
-  // Send push notification
+  // Push notifications — no infrastructure configured yet
   private async sendPushNotification(
-    notification: ChatNotification,
-    preferences: NotificationPreference
+    _notification: ChatNotification,
+    _preferences: NotificationPreference
   ): Promise<void> {
-    try {
-      // In production, integrate with Firebase Cloud Messaging or similar
-      console.log('Sending push notification:', {
-        to: preferences.user_id || preferences.client_id,
-        title: notification.title,
-        body: notification.content
-      })
-      
-      // Mock push notification
-      await new Promise(resolve => setTimeout(resolve, 100))
-    } catch (error) {
-      console.error('Error sending push notification:', error)
-    }
+    // No-op: push notification infrastructure (FCM/APNs) not yet configured
   }
 
-  // Send WhatsApp notification
+  // Send WhatsApp notification via server API (uses Meta Graph API on the backend)
   private async sendWhatsAppNotification(
     notification: ChatNotification,
     preferences: NotificationPreference
   ): Promise<void> {
     try {
-      // In production, use WhatsApp Business API
-      console.log('Sending WhatsApp notification:', {
-        to: preferences.user_id,
-        message: `${notification.title}\n\n${notification.content}`
+      const recipientId = preferences.user_id
+      if (!recipientId) return
+
+      // Look up recipient phone from users table
+      const { data: user } = await supabase
+        .from('users')
+        .select('phone')
+        .eq('id', recipientId)
+        .single()
+
+      if (!user?.phone) {
+        console.warn('No phone found for recipient:', recipientId)
+        return
+      }
+
+      await fetch('/api/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          channel: 'whatsapp',
+          to: user.phone,
+          message: `${notification.title}\n\n${notification.content}`,
+        }),
       })
-      
-      // Mock WhatsApp notification
-      await new Promise(resolve => setTimeout(resolve, 100))
     } catch (error) {
       console.error('Error sending WhatsApp notification:', error)
     }

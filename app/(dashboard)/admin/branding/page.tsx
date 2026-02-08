@@ -4,6 +4,8 @@ import { AdminOnly } from '@/components/auth/role-guard'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useLawFirm, useUpdateLawFirm } from '@/lib/queries/useSettings'
 import { useToast } from '@/components/ui/toast-provider'
+import { useSupabase } from '@/components/providers'
+import { uploadFile } from '@/lib/supabase/storage'
 import { useState, useEffect } from 'react'
 import {
   SwatchIcon,
@@ -17,6 +19,7 @@ import Link from 'next/link'
 export default function BrandingPage() {
   const effectiveLawFirmId = useEffectiveLawFirmId()
   const toast = useToast()
+  const supabase = useSupabase()
   const { data: lawFirm, isLoading } = useLawFirm(effectiveLawFirmId ?? undefined)
   const updateLawFirm = useUpdateLawFirm()
   const [uploadingLogo, setUploadingLogo] = useState(false)
@@ -80,10 +83,23 @@ export default function BrandingPage() {
       return
     }
 
+    if (!effectiveLawFirmId) {
+      toast.error('Escritorio nao identificado.')
+      return
+    }
+
     setUploadingLogo(true)
     try {
-      const url = URL.createObjectURL(file)
-      setLogoUrl(url)
+      const ext = file.name.split('.').pop() || 'png'
+      const storagePath = `${effectiveLawFirmId}/branding/logo.${ext}`
+
+      await uploadFile(supabase, 'documents', storagePath, file)
+
+      const { data: urlData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(storagePath)
+
+      setLogoUrl(urlData.publicUrl)
       toast.info('Logo carregada. Salve as alteracoes para confirmar.')
     } catch {
       toast.error('Erro ao carregar logo. Tente novamente.')

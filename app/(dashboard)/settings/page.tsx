@@ -19,14 +19,11 @@ import {
   ShieldCheckIcon,
   CurrencyDollarIcon,
   CloudIcon,
-  PaintBrushIcon,
   CheckCircleIcon,
-  EyeIcon,
-  EyeSlashIcon,
   CogIcon,
 } from '@heroicons/react/24/outline'
 
-type TabId = 'firm' | 'account' | 'notifications' | 'security' | 'billing' | 'integrations' | 'appearance'
+type TabId = 'firm' | 'account' | 'notifications' | 'security' | 'billing' | 'integrations'
 
 interface TabDef {
   id: TabId
@@ -43,7 +40,6 @@ const tabs: TabDef[] = [
   { id: 'security', name: 'Seguranca', description: 'Configuracoes de seguranca e privacidade', icon: ShieldCheckIcon, allowedRoles: ['admin', 'lawyer', 'staff'] },
   { id: 'billing', name: 'Faturamento', description: 'Configuracoes de cobranca e pagamentos', icon: CurrencyDollarIcon, allowedRoles: ['admin', 'lawyer'] },
   { id: 'integrations', name: 'Integracoes', description: 'Configuracoes de integracoes e APIs', icon: CloudIcon, allowedRoles: ['admin'] },
-  { id: 'appearance', name: 'Aparencia', description: 'Personalizacoes de interface e tema', icon: PaintBrushIcon, allowedRoles: ['admin', 'lawyer', 'staff', 'client'] },
 ]
 
 interface NotificationPrefs {
@@ -61,13 +57,6 @@ interface SecurityPrefs {
   loginNotif: boolean
   dataEncryption: boolean
   auditLog: boolean
-}
-
-interface AppearancePrefs {
-  theme: string
-  language: string
-  sidebarCollapsed: boolean
-  animations: boolean
 }
 
 interface BillingFeatures {
@@ -103,13 +92,6 @@ const DEFAULT_SECURITY_PREFS: SecurityPrefs = {
   auditLog: true,
 }
 
-const DEFAULT_APPEARANCE_PREFS: AppearancePrefs = {
-  theme: 'light',
-  language: 'pt-BR',
-  sidebarCollapsed: false,
-  animations: true,
-}
-
 const DEFAULT_BILLING_FEATURES: BillingFeatures = {
   defaultRate: 350,
   invoicePrefix: 'FAT',
@@ -138,7 +120,6 @@ export default function SettingsPage() {
   const updateFirmFeatures = useUpdateFirmFeatures()
 
   const [activeTab, setActiveTab] = useState<TabId>('firm')
-  const [showPassword, setShowPassword] = useState(false)
 
   // Firm form state
   const [firmName, setFirmName] = useState('')
@@ -158,17 +139,12 @@ export default function SettingsPage() {
   const [secPrefs, setSecPrefs] = useState<SecurityPrefs>(DEFAULT_SECURITY_PREFS)
   const [secDirty, setSecDirty] = useState(false)
 
-  // Appearance preferences
-  const [appPrefs, setAppPrefs] = useState<AppearancePrefs>(DEFAULT_APPEARANCE_PREFS)
-  const [appDirty, setAppDirty] = useState(false)
-
   // Billing features (firm-level)
   const [billingPrefs, setBillingPrefs] = useState<BillingFeatures>(DEFAULT_BILLING_FEATURES)
   const [billingDirty, setBillingDirty] = useState(false)
 
-  // Integration features (firm-level)
+  // Integration features (firm-level, read-only — integrations coming soon)
   const [intPrefs, setIntPrefs] = useState<IntegrationFeatures>(DEFAULT_INTEGRATION_FEATURES)
-  const [intDirty, setIntDirty] = useState(false)
 
   // Populate firm fields when data loads
   const populateFirmFields = useCallback(() => {
@@ -203,10 +179,6 @@ export default function SettingsPage() {
       const s = userPrefs.security as Partial<SecurityPrefs> | undefined
       if (s) {
         setSecPrefs({ ...DEFAULT_SECURITY_PREFS, ...s })
-      }
-      const a = userPrefs.appearance as Partial<AppearancePrefs> | undefined
-      if (a) {
-        setAppPrefs({ ...DEFAULT_APPEARANCE_PREFS, ...a })
       }
     }
   }, [userPrefs])
@@ -276,16 +248,6 @@ export default function SettingsPage() {
     )
   }
 
-  const handleSaveAppearance = () => {
-    updateUserPreferences.mutate(
-      { appearance: appPrefs },
-      {
-        onSuccess: () => { toast.success('Preferencias de aparencia salvas!'); setAppDirty(false) },
-        onError: () => { toast.error('Erro ao salvar preferencias de aparencia.') },
-      }
-    )
-  }
-
   const handleSaveBilling = () => {
     if (!effectiveLawFirmId) return
     updateFirmFeatures.mutate(
@@ -293,17 +255,6 @@ export default function SettingsPage() {
       {
         onSuccess: () => { toast.success('Configuracoes de faturamento salvas!'); setBillingDirty(false) },
         onError: () => { toast.error('Erro ao salvar configuracoes de faturamento.') },
-      }
-    )
-  }
-
-  const handleSaveIntegrations = () => {
-    if (!effectiveLawFirmId) return
-    updateFirmFeatures.mutate(
-      { id: effectiveLawFirmId!, features: { integrations: intPrefs } },
-      {
-        onSuccess: () => { toast.success('Configuracoes de integracoes salvas!'); setIntDirty(false) },
-        onError: () => { toast.error('Erro ao salvar configuracoes de integracoes.') },
       }
     )
   }
@@ -391,15 +342,6 @@ export default function SettingsPage() {
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Funcao</label>
         <input type="text" value={profile?.user_type === 'admin' ? 'Administrador' : profile?.user_type === 'lawyer' ? 'Advogado' : profile?.user_type === 'staff' ? 'Funcionario' : 'Cliente'} readOnly className={`${inputCls} bg-gray-50`} />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-        <div className="relative">
-          <input type={showPassword ? 'text' : 'password'} placeholder="Nova senha (deixe em branco para manter atual)" className={inputCls} />
-          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center">
-            {showPassword ? <EyeSlashIcon className="h-5 w-5 text-gray-400" /> : <EyeIcon className="h-5 w-5 text-gray-400" />}
-          </button>
-        </div>
       </div>
       <p className="text-sm text-gray-500">Para alterar dados da conta, entre em contato com o administrador.</p>
     </div>
@@ -545,17 +487,13 @@ export default function SettingsPage() {
     </div>
   )
 
-  const updateIntPref = <K extends keyof IntegrationFeatures>(key: K, value: IntegrationFeatures[K]) => {
-    setIntPrefs(prev => ({ ...prev, [key]: value }))
-    setIntDirty(true)
-  }
-
   const renderIntegrationsTab = () => (
     <div className="space-y-6">
       {featuresLoading ? (
         <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
       ) : (
-        <>
+        <div className="opacity-60">
+          <p className="text-sm text-gray-500 mb-4">As integracoes abaixo estarao disponiveis em versoes futuras.</p>
           {[
             { label: 'Integracao WhatsApp', desc: 'Conectar conta do WhatsApp Business', key: 'whatsappInt' as const },
             { label: 'Google Calendar', desc: 'Sincronizar com Google Calendar', key: 'googleCalendar' as const },
@@ -563,69 +501,12 @@ export default function SettingsPage() {
             { label: 'Acesso a API', desc: 'Permitir acesso via API externa', key: 'apiAccess' as const },
           ].map(item => (
             <div key={item.key} className="flex items-center">
-              <input type="checkbox" checked={intPrefs[item.key]} onChange={e => updateIntPref(item.key, e.target.checked)} className={checkboxCls} />
-              <label className="ml-2 text-sm text-gray-700">{item.desc}</label>
+              <input type="checkbox" checked={intPrefs[item.key]} disabled className={`${checkboxCls} cursor-not-allowed`} />
+              <label className="ml-2 text-sm text-gray-400">{item.desc}</label>
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Em breve</span>
             </div>
           ))}
-          <SaveBar
-            dirty={intDirty}
-            onSave={handleSaveIntegrations}
-            onDiscard={() => {
-              const i = firmFeatures?.integrations as Partial<IntegrationFeatures> | undefined
-              setIntPrefs({ ...DEFAULT_INTEGRATION_FEATURES, ...i })
-              setIntDirty(false)
-            }}
-          />
-        </>
-      )}
-    </div>
-  )
-
-  const updateAppPref = <K extends keyof AppearancePrefs>(key: K, value: AppearancePrefs[K]) => {
-    setAppPrefs(prev => ({ ...prev, [key]: value }))
-    setAppDirty(true)
-  }
-
-  const renderAppearanceTab = () => (
-    <div className="space-y-6">
-      {prefsLoading ? (
-        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
-      ) : (
-        <>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tema</label>
-            <select value={appPrefs.theme} onChange={e => updateAppPref('theme', e.target.value)} className={inputCls}>
-              <option value="light">Claro</option>
-              <option value="dark">Escuro</option>
-              <option value="auto">Automatico</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Idioma</label>
-            <select value={appPrefs.language} onChange={e => updateAppPref('language', e.target.value)} className={inputCls}>
-              <option value="pt-BR">Portugues (Brasil)</option>
-              <option value="en-US">English (US)</option>
-              <option value="es-ES">Espanol</option>
-            </select>
-          </div>
-          <div className="flex items-center">
-            <input type="checkbox" checked={appPrefs.sidebarCollapsed} onChange={e => updateAppPref('sidebarCollapsed', e.target.checked)} className={checkboxCls} />
-            <label className="ml-2 text-sm text-gray-700">Manter menu lateral compacto por padrao</label>
-          </div>
-          <div className="flex items-center">
-            <input type="checkbox" checked={appPrefs.animations} onChange={e => updateAppPref('animations', e.target.checked)} className={checkboxCls} />
-            <label className="ml-2 text-sm text-gray-700">Habilitar animacoes na interface</label>
-          </div>
-          <SaveBar
-            dirty={appDirty}
-            onSave={handleSaveAppearance}
-            onDiscard={() => {
-              const a = userPrefs?.appearance as Partial<AppearancePrefs> | undefined
-              setAppPrefs({ ...DEFAULT_APPEARANCE_PREFS, ...a })
-              setAppDirty(false)
-            }}
-          />
-        </>
+        </div>
       )}
     </div>
   )
@@ -637,7 +518,6 @@ export default function SettingsPage() {
     security: renderSecurityTab,
     billing: renderBillingTab,
     integrations: renderIntegrationsTab,
-    appearance: renderAppearanceTab,
   }
 
   const activeTabDef = visibleTabs.find(t => t.id === activeTab) || visibleTabs[0]

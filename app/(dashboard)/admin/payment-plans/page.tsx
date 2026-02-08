@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { PageHeader } from '@/components/layout/page-header'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import {
   usePaymentPlans,
@@ -173,19 +174,21 @@ export default function PaymentPlansPage(): JSX.Element {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Planos de Pagamento</h1>
-          <p className="text-gray-600">Gerencie parcelamentos e cobranças de casos</p>
-        </div>
-        <button
-          onClick={handleCreatePlan}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Novo Plano
-        </button>
-      </div>
+      <PageHeader
+        title="Planos de Pagamento"
+        description="Gerencie parcelamentos e cobranças de casos"
+        backHref="/admin"
+        backLabel="Voltar para Admin"
+        actions={
+          <button
+            onClick={handleCreatePlan}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            <PlusIcon className="w-5 h-5 mr-2" />
+            Novo Plano
+          </button>
+        }
+      />
 
       {/* Filters */}
       <div className="bg-white p-6 rounded-lg shadow">

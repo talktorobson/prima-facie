@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { clientService, Client, ClientStats } from '@/lib/clients/client-service'
-import { 
-  PlusIcon, 
+import {
+  PlusIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
   EyeIcon,
@@ -20,6 +20,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon
 } from '@heroicons/react/24/outline'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // Note: Client data now loaded from database
 
@@ -157,6 +158,26 @@ export default function ClientsPage() {
 
   const formatDocument = (client: Client) => {
     return client.type === 'pessoa_fisica' ? client.cpf : client.cnpj
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
+            <p className="mt-2 text-gray-600">Gerencie todos os clientes do escritório</p>
+          </div>
+        </div>
+        <div className="bg-white shadow overflow-hidden sm:rounded-md p-4">
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} variant="table-row" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

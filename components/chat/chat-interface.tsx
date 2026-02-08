@@ -1,23 +1,24 @@
 'use client'
 
-import { useState, useEffect, useRef, memo, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   PaperAirplaneIcon,
   PaperClipIcon,
   FaceSmileIcon,
   EllipsisVerticalIcon,
-  UserIcon,
   PhoneIcon,
   VideoCameraIcon,
   SparklesIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 import { useConversationMessages, useSendMessage, useMarkAsRead } from '@/lib/queries/useMessages'
+import { useMessageSearch } from '@/lib/queries/useMessageSearch'
 import { useConversationRealtime, useTypingBroadcast, formatMessageTime, isMessageFromCurrentUser } from '@/lib/supabase/realtime'
 import { useSupabase } from '@/components/providers'
 import { uploadFile, getSignedUrl } from '@/lib/supabase/storage'
-import type { Conversation, Message } from '@/types/database'
-import type { TypingIndicator } from '@/lib/supabase/realtime'
-import MessageStatusIndicator from './message-status-indicator'
+import type { Conversation } from '@/types/database'
+import { MessageBubble, TypingIndicatorComponent } from './message-bubble'
+import EvaHistoryPanel from './eva-history-panel'
 import { useToast } from '@/components/ui/toast-provider'
 
 const COMMON_EMOJIS = ['😀', '😂', '👍', '❤️', '🙏', '👋', '✅', '⚖️', '📄', '📎', '🔔', '⏰', '📅', '💼', '🏛️', '📝', '🤝', '👏', '🎉', '✨']
@@ -38,148 +39,6 @@ interface ChatInterfaceProps {
   onClose?: () => void
 }
 
-interface MessageBubbleProps {
-  message: Message & { sender?: { id: string; first_name: string; last_name: string; full_name?: string } }
-  isFromCurrentUser: boolean
-  showAvatar?: boolean
-  showTime?: boolean
-}
-
-const MessageBubble = memo(({ message, isFromCurrentUser, showAvatar = true, showTime = true }: MessageBubbleProps) => {
-  const senderName = message.sender?.full_name || message.sender?.first_name || (isFromCurrentUser ? 'Voce' : 'Usuario')
-
-  const renderMessageContent = () => {
-    switch (message.message_type) {
-      case 'file': {
-        const attachment = (message as unknown as Record<string, unknown>).attachments as { name: string; size: number; type: string; url: string }[] | undefined
-        const fileInfo = attachment?.[0]
-        const formatSize = (bytes: number) => {
-          if (bytes < 1024) return `${bytes} B`
-          if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-          return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-        }
-        return (
-          <a
-            href={fileInfo?.url || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center space-x-2 p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
-          >
-            <PaperClipIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{fileInfo?.name || message.content || 'Documento'}</p>
-              {fileInfo?.size && <p className="text-xs text-gray-500">{formatSize(fileInfo.size)}</p>}
-            </div>
-          </a>
-        )
-      }
-      case 'system':
-        return (
-          <p className="text-sm italic text-gray-600 text-center">
-            {message.content}
-          </p>
-        )
-      default:
-        return <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-    }
-  }
-
-  if (message.message_type === 'system') {
-    return (
-      <div className="flex justify-center my-2">
-        <div className="bg-gray-100 rounded-full px-3 py-1">
-          {renderMessageContent()}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className={`flex ${isFromCurrentUser ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`flex max-w-xs lg:max-w-md ${isFromCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
-        {showAvatar && !isFromCurrentUser && (
-          <div className="flex-shrink-0 mr-2">
-            <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-              <UserIcon className="h-5 w-5 text-gray-600" />
-            </div>
-          </div>
-        )}
-
-        <div className={`${isFromCurrentUser ? 'mr-2' : 'ml-2'}`}>
-          {!isFromCurrentUser && showAvatar && (
-            <p className="text-xs text-gray-500 mb-1">{senderName}</p>
-          )}
-
-          <div
-            className={`rounded-lg px-3 py-2 ${
-              isFromCurrentUser
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-900'
-            }`}
-          >
-            {message.parent_message_id && (
-              <div className="border-l-2 border-gray-300 pl-2 mb-2 opacity-75">
-                <p className="text-xs">Respondendo a mensagem</p>
-              </div>
-            )}
-
-            {renderMessageContent()}
-
-            <div className={`flex items-center justify-end mt-1 space-x-1 ${
-              isFromCurrentUser ? 'text-white/70' : 'text-gray-500'
-            }`}>
-              {showTime && (
-                <span className="text-xs">{formatMessageTime(message.created_at)}</span>
-              )}
-              {isFromCurrentUser && (
-                <MessageStatusIndicator
-                  status={(message.status as 'sent' | 'delivered' | 'read' | 'failed') || 'sent'}
-                  showTooltip={true}
-                  size="sm"
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}, (prev, next) => (
-  prev.message.id === next.message.id &&
-  prev.message.status === next.message.status &&
-  prev.showAvatar === next.showAvatar &&
-  prev.showTime === next.showTime
-))
-MessageBubble.displayName = 'MessageBubble'
-
-const TypingIndicatorComponent = ({ typing }: { typing: TypingIndicator[] }) => {
-  if (typing.length === 0) return null
-
-  return (
-    <div className="flex justify-start mb-4">
-      <div className="flex max-w-xs">
-        <div className="flex-shrink-0 mr-2">
-          <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-            <UserIcon className="h-5 w-5 text-gray-600" />
-          </div>
-        </div>
-        <div className="ml-2">
-          <p className="text-xs text-gray-500 mb-1">
-            {typing.map(t => t.user_name).join(', ')} esta digitando...
-          </p>
-          <div className="bg-gray-100 rounded-lg px-3 py-2">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function ChatInterface({
   conversation,
   currentUserId,
@@ -195,19 +54,47 @@ export default function ChatInterface({
   const [isEvaProcessing, setIsEvaProcessing] = useState(false)
   const [evaDraft, setEvaDraft] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [showEvaHistory, setShowEvaHistory] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const isInitialLoadRef = useRef(true)
 
   // React Query hooks
-  const { data: messages = [], isLoading } = useConversationMessages(conversation.id)
+  const {
+    data,
+    isLoading,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useConversationMessages(conversation.id)
+  const messages = useMemo(() => (data?.pages ?? []).flat().reverse(), [data])
   const sendMessageMutation = useSendMessage()
   const markAsReadMutation = useMarkAsRead()
 
   // Real-time subscriptions
   useConversationRealtime(conversation.id)
   const { sendTyping, typingUsers } = useTypingBroadcast(conversation.id, currentUserId, currentUserName)
+
+  // Message search with debounce
+  const searchTimeoutRef = useRef<NodeJS.Timeout>()
+  const { data: searchResults = [] } = useMessageSearch(conversation.id, debouncedSearch)
+
+  useEffect(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 300)
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    }
+  }, [searchQuery])
 
   // Mark as read on conversation open (not on every message change)
   const markAsRead = markAsReadMutation.mutate
@@ -217,6 +104,24 @@ export default function ChatInterface({
     }
   }, [conversation.id, currentUserId, markAsRead])
 
+  // Clear highlight after animation
+  useEffect(() => {
+    if (!highlightedMessageId) return
+    const timer = setTimeout(() => setHighlightedMessageId(null), 2000)
+    return () => clearTimeout(timer)
+  }, [highlightedMessageId])
+
+  // Scroll to a specific message by ID and highlight it
+  const scrollToMessage = useCallback((messageId: string) => {
+    const el = document.getElementById(`msg-${messageId}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setHighlightedMessageId(messageId)
+      setShowSearch(false)
+      setSearchQuery('')
+    }
+  }, [])
+
   // Cleanup typing timeout on unmount
   useEffect(() => {
     return () => {
@@ -224,14 +129,27 @@ export default function ChatInterface({
     }
   }, [])
 
-  // Auto-scroll to bottom
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  // Auto-scroll to bottom only on initial load or when user is near bottom
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior })
+  }, [])
+
+  const isNearBottom = useCallback(() => {
+    const container = messagesContainerRef.current
+    if (!container) return true
+    return container.scrollHeight - container.scrollTop - container.clientHeight < 100
   }, [])
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages, scrollToBottom])
+    if (isInitialLoadRef.current && messages.length > 0) {
+      isInitialLoadRef.current = false
+      scrollToBottom('instant')
+      return
+    }
+    if (isNearBottom()) {
+      scrollToBottom()
+    }
+  }, [messages, scrollToBottom, isNearBottom])
 
   // Handle typing indicator
   const handleTyping = () => {
@@ -281,11 +199,15 @@ export default function ChatInterface({
         const { content } = await response.json()
         setEvaDraft(content)
       } catch (err) {
+        const retryEva = () => {
+          setNewMessage(`@eva ${evaQuery}`)
+          setTimeout(() => handleSendMessage(), 0)
+        }
         if (err instanceof DOMException && err.name === 'AbortError') {
-          toast.error('A operacao excedeu o tempo limite. Tente novamente.')
+          toast.error('A operacao excedeu o tempo limite. Tente novamente.', { label: 'Tentar novamente', onClick: retryEva })
         } else {
           const msg = err instanceof Error ? err.message : 'Erro desconhecido'
-          toast.error(`EVA nao conseguiu processar: ${msg}`)
+          toast.error(`EVA nao conseguiu processar: ${msg}`, { label: 'Tentar novamente', onClick: retryEva })
         }
       } finally {
         clearTimeout(timeoutId)
@@ -295,11 +217,12 @@ export default function ChatInterface({
     }
 
     // Normal message flow
+    const messageContent = newMessage.trim()
     sendMessageMutation.mutate(
       {
         law_firm_id: lawFirmId,
         conversation_id: conversation.id,
-        content: newMessage.trim(),
+        content: messageContent,
         message_type: 'text',
         sender_id: currentUserId,
         sender_type: 'user',
@@ -314,7 +237,13 @@ export default function ChatInterface({
           }
         },
         onError: () => {
-          toast.error('Erro ao enviar mensagem. Tente novamente.')
+          toast.error('Erro ao enviar mensagem. Tente novamente.', {
+            label: 'Tentar novamente',
+            onClick: () => {
+              setNewMessage(messageContent)
+              setTimeout(() => handleSendMessage(), 0)
+            },
+          })
         },
       }
     )
@@ -384,16 +313,21 @@ export default function ChatInterface({
         (new Date(message.created_at).getTime() - new Date(prevMessage?.created_at || 0).getTime()) > 300000
 
       return (
-        <MessageBubble
+        <div
           key={message.id}
-          message={message}
-          isFromCurrentUser={isMessageFromCurrentUser(message, currentUserId)}
-          showAvatar={showAvatar}
-          showTime={showTime}
-        />
+          id={`msg-${message.id}`}
+          className={`transition-colors duration-700 ${highlightedMessageId === message.id ? 'bg-yellow-100 rounded-lg' : ''}`}
+        >
+          <MessageBubble
+            message={message}
+            isFromCurrentUser={isMessageFromCurrentUser(message, currentUserId)}
+            showAvatar={showAvatar}
+            showTime={showTime}
+          />
+        </div>
       )
     }),
-    [messages, currentUserId]
+    [messages, currentUserId, highlightedMessageId]
   )
 
   return (
@@ -417,6 +351,27 @@ export default function ChatInterface({
         </div>
 
         <div className="flex items-center space-x-2">
+          <button
+            onClick={() => {
+              setShowSearch(!showSearch)
+              if (showSearch) setSearchQuery('')
+            }}
+            className={`p-2 rounded-lg hover:bg-gray-100 ${showSearch ? 'text-primary bg-primary/10' : 'text-gray-400 hover:text-gray-600'}`}
+            aria-label="Buscar mensagens"
+            title="Buscar mensagens"
+          >
+            <MagnifyingGlassIcon className="h-5 w-5" />
+          </button>
+          {!isClient && (
+            <button
+              onClick={() => setShowEvaHistory(!showEvaHistory)}
+              className={`p-2 rounded-lg hover:bg-gray-100 ${showEvaHistory ? 'text-primary bg-primary/10' : 'text-gray-400 hover:text-gray-600'}`}
+              aria-label="Historico da EVA"
+              title="Historico da EVA"
+            >
+              <SparklesIcon className="h-5 w-5" />
+            </button>
+          )}
           <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
             <PhoneIcon className="h-5 w-5" />
           </button>
@@ -437,14 +392,84 @@ export default function ChatInterface({
         </div>
       </div>
 
+      {/* Search Bar */}
+      {showSearch && (
+        <div className="relative border-b border-gray-200 p-2">
+          <div className="flex items-center gap-2">
+            <MagnifyingGlassIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar na conversa..."
+              className="flex-1 text-sm border-none focus:outline-none focus:ring-0 bg-transparent"
+              autoFocus
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-xs text-gray-400 hover:text-gray-600"
+              >
+                Limpar
+              </button>
+            )}
+          </div>
+          {searchQuery.length >= 2 && searchResults.length > 0 && (
+            <div className="absolute left-0 right-0 top-full bg-white border border-gray-200 rounded-b-lg shadow-lg max-h-48 overflow-y-auto z-20">
+              {searchResults.map((result) => (
+                <button
+                  key={result.id}
+                  onClick={() => scrollToMessage(result.id)}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                >
+                  <p className="text-sm text-gray-800 truncate">{result.content}</p>
+                  <p className="text-xs text-gray-400">{formatMessageTime(result.created_at)}</p>
+                </button>
+              ))}
+            </div>
+          )}
+          {searchQuery.length >= 2 && searchResults.length === 0 && debouncedSearch === searchQuery && (
+            <div className="absolute left-0 right-0 top-full bg-white border border-gray-200 rounded-b-lg shadow-lg p-3 z-20">
+              <p className="text-sm text-gray-500 text-center">Nenhuma mensagem encontrada</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : (
           <>
+            {hasNextPage && (
+              <div className="flex justify-center py-2">
+                <button
+                  onClick={() => {
+                    const container = messagesContainerRef.current
+                    const prevScrollHeight = container?.scrollHeight ?? 0
+                    fetchNextPage().then(() => {
+                      if (container) {
+                        container.scrollTop = container.scrollHeight - prevScrollHeight
+                      }
+                    })
+                  }}
+                  disabled={isFetchingNextPage}
+                  className="text-sm text-primary hover:text-primary/80 font-medium disabled:opacity-50"
+                >
+                  {isFetchingNextPage ? (
+                    <span className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+                      Carregando...
+                    </span>
+                  ) : (
+                    'Carregar mensagens anteriores'
+                  )}
+                </button>
+              </div>
+            )}
             {renderedMessages}
             {isEvaProcessing && (
               <div className="flex justify-start mb-4">
@@ -601,6 +626,18 @@ export default function ChatInterface({
           accept="image/*,.pdf,.doc,.docx,.txt"
         />
       </div>
+
+      {/* EVA History Panel */}
+      {showEvaHistory && (
+        <EvaHistoryPanel
+          conversationId={conversation.id}
+          onUseResponse={(content) => {
+            setNewMessage(content)
+            setShowEvaHistory(false)
+          }}
+          onClose={() => setShowEvaHistory(false)}
+        />
+      )}
     </div>
   )
 }

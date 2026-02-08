@@ -2,6 +2,7 @@
 
 import { ReactNode, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
   HomeIcon,
   DocumentTextIcon,
@@ -161,6 +162,11 @@ function NavContent({ onNavigate, displayName, clientNumber, onSignOut }: NavCon
 export default function ClientPortalLayout({ children }: ClientPortalLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { profile, signOut } = useAuthContext()
+  const pathname = usePathname()
+
+  const currentSection = navigation.find(
+    item => pathname === item.href || pathname?.startsWith(`${item.href}/`)
+  )
 
   const displayName = profile?.full_name ?? 'Cliente'
   // client_number is not on User type but may exist on the DB row for client users
@@ -188,6 +194,12 @@ export default function ClientPortalLayout({ children }: ClientPortalLayoutProps
             <span className="text-sm font-medium text-white">PF</span>
           </div>
           <span className="ml-2 text-sm font-medium text-gray-900">Prima Facie</span>
+          {currentSection && (
+            <>
+              <span className="text-gray-300 text-sm ml-2">/</span>
+              <span className="text-sm text-gray-600 truncate ml-1">{currentSection.name}</span>
+            </>
+          )}
         </div>
       </div>
 

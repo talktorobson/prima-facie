@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { PageHeader } from '@/components/layout/page-header'
 import { AdminOnly } from '@/components/auth/role-guard'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useLawFirm, useUpdateLawFirm } from '@/lib/queries/useSettings'
@@ -135,42 +136,41 @@ export default function AdminWebsitePage() {
   return (
     <AdminOnly>
       <div className="space-y-6">
-        <div className="border-b border-gray-200 pb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Globe className="h-8 w-8 text-primary" />
-              Website do Escritorio
-            </h1>
-            <p className="mt-2 text-gray-600">
-              Gerencie o site publico do seu escritorio
-            </p>
-          </div>
-          {content && (
-            <div className="flex items-center gap-3">
-              {lawFirm?.slug && (
-                <a
-                  href={`/site/${lawFirm.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Eye className="h-4 w-4" />
-                  Visualizar
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-              <button
-                onClick={handleTogglePublish}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  content.is_published
-                    ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
-              >
-                {content.is_published ? 'Despublicar' : 'Publicar Site'}
-              </button>
-            </div>
-          )}
+        <div className="border-b border-gray-200 pb-6">
+          <PageHeader
+            title="Website do Escritorio"
+            description="Gerencie o site publico do seu escritorio"
+            backHref="/admin"
+            backLabel="Voltar para Admin"
+            actions={
+              content ? (
+                <div className="flex items-center gap-3">
+                  {lawFirm?.slug && (
+                    <a
+                      href={`/site/${lawFirm.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Visualizar
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                  <button
+                    onClick={handleTogglePublish}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      content.is_published
+                        ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
+                  >
+                    {content.is_published ? 'Despublicar' : 'Publicar Site'}
+                  </button>
+                </div>
+              ) : undefined
+            }
+          />
         </div>
 
         {isLoading ? (

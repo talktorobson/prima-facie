@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useToast } from '@/components/ui/toast-provider'
 import { useQuery } from '@tanstack/react-query'
 import {
   ArrowLeftIcon,
@@ -89,6 +90,7 @@ interface DataJudPreview {
 export default function EditMatterPage() {
   const params = useParams()
   const router = useRouter()
+  const toast = useToast()
   const effectiveLawFirmId = useEffectiveLawFirmId()
   const matterId = params.id as string
   const supabase = useSupabase()
@@ -291,7 +293,8 @@ export default function EditMatterPage() {
         }
       })
 
-      router.push(`/matters/${matterId}?updated=true`)
+      toast.success('Processo atualizado com sucesso!')
+      router.push(`/matters/${matterId}`)
     } catch (error) {
       console.error('Error updating matter:', error)
       setErrors({ submit: 'Erro ao atualizar processo. Tente novamente.' })

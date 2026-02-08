@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { PageHeader } from '@/components/layout/page-header'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { subscriptionService } from '@/lib/billing/subscription-service'
 import { SubscriptionPlan, PlanFormData } from '@/lib/billing/subscription-types'
@@ -281,24 +282,21 @@ export default function SubscriptionPlansPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <CurrencyDollarIcon className="h-8 w-8 text-primary mr-3" />
-                Planos de Assinatura
-              </h1>
-              <p className="mt-2 text-gray-600">
-                Gerencie os planos de consultoria recorrente da sua firma
-              </p>
-            </div>
-            <button
-              onClick={handleCreatePlan}
-              className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Novo Plano
-            </button>
-          </div>
+          <PageHeader
+            title="Planos de Assinatura"
+            description="Gerencie os planos de consultoria recorrente da sua firma"
+            backHref="/admin"
+            backLabel="Voltar para Admin"
+            actions={
+              <button
+                onClick={handleCreatePlan}
+                className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Novo Plano
+              </button>
+            }
+          />
 
           {/* Stats Cards */}
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

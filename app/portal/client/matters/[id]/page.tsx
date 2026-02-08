@@ -268,9 +268,10 @@ export default function ClientMatterDetailPage() {
           <div className="flex items-center space-x-3 mb-4">
             <Link
               href="/portal/client/matters"
-              className="text-gray-400 hover:text-gray-600"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
-              <ArrowLeftIcon className="h-6 w-6" />
+              <ArrowLeftIcon className="h-4 w-4" />
+              <span>Voltar para Meus Processos</span>
             </Link>
             <div className="flex-1">
               <div className="flex items-center justify-between">

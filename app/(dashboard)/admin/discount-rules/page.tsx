@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { PageHeader } from '@/components/layout/page-header'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import {
   useDiscountRules,
@@ -229,12 +230,13 @@ export default function DiscountRulesPage(): JSX.Element {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Regras de Desconto</h1>
-          <p className="text-gray-600">Gerencie descontos automáticos e cross-selling</p>
-        </div>
-        <div className="flex space-x-3">
+      <PageHeader
+        title="Regras de Desconto"
+        description="Gerencie descontos automáticos e cross-selling"
+        backHref="/admin"
+        backLabel="Voltar para Admin"
+        actions={
+          <div className="flex space-x-3">
           <button
             onClick={handleCreatePresetRules}
             className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
@@ -250,7 +252,8 @@ export default function DiscountRulesPage(): JSX.Element {
             Nova Regra
           </button>
         </div>
-      </div>
+        }
+      />
 
       {/* Filters */}
       <div className="bg-white p-6 rounded-lg shadow">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '@/components/providers'
 import type {
   Conversation,
@@ -43,15 +43,19 @@ export function useConversations(lawFirmId?: string | null, userId?: string | nu
 
 const MESSAGE_PAGE_SIZE = 50
 
+type MessageWithSender = Message & {
+  sender?: { id: string; first_name: string; last_name: string; full_name?: string; avatar_url?: string }
+}
+
 export function useConversationMessages(conversationId?: string | null) {
   const supabase = useSupabase()
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['conversation-messages', conversationId],
-    queryFn: async () => {
+    queryFn: async ({ pageParam }) => {
       if (!conversationId) throw new Error('Missing conversationId')
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('messages')
         .select(`
           id, conversation_id, content, message_type, sender_id, sender_type,
@@ -63,9 +67,18 @@ export function useConversationMessages(conversationId?: string | null) {
         .order('created_at', { ascending: false })
         .limit(MESSAGE_PAGE_SIZE)
 
+      if (pageParam) {
+        query = query.lt('created_at', pageParam)
+      }
+
+      const { data, error } = await query
       if (error) throw error
-      // Reverse to show oldest-first in UI
-      return ((data || []) as (Message & { sender?: { id: string; first_name: string; last_name: string; full_name?: string; avatar_url?: string } })[]).reverse()
+      return (data || []) as MessageWithSender[]
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.length < MESSAGE_PAGE_SIZE) return undefined
+      return lastPage[lastPage.length - 1]?.created_at
     },
     enabled: !!conversationId,
   })

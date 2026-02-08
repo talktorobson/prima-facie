@@ -7,6 +7,9 @@ import { checkRateLimit } from '@/lib/ai/rate-limiter'
 import { getClientTools } from '@/lib/ai/tools/client-tools'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AI_CONFIG } from '@/lib/ai/config'
+import { resolveOrCreateAIConversation, incrementConversationTokens, logAIMessages } from '@/lib/ai/conversation-resolver'
+
+const MAX_QUERY_LENGTH = 5000
 
 export async function POST(request: NextRequest) {
   // Allow clients + all staff roles
@@ -23,8 +26,8 @@ export async function POST(request: NextRequest) {
   }
 
   const query = body.query as string | undefined
-  if (!query?.trim()) {
-    return NextResponse.json({ error: 'Query é obrigatória' }, { status: 400 })
+  if (!query?.trim() || query.length > MAX_QUERY_LENGTH) {
+    return NextResponse.json({ error: `Query deve ter entre 1 e ${MAX_QUERY_LENGTH} caracteres` }, { status: 400 })
   }
 
   const supabase = createAdminClient()
@@ -60,11 +63,12 @@ export async function POST(request: NextRequest) {
     .eq('law_firm_id', lawFirmId)
     .limit(1)
 
-  if (matterLinks?.length) {
+  const firstMatterId = matterLinks?.[0]?.matter_id
+  if (firstMatterId) {
     const { data: matter } = await supabase
       .from('matters')
       .select('responsible_lawyer_id')
-      .eq('id', matterLinks[0].matter_id)
+      .eq('id', firstMatterId)
       .single()
     lawyerSenderId = matter?.responsible_lawyer_id
   }
@@ -80,14 +84,17 @@ export async function POST(request: NextRequest) {
     lawyerSenderId = firmAdmin?.id
   }
 
-  // Fetch firm name
-  let firmName = 'Prima Facie'
-  const { data: firm } = await supabase
-    .from('law_firms')
-    .select('name')
-    .eq('id', lawFirmId)
-    .single()
-  if (firm) firmName = firm.name
+  // Parallelize firm name + AI conversation resolution
+  const [firmResult, aiConversationId] = await Promise.all([
+    supabase.from('law_firms').select('name').eq('id', lawFirmId).single(),
+    resolveOrCreateAIConversation(supabase, profile.id, lawFirmId, 'Portal', query),
+  ])
+
+  const firmName = firmResult.data?.name || 'Prima Facie'
+
+  if (!aiConversationId) {
+    return NextResponse.json({ error: 'Erro ao criar conversa AI' }, { status: 500 })
+  }
 
   const clientName = contact.contact_type === 'company'
     ? (contact.company_name || contact.full_name || 'Cliente')
@@ -98,40 +105,6 @@ export async function POST(request: NextRequest) {
 
   // Get client-scoped tools
   const tools = getClientTools(supabase, lawFirmId, contact.id)
-
-  // Create or reuse AI conversation for logging (scoped to client_portal context)
-  let aiConversationId: string
-  const { data: existingConv } = await supabase
-    .from('ai_conversations')
-    .select('id')
-    .eq('user_id', profile.id)
-    .eq('status', 'active')
-    .like('title', 'Portal:%')
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .single()
-
-  if (existingConv) {
-    aiConversationId = existingConv.id
-  } else {
-    const { data: newConv, error: convError } = await supabase
-      .from('ai_conversations')
-      .insert({
-        law_firm_id: lawFirmId,
-        user_id: profile.id,
-        title: `Portal: ${query.slice(0, 80)}`,
-        status: 'active',
-        provider: AI_CONFIG.defaultProvider,
-        model: AI_CONFIG.defaultModel,
-      })
-      .select('id')
-      .single()
-
-    if (convError || !newConv) {
-      return NextResponse.json({ error: 'Erro ao criar conversa AI' }, { status: 500 })
-    }
-    aiConversationId = newConv.id
-  }
 
   try {
     const result = await generateText({
@@ -148,54 +121,45 @@ export async function POST(request: NextRequest) {
     const tokensInput = result.usage?.inputTokens || 0
     const tokensOutput = result.usage?.outputTokens || 0
 
-    // Log user query
-    await supabase.from('ai_messages').insert({
-      conversation_id: aiConversationId,
-      law_firm_id: lawFirmId,
-      role: 'user',
-      content: query,
-      source_type: 'client_portal',
-    })
-
-    // Log assistant response
-    await supabase.from('ai_messages').insert({
-      conversation_id: aiConversationId,
-      law_firm_id: lawFirmId,
-      role: 'assistant',
-      content: assistantContent,
-      tokens_input: tokensInput,
-      tokens_output: tokensOutput,
-      source_type: 'client_portal',
-    })
-
-    // Increment conversation token count
-    const { data: currentConv } = await supabase
-      .from('ai_conversations')
-      .select('total_tokens_used')
-      .eq('id', aiConversationId)
-      .single()
-
-    await supabase
-      .from('ai_conversations')
-      .update({ total_tokens_used: (currentConv?.total_tokens_used || 0) + tokensInput + tokensOutput })
-      .eq('id', aiConversationId)
+    // Log messages, increment tokens, and insert EVA response (all non-blocking)
+    const insertPromises: Promise<unknown>[] = [
+      logAIMessages(supabase, {
+        conversationId: aiConversationId,
+        lawFirmId,
+        query,
+        assistantContent,
+        tokensInput,
+        tokensOutput,
+        sourceType: 'client_portal',
+      }),
+      incrementConversationTokens(supabase, aiConversationId, tokensInput, tokensOutput),
+    ]
 
     // Insert EVA's response as a message from the firm (server-side to bypass RLS)
     if (assistantContent.trim() && lawyerSenderId) {
-      await supabase.from('messages').insert({
-        content: assistantContent,
-        contact_id: contact.id,
-        law_firm_id: lawFirmId,
-        sender_id: lawyerSenderId,
-        sender_type: 'user',
-        message_type: 'text',
-        status: 'sent',
-      })
+      insertPromises.push(
+        supabase.from('messages').insert({
+          content: assistantContent,
+          contact_id: contact.id,
+          law_firm_id: lawFirmId,
+          sender_id: lawyerSenderId,
+          sender_type: 'user',
+          message_type: 'text',
+          status: 'sent',
+        }).then(({ error }) => {
+          if (error) console.error('[client-qa] Failed to insert EVA message:', error.message)
+        })
+      )
     }
+
+    await Promise.all(insertPromises)
 
     return NextResponse.json({ content: assistantContent })
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Erro ao processar mensagem'
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+    console.error('[client-qa] AI generation failed:', {
+      userId: profile.id,
+      error: err instanceof Error ? err.message : err,
+    })
+    return NextResponse.json({ error: 'Erro ao processar mensagem. Tente novamente.' }, { status: 500 })
   }
 }

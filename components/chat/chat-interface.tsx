@@ -176,6 +176,7 @@ export default function ChatInterface({
   const [newMessage, setNewMessage] = useState('')
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [isEvaProcessing, setIsEvaProcessing] = useState(false)
+  const [evaDraft, setEvaDraft] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
@@ -234,11 +235,14 @@ export default function ChatInterface({
     const evaQuery = extractEvaQuery(newMessage.trim())
 
     if (evaQuery && !isClient) {
-      // @eva ghost-write flow
+      // @eva ghost-write flow — fetch draft, show preview before sending
       setIsEvaProcessing(true)
       setNewMessage('')
       sendTyping(false)
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000)
 
       try {
         const response = await fetch('/api/ai/chat-ghost', {
@@ -248,6 +252,7 @@ export default function ChatInterface({
             query: evaQuery,
             conversationId: conversation.id,
           }),
+          signal: controller.signal,
         })
 
         if (!response.ok) {
@@ -256,28 +261,16 @@ export default function ChatInterface({
         }
 
         const { content } = await response.json()
-
-        // Send EVA's response as the user's own message
-        sendMessageMutation.mutate(
-          {
-            law_firm_id: lawFirmId,
-            conversation_id: conversation.id,
-            content,
-            message_type: 'text',
-            sender_id: currentUserId,
-            sender_type: 'user',
-            status: 'sent',
-          },
-          {
-            onError: () => {
-              toast.error('Erro ao enviar a resposta da EVA.')
-            },
-          }
-        )
+        setEvaDraft(content)
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Erro desconhecido'
-        toast.error(`EVA nao conseguiu processar: ${msg}`)
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          toast.error('A operacao excedeu o tempo limite. Tente novamente.')
+        } else {
+          const msg = err instanceof Error ? err.message : 'Erro desconhecido'
+          toast.error(`EVA nao conseguiu processar: ${msg}`)
+        }
       } finally {
+        clearTimeout(timeoutId)
         setIsEvaProcessing(false)
       }
       return
@@ -429,6 +422,57 @@ export default function ChatInterface({
                 </div>
               </div>
             )}
+            {/* EVA draft preview — user can edit, send, or discard */}
+            {evaDraft && (
+              <div className="flex justify-start mb-4">
+                <div className="max-w-sm">
+                  <div className="flex items-center gap-1 mb-1">
+                    <SparklesIcon className="h-4 w-4 text-primary" />
+                    <p className="text-xs text-primary font-medium">Rascunho da EVA — revise antes de enviar</p>
+                  </div>
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+                    <textarea
+                      value={evaDraft}
+                      onChange={(e) => setEvaDraft(e.target.value)}
+                      className="w-full bg-transparent text-sm text-gray-900 resize-none border-none focus:outline-none focus:ring-0 p-0"
+                      rows={Math.min(6, evaDraft.split('\n').length + 1)}
+                    />
+                    <div className="flex justify-end gap-2 mt-2">
+                      <button
+                        onClick={() => setEvaDraft(null)}
+                        className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded"
+                      >
+                        Descartar
+                      </button>
+                      <button
+                        onClick={() => {
+                          const content = evaDraft.trim()
+                          if (!content) return
+                          sendMessageMutation.mutate(
+                            {
+                              law_firm_id: lawFirmId,
+                              conversation_id: conversation.id,
+                              content,
+                              message_type: 'text',
+                              sender_id: currentUserId,
+                              sender_type: 'user',
+                              status: 'sent',
+                            },
+                            {
+                              onError: () => toast.error('Erro ao enviar a resposta da EVA.'),
+                            }
+                          )
+                          setEvaDraft(null)
+                        }}
+                        className="text-xs bg-primary text-white px-3 py-1 rounded hover:bg-primary/90"
+                      >
+                        Enviar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <TypingIndicatorComponent typing={typingUsers} />
             <div ref={messagesEndRef} />
           </>
@@ -443,6 +487,7 @@ export default function ChatInterface({
             disabled={sendMessageMutation.isPending}
             className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50"
             title="Enviar arquivo"
+            aria-label="Enviar arquivo"
           >
             {sendMessageMutation.isPending ? (
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
@@ -471,6 +516,7 @@ export default function ChatInterface({
             <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              aria-label="Selecionar emoji"
             >
               <FaceSmileIcon className="h-5 w-5" />
             </button>
@@ -496,6 +542,7 @@ export default function ChatInterface({
             onClick={handleSendMessage}
             disabled={!newMessage.trim() || sendMessageMutation.isPending || isEvaProcessing}
             className="p-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Enviar mensagem"
           >
             <PaperAirplaneIcon className="h-5 w-5" />
           </button>

@@ -49,7 +49,10 @@ const queryMyMatters = (supabase: SupabaseClient, lawFirmId: string, contactId: 
         .order('updated_at', { ascending: false })
         .limit(limit)
 
-      if (search) query = query.or(`title.ilike.%${search}%,matter_number.ilike.%${search}%`)
+      if (search) {
+        const escaped = search.replace(/[%_\\]/g, '\\$&')
+        query = query.or(`title.ilike.%${escaped}%,matter_number.ilike.%${escaped}%`)
+      }
       if (status) query = query.eq('status', status)
 
       const { data, error } = await query
@@ -157,7 +160,10 @@ const queryMyDocuments = (supabase: SupabaseClient, lawFirmId: string, contactId
         .order('created_at', { ascending: false })
         .limit(limit)
 
-      if (search) query = query.ilike('name', `%${search}%`)
+      if (search) {
+        const escaped = search.replace(/[%_\\]/g, '\\$&')
+        query = query.ilike('name', `%${escaped}%`)
+      }
 
       const { data, error } = await query
 

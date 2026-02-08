@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useMyMessages } from '@/lib/queries/useClientPortal'
 import { useSupabase } from '@/components/providers'
 import { useAuthContext } from '@/lib/providers/auth-provider'
@@ -44,6 +44,7 @@ export default function ClientMessagesPage() {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const messageList = (messages ?? []) as MessageRow[]
+  const reversedMessages = useMemo(() => [...messageList].reverse(), [messageList])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -86,11 +87,14 @@ export default function ClientMessagesPage() {
       if (isEvaMode) {
         // EVA Q&A flow — server inserts the response message via admin client
         setIsEvaProcessing(true)
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 30_000)
         try {
           const response = await fetch('/api/ai/client-qa', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query: trimmed }),
+            signal: controller.signal,
           })
 
           if (!response.ok) {
@@ -101,9 +105,12 @@ export default function ClientMessagesPage() {
           // Server already inserted the response into messages table
           queryClient.invalidateQueries({ queryKey: ['portal', 'my-messages'] })
         } catch (err) {
-          const msg = err instanceof Error ? err.message : 'Erro desconhecido'
+          const msg = err instanceof Error
+            ? (err.name === 'AbortError' ? 'Tempo limite excedido' : err.message)
+            : 'Erro desconhecido'
           toast.error(`EVA nao conseguiu processar: ${msg}`)
         } finally {
+          clearTimeout(timeout)
           setIsEvaProcessing(false)
           setIsEvaMode(false)
         }
@@ -152,7 +159,7 @@ export default function ClientMessagesPage() {
             </div>
           ) : (
             <>
-              {[...messageList].reverse().map((msg) => {
+              {reversedMessages.map((msg) => {
                 const isClientMsg = msg.sender_type === 'contact'
                 return (
                   <div
@@ -217,6 +224,7 @@ export default function ClientMessagesPage() {
                 : 'text-gray-400 hover:text-primary hover:bg-primary/10'
             } disabled:opacity-50`}
             title={isEvaMode ? 'Modo EVA ativo - clique para desativar' : 'Perguntar a EVA'}
+            aria-label={isEvaMode ? 'Desativar modo EVA' : 'Ativar modo EVA'}
           >
             <SparklesIcon className="h-5 w-5" />
           </button>
@@ -239,6 +247,7 @@ export default function ClientMessagesPage() {
             type="submit"
             disabled={sending || isEvaProcessing || !newMessage.trim()}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 disabled:opacity-50"
+            aria-label="Enviar mensagem"
           >
             {sending || isEvaProcessing ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />

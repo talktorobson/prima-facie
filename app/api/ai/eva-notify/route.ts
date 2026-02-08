@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAIUser } from '@/lib/ai/verify-user'
+import { checkRateLimit } from '@/lib/ai/rate-limiter'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { processEvaNotification, type NotificationEvent, VALID_EVENT_TYPES } from '@/lib/ai/eva-notifications'
 
 export async function POST(request: NextRequest) {
@@ -8,6 +10,14 @@ export async function POST(request: NextRequest) {
   if (auth.error) return auth.error
 
   const { profile } = auth
+
+  const supabase = createAdminClient()
+
+  // Rate limit check
+  const rateLimit = await checkRateLimit(supabase, profile.id)
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: rateLimit.error }, { status: 429 })
+  }
 
   let body: Record<string, unknown>
   try {

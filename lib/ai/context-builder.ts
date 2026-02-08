@@ -58,12 +58,15 @@ export async function buildConversationContext(
     return `Conversa: ${conversation.title || 'Sem titulo'}\nTipo: ${conversation.conversation_type || 'chat'}\nNenhuma mensagem anterior.`
   }
 
-  // Build message history (chronological order)
-  const reversed = [...messages].reverse()
-  const lines = reversed.map((msg) => {
+  // Build message history (chronological order, truncate long messages)
+  const MAX_MSG_LENGTH = 500
+  const lines = messages.reverse().map((msg) => {
     const sender = msg.sender_type === 'contact' ? 'Cliente' : 'Escritorio'
     const time = new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    return `[${time}] ${sender}: ${msg.content}`
+    const content = msg.content.length > MAX_MSG_LENGTH
+      ? msg.content.slice(0, MAX_MSG_LENGTH) + '...'
+      : msg.content
+    return `[${time}] ${sender}: ${content}`
   })
 
   return `Conversa: ${conversation.title || 'Sem titulo'}

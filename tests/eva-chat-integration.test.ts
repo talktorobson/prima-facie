@@ -283,14 +283,22 @@ describe('Client tools — getClientTools', () => {
 
 describe('AI conversation scoping', () => {
   it('chat-ghost uses Ghost-write: prefix for conversation lookup', async () => {
-    // Read the source file and check that it uses .like('title', 'Ghost-write:%')
+    // Scoping logic was extracted to conversation-resolver.ts — check both files
     const fs = require('fs')
-    const source = fs.readFileSync(
+    const resolverSource = fs.readFileSync(
+      require('path').join(__dirname, '..', 'lib', 'ai', 'conversation-resolver.ts'),
+      'utf8'
+    )
+    // The shared resolver uses .like('title', `${titlePrefix}:%`)
+    expect(resolverSource).toContain(".like('title', `${titlePrefix}:%`)")
+
+    // chat-ghost calls with 'Ghost-write' prefix
+    const ghostSource = fs.readFileSync(
       require('path').join(__dirname, '..', 'app', 'api', 'ai', 'chat-ghost', 'route.ts'),
       'utf8'
     )
-    expect(source).toContain(".like('title', 'Ghost-write:%')")
-    expect(source).not.toMatch(/\.eq\('user_id'.*\n.*\.eq\('status'.*\n.*\.order/)
+    expect(ghostSource).toContain("'Ghost-write'")
+    expect(ghostSource).toContain('resolveOrCreateAIConversation')
   })
 
   it('client-qa uses Portal: prefix for conversation lookup', async () => {
@@ -299,7 +307,8 @@ describe('AI conversation scoping', () => {
       require('path').join(__dirname, '..', 'app', 'api', 'ai', 'client-qa', 'route.ts'),
       'utf8'
     )
-    expect(source).toContain(".like('title', 'Portal:%')")
+    expect(source).toContain("'Portal'")
+    expect(source).toContain('resolveOrCreateAIConversation')
   })
 
   it('chat-ghost derives lawFirmId from profile, not request body', async () => {
@@ -355,9 +364,9 @@ describe('Cron deadline deduplication', () => {
       require('path').join(__dirname, '..', 'app', 'api', 'cron', 'eva-deadlines', 'route.ts'),
       'utf8'
     )
-    expect(source).toContain("source_type', 'proactive'")
+    expect(source).toContain("'source_type', 'proactive'")
     expect(source).toContain('alreadyNotifiedMatterIds')
-    expect(source).toContain('notifiedFirms')
+    expect(source).toContain('notifiedKeys')
   })
 
   it('skips matters from firms already notified today', async () => {
@@ -382,22 +391,38 @@ describe('Cron deadline deduplication', () => {
 describe('Token count increment', () => {
   it('chat-ghost reads current tokens before incrementing', async () => {
     const fs = require('fs')
-    const source = fs.readFileSync(
+    // Token logic was extracted to conversation-resolver.ts
+    const resolverSource = fs.readFileSync(
+      require('path').join(__dirname, '..', 'lib', 'ai', 'conversation-resolver.ts'),
+      'utf8'
+    )
+    expect(resolverSource).toContain("select('total_tokens_used')")
+    expect(resolverSource).toContain('(currentConv?.total_tokens_used || 0) + tokensInput + tokensOutput')
+
+    // chat-ghost calls the shared function
+    const ghostSource = fs.readFileSync(
       require('path').join(__dirname, '..', 'app', 'api', 'ai', 'chat-ghost', 'route.ts'),
       'utf8'
     )
-    expect(source).toContain("select('total_tokens_used')")
-    expect(source).toContain('(currentConv?.total_tokens_used || 0) + tokensInput + tokensOutput')
+    expect(ghostSource).toContain('incrementConversationTokens')
   })
 
   it('client-qa reads current tokens before incrementing', async () => {
     const fs = require('fs')
-    const source = fs.readFileSync(
+    // Token logic was extracted to conversation-resolver.ts
+    const resolverSource = fs.readFileSync(
+      require('path').join(__dirname, '..', 'lib', 'ai', 'conversation-resolver.ts'),
+      'utf8'
+    )
+    expect(resolverSource).toContain("select('total_tokens_used')")
+    expect(resolverSource).toContain('(currentConv?.total_tokens_used || 0) + tokensInput + tokensOutput')
+
+    // client-qa calls the shared function
+    const qaSource = fs.readFileSync(
       require('path').join(__dirname, '..', 'app', 'api', 'ai', 'client-qa', 'route.ts'),
       'utf8'
     )
-    expect(source).toContain("select('total_tokens_used')")
-    expect(source).toContain('(currentConv?.total_tokens_used || 0) + tokensInput + tokensOutput')
+    expect(qaSource).toContain('incrementConversationTokens')
   })
 })
 

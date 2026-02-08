@@ -230,7 +230,12 @@ ${metadataContext}`
       source_type: 'proactive',
       source_conversation_id: conversationId,
     })
-  } catch {
-    // Silently fail — proactive notifications should not break the app
+  } catch (err) {
+    console.error('[EVA Notifications] Failed to process event:', {
+      eventType: event.eventType,
+      lawFirmId: event.lawFirmId,
+      matterId: event.matterId,
+      error: err instanceof Error ? err.message : err,
+    })
   }
 }

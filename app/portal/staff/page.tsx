@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   useMyAssignedMatters,
   useMyTasks,
@@ -93,6 +94,7 @@ function getWeekRange() {
 
 export default function StaffPortalPage() {
   const toast = useToast()
+  const router = useRouter()
   const weekRange = getWeekRange()
 
   const { data: matters, isLoading: mattersLoading } = useMyAssignedMatters()
@@ -372,9 +374,9 @@ export default function StaffPortalPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {matterList.slice(0, 10).map((m) => (
-                    <tr key={m.id} className="hover:bg-gray-50">
+                    <tr key={m.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/portal/staff/matters/${m.id}`)}>
                       <td className="px-4 py-3">
-                        <p className="text-sm font-medium text-gray-900">{m.title}</p>
+                        <p className="text-sm font-medium text-primary hover:underline">{m.title}</p>
                         <p className="text-xs text-gray-500">{m.matter_number}</p>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500">

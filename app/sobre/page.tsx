@@ -156,8 +156,13 @@ export default function SobrePage() {
             <ScrollReveal delay="100ms">
               <div className="mt-16 flex justify-center">
                 <div className="text-center">
-                  <div className="w-24 h-24 bg-landing-charcoal rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-white font-serif font-bold text-xl">LDR</span>
+                  <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/larissa-davila-reis.jpg"
+                      alt="Dra. Larissa D'Avila Reis"
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                   <h3 className="text-lg font-serif font-semibold text-landing-ink">
                     Dra. Larissa D&apos;Avila Reis

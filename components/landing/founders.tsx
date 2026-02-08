@@ -23,6 +23,14 @@ export default function Founders() {
         <div className="max-w-xl mx-auto">
           <ScrollReveal>
             <div className="border border-white/10 p-8 md:p-10">
+              <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-6">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/larissa-davila-reis.jpg"
+                  alt="Dra. Larissa D'Avila Reis"
+                  className="w-full h-full object-cover object-top"
+                />
+              </div>
               <h3 className="text-2xl font-serif font-bold text-white mb-1">
                 {founder.name}
               </h3>

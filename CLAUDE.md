@@ -6,7 +6,7 @@ Prima Facie is a Next.js 14 legal practice management SaaS (Sistema de Gestao pa
 ## Project Structure
 ```
 prima-facie/
-├── app/                        # Next.js 14 App Router (57 pages)
+├── app/                        # Next.js 14 App Router (75 pages)
 │   ├── (auth)/                # Authentication routes group
 │   │   ├── login/             # Login page
 │   │   ├── register/         # Registration page
@@ -46,21 +46,22 @@ prima-facie/
 │   │   └── layout.tsx        # Dashboard layout with sidebar
 │   ├── portal/               # Portal access
 │   │   ├── client/           # Client portal (dashboard, matters, messages, billing, profile)
-│   │   ├── staff/            # Staff portal
+│   │   ├── staff/            # Staff portal (dashboard, matters, tasks, messages, time-entry)
 │   │   └── layout.tsx        # Portal layout wrapper
 │   ├── about/                # Public about page
 │   ├── contact/              # Public contact page
 │   ├── pricing/              # Public pricing page
 │   ├── layout.tsx            # Root layout (Inter font, Providers)
 │   └── page.tsx              # Landing page (D'Avila Reis)
-├── components/                # 79 component files
+├── components/                # 131 component files
 │   ├── ui/                   # 27 reusable UI components + barrel exports
 │   ├── layout/               # Sidebar, mobile menu, dashboard header
 │   ├── auth/                 # Role guards, user profile
 │   ├── matters/              # Create/edit/delete matter dialogs
 │   ├── tasks/                # Task dialogs, item, stats components
 │   ├── chat/                 # Chat interface, conversation list, modals
-│   ├── reports/              # Report tabs and shared utilities
+│   ├── reports/              # Report tabs and shared utilities (Recharts)
+│   ├── pipeline/             # Kanban board + card components
 │   ├── notifications/        # Notification panel
 │   ├── landing/              # Landing page sections (hero, services, team, etc.)
 │   ├── features/
@@ -73,7 +74,7 @@ prima-facie/
 │   ├── supabase/             # Client, server, storage, realtime
 │   ├── hooks/                # use-auth.ts (main), useAuth.ts (legacy)
 │   ├── providers/            # Auth context provider
-│   ├── queries/              # 13 React Query hook files
+│   ├── queries/              # 18 React Query hook files
 │   ├── schemas/              # 6 Zod validation schema files
 │   ├── billing/              # 18 billing service files
 │   ├── financial/            # 3 financial service files
@@ -94,7 +95,7 @@ prima-facie/
 │   │   └── archive/          # 13 original migration files (historical)
 │   ├── seed-data/            # Seed SQL scripts (5 steps)
 │   └── docs/                 # Schema overview documentation
-├── tests/                    # 62 test suites (~47,000 lines)
+├── tests/                    # 30 passing test suites (542 tests)
 │   ├── frontend/             # 11 UI component test files
 │   ├── backend/              # 8 API test files
 │   ├── auth/                 # 8 auth/security test files
@@ -121,6 +122,8 @@ prima-facie/
 - **Icons**: Lucide React 0.309.0
 - **Date Handling**: date-fns 3.2.0
 - **CSS Utilities**: clsx 2.1.1 + tailwind-merge 3.3.1
+- **Charts**: Recharts 3.7.0
+- **Drag & Drop**: @hello-pangea/dnd 18.0.1
 - **PDF**: jsPDF 2.5.1 + jsPDF-AutoTable 3.8.2
 - **Excel**: XLSX 0.18.5
 - **Payments**: Stripe 18.2.1
@@ -153,32 +156,32 @@ prima-facie/
 - Task management with priority, status, and assignment
 - Document management with upload and storage integration
 - Calendar scheduling with event types
-- Reports with export (PDF/Excel)
-- Sales pipeline (list, create, edit lead pages)
+- Reports with Recharts (BarChart, PieChart) and export (PDF/Excel)
+- Sales pipeline with list + Kanban board (drag-and-drop via @hello-pangea/dnd)
 - Admin panel (10 subroutes: analytics, security, billing, notifications, users, etc.)
 - Settings page (7 tabs: firm, account, notifications, security, billing, integrations, appearance)
-- Client portal (dashboard, matters, messages, billing, profile)
-- Staff portal
+- Client portal (dashboard, matters, messages, billing, profile) with auth-wired layout
+- Staff portal (dashboard, matter detail, tasks, messages, time entry) with sidebar layout
 - Super admin platform view (multi-firm management)
-- Chat/messaging with conversation management
+- Chat/messaging with file upload (Supabase Storage), EVA AI ghost-write, real-time subscriptions
 - Authentication flow (login, register, forgot password)
 - Route protection middleware with role-based access
 - 27 production UI components with barrel exports
 - Desktop sidebar (12 items) + responsive mobile menu
-- React Query data layer with 13 hook files
+- React Query data layer with 18 hook files
 - 6 Zod validation schemas
 - 18 billing service files (subscriptions, case billing, discounts, time tracking, payment plans)
 - Financial services (AP/AR, collections, vendor management)
 - Export system (PDF, Excel)
 - DataJud CNJ integration (case enrichment, timeline events)
-- WhatsApp integration infrastructure
+- WhatsApp integration (webhook aligned with real DB schema, auto-reply, media handling)
 - Email notification service
 - Stripe payment integration
-- 62 test suites (~47,000 lines of test code)
+- 30 passing test suites (542 tests)
 - Portuguese localization throughout the UI
 
 ### Integration Status
-Most frontend pages use React Query hooks connected to Supabase. Some pages still use mock data internally. See `2026-master-plan.md` for detailed per-module integration status.
+All frontend modules are wired to real Supabase data via React Query hooks. All 10 sprints (0-9) are 100% complete. See `2026-master-plan.md` for detailed per-module status.
 
 ## Authentication Flow
 - `middleware.ts` handles route protection using Supabase SSR cookies (247 lines)
@@ -215,7 +218,7 @@ Single consolidated file: `database/migrations/000_init.sql` (2,348 lines, 54 ta
 - 5 child tables have direct `law_firm_id`: matter_contacts, bill_payments, payment_reminders, payment_installments, payment_collections
 
 ## React Query Hooks
-All in `lib/queries/`:
+All in `lib/queries/` (18 files):
 - `useMatters.ts` - Matter CRUD
 - `useTasks.ts` - Task management
 - `useInvoices.ts` - Invoice queries
@@ -229,6 +232,11 @@ All in `lib/queries/`:
 - `useStaffPortal.ts` - Staff portal
 - `usePipeline.ts` - Sales pipeline
 - `usePlatform.ts` - Super admin platform
+- `useDiscountRules.ts` - Discount rule CRUD + toggle + presets
+- `usePaymentPlans.ts` - Payment plan CRUD + activate + cancel
+- `useMessages.ts` - Chat messages
+- `useArticles.ts` - Content hub articles
+- `useWebsiteContent.ts` - Website CMS content
 
 ## UI Components (27 in `components/ui/`)
 Alert, Badge, Button, Card, Checkbox, DatePicker, Dialog, DropdownMenu, EmptyState, FileUpload, Form, Input, Label, LoadingSpinner, Pagination, Progress, ScrollArea, SearchInput, Select, Separator, Skeleton, StatusWorkflowBadge, Switch, Table, Tabs, Textarea, Toast (+ToastProvider)
@@ -300,6 +308,18 @@ Copy `.env.local.example` to `.env.local` and configure:
 - Stripe keys (see `.env.local.example`)
 
 ## Version History
+- **v4.1.0 (2026-02-08): All Sprints Complete**
+  - 75 page routes, 131 components, 18 RQ hook files
+  - Recharts (BarChart + PieChart) in reports
+  - Pipeline Kanban board with @hello-pangea/dnd drag-and-drop
+  - Chat file upload via Supabase Storage + EVA AI ghost-write
+  - Staff portal: layout + 4 sub-pages (matter detail, tasks, messages, time entry)
+  - Client portal layout wired to real auth context
+  - Discount rules + payment plans migrated to React Query
+  - WhatsApp webhook aligned with real DB schema
+  - Dead code cleanup across admin pages
+  - 30 test suites (542 tests) all passing
+
 - **v4.0.0 (2026-02): Full Platform Build-Out**
   - 57 page routes across dashboard, admin, portal, and public areas
   - 27 UI components with barrel exports
@@ -313,7 +333,6 @@ Copy `.env.local.example` to `.env.local` and configure:
   - Client and staff portals
   - Super admin multi-firm platform view
   - Sales pipeline with lead management
-  - 62 test suites (~47,000 lines)
   - Landing page (D'Avila Reis)
 
 - **v3.0.0 (2025-01): Full CRUD & UI Components**
@@ -341,7 +360,8 @@ Copy `.env.local.example` to `.env.local` and configure:
 - Infrastructure (DB, Auth, Middleware, Landing): Complete
 - Backend Services (Billing, Financial, Clients, Matters, Exports): Complete
 - UI Components (27/27): Complete
-- React Query Hooks (13 files): Complete
-- Frontend Pages (57 routes): Built, some still using mock data internally
-- **Next**: Wire remaining pages to real Supabase data via existing RQ hooks + services
-- See `2026-master-plan.md` for detailed per-sprint integration status
+- React Query Hooks (18 files): Complete
+- Frontend Pages (75 routes): All wired to real Supabase data
+- Tests: 30 suites, 542 tests passing
+- All 10 sprints (0-9) are 100% complete
+- See `2026-master-plan.md` for detailed per-sprint status

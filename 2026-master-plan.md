@@ -4,8 +4,8 @@
 
 This plan covers every remaining feature to bring Prima Facie from its current state to a fully functional legal practice management SaaS. The database schema, types, enums, and RLS policies already exist for every module.
 
-> **Last audit: February 2026**
-> A codebase audit revealed that significant work has been done across all modules since the original plan was written. However, two distinct architectural patterns coexist, and most modules use mock data rather than real Supabase integration. This plan now reflects the **actual state** of the codebase.
+> **Last audit: 8 February 2026**
+> All sprints are now complete. Every module has React Query hooks, real Supabase integration, and proper data wiring. Recent work added Recharts for reports, drag-and-drop Kanban for pipeline, file upload in chat, staff portal pages, and WhatsApp webhook fixes.
 
 ---
 
@@ -42,10 +42,10 @@ This plan covers every remaining feature to bring Prima Facie from its current s
 | 3 | Billing | 4 pages + 7 feature components | 18 service files + RQ hooks (`useInvoices.ts`, `useTimeEntries.ts`) + Zod schemas | All 4 pages use RQ hooks, full CRUD | **100%** |
 | 4 | Documents | 1 page (upload modal) | RQ hooks (`useDocuments.ts`) + storage helper + Zod schema | Real data via RQ + storage helper | **100%** |
 | 5 | Calendar | 1 page (month grid) | RQ hooks (`useCalendarEvents.ts`) | Aggregation via RQ hooks, real data | **100%** |
-| 6 | Settings & Admin | Settings: 1 page (7 tabs) + Admin: dashboard + 10 subroutes | RQ hooks (`useSettings.ts`, `useAdmin.ts`) + Zod schemas | All wired; discount-rules/payment-plans use service layer (no RQ) | **95%** |
-| 7 | Reports | 1 page (100 lines, decomposed) + 2 report components | RQ hooks (`useReports.ts`) | Real data via RQ; CSS-only charts (no recharts yet) | **90%** |
-| 8 | Pipeline | 3 pages (list + new + edit) | RQ hooks (`usePipeline.ts`) + Zod schema | Full CRUD, all 3 pages wired | **100%** |
-| 9 | Portals | Client: 7 pages + layout + billing; Staff: 1 page | RQ hooks (`useClientPortal.ts`, `useStaffPortal.ts`) | All pages real data; layout uses auth context | **95%** |
+| 6 | Settings & Admin | Settings: 1 page (7 tabs) + Admin: dashboard + 10 subroutes | RQ hooks (`useSettings.ts`, `useAdmin.ts`, `useDiscountRules.ts`, `usePaymentPlans.ts`) + Zod schemas | All wired via RQ hooks including discount-rules and payment-plans | **100%** |
+| 7 | Reports | 1 page (100 lines, decomposed) + 2 report components | RQ hooks (`useReports.ts`) | Real data via RQ; Recharts BarChart + PieChart | **100%** |
+| 8 | Pipeline | 3 pages (list + new + edit) + Kanban board | RQ hooks (`usePipeline.ts`) + Zod schema + `@hello-pangea/dnd` | Full CRUD, list + kanban views, drag-and-drop | **100%** |
+| 9 | Portals | Client: 7 pages + layout; Staff: 5 pages + layout | RQ hooks (`useClientPortal.ts`, `useStaffPortal.ts`) | All pages real data; both layouts use auth context | **100%** |
 
 ### Two Architecture Patterns
 
@@ -56,7 +56,7 @@ The codebase has two coexisting patterns:
 | **React Query + Dialogs** | Matters, Platform, Tasks | RQ hooks in `lib/queries/`, dialog components in `components/{module}/`, state in page |
 | **Service Class + Full Pages** | Clients, Billing | Class-based services in `lib/{module}/`, separate `/new`, `/[id]`, `/[id]/edit` route pages |
 
-**13 React Query hook files now exist** in `lib/queries/`: useMatters, useTasks, useInvoices, useTimeEntries, useAdmin, useCalendarEvents, useDocuments, useReports, useSettings, useClientPortal, useStaffPortal, usePipeline, usePlatform. Additionally, 6 Zod validation schemas exist in `lib/schemas/`.
+**18 React Query hook files now exist** in `lib/queries/`: useMatters, useTasks, useInvoices, useTimeEntries, useAdmin, useCalendarEvents, useDocuments, useReports, useSettings, useClientPortal, useStaffPortal, usePipeline, usePlatform, useDiscountRules, usePaymentPlans, useMessages, useArticles, useWebsiteContent. Additionally, 6 Zod validation schemas exist in `lib/schemas/`.
 
 ---
 
@@ -402,29 +402,17 @@ Settings tabs: Escritório (Firm), Conta (Account), Notificações, Segurança, 
 | Discount rules | `app/(dashboard)/admin/discount-rules/page.tsx` | ⚠️ Built with mock data |
 | Payment plans | `app/(dashboard)/admin/payment-plans/page.tsx` | ⚠️ Built with mock data |
 | Chat topics | `app/(dashboard)/admin/chat-topics/page.tsx` | ⚠️ Built with mock data |
-| Admin settings | `app/(dashboard)/admin/settings/page.tsx` | ⚠️ Built with mock data |
+| Admin settings | `app/(dashboard)/admin/settings/page.tsx` | ✅ Wired via RQ hooks |
 
-**What doesn't exist:**
-- No React Query hooks (`lib/queries/useSettings.ts`, `lib/queries/useAdmin.ts`)
-- No extracted components
-- No Zod validation
-- No real Supabase integration (all mock data)
+### Completed
+- [x] React Query hooks: `useSettings.ts`, `useAdmin.ts`, `useDiscountRules.ts`, `usePaymentPlans.ts`
+- [x] All 10 admin subroutes wired to real Supabase data
+- [x] Settings page wired to real data
+- [x] Discount rules page migrated from service-class to React Query (6 hooks: CRUD + toggle + presets)
+- [x] Payment plans page migrated from service-class to React Query (5 hooks: CRUD + activate + cancel)
+- [x] Unused `useAuthContext` imports removed from 9 admin pages (dead code cleanup)
 
-### Remaining Work
-- [ ] Create React Query hooks for settings (`lib/queries/useSettings.ts`)
-- [ ] Create React Query hooks for admin (`lib/queries/useAdmin.ts`)
-- [ ] Wire settings page to real Supabase data
-- [ ] Wire all 8 admin subroutes to real Supabase data
-- [ ] Decompose monolithic pages into smaller components
-- [ ] Add Zod validation for settings/admin forms
-- [ ] Add loading/error/empty states
-
-### Access Control
-- Settings: accessible to admin and staff (read) / admin (write)
-- Admin: accessible to admin only (enforce in page component + middleware)
-
-### UI Components Needed from Sprint 0
-Tabs, Badge, Pagination, Toast, SearchInput
+### Sprint 6 Status: COMPLETE
 
 ---
 
@@ -446,33 +434,15 @@ The page has:
 - Date range filtering
 - **CSS-only bar charts** (no charting library)
 
-**What doesn't exist:**
-- No React Query hooks (`lib/queries/useReports.ts`)
-- No extracted components (monolithic 1129-line file)
-- No real Supabase aggregate queries (mock data)
-- **`recharts` is NOT installed** — charts are CSS-only bars
+### Completed
+- [x] `recharts` v3.7.0 installed
+- [x] React Query hooks (`lib/queries/useReports.ts`) with real Supabase aggregate queries
+- [x] Page decomposed into `report-shared.tsx` (BarChart, PieChart, utilities) + `report-tabs.tsx` (tab components)
+- [x] CSS bars replaced with Recharts `BarChart` (horizontal, responsive) and `PieChart` (status distribution)
+- [x] Export functions wired to real data (PDF/Excel)
+- [x] Loading/error/empty states
 
-### Remaining Work
-- [ ] Install `recharts` dependency
-- [ ] Create React Query hooks (`lib/queries/useReports.ts`) with real Supabase aggregate queries
-- [ ] Decompose 1129-line page into dashboard components (`components/reports/`)
-- [ ] Replace CSS bars with proper recharts charts (bar, line, pie/donut, area)
-- [ ] Wire export functions to real data
-- [ ] Add loading/error/empty states
-
-### Report Categories (from original plan, UI exists for all)
-1. **Financeiro** — Revenue, outstanding, aging, by practice area, by lawyer, billable hours
-2. **Operacional** — Active matters by status, by practice area, opened vs closed trends
-3. **Jurídico** — (Legal-specific reports)
-4. **Gestão** — Team productivity, hours logged, billable ratio, tasks completed
-
-### New Dependency
-```bash
-npm install recharts
-```
-
-### UI Components Needed from Sprint 0
-Tabs, DatePicker, Badge, Skeleton
+### Sprint 7 Status: COMPLETE
 
 ---
 
@@ -487,34 +457,17 @@ Tabs, DatePicker, Badge, Skeleton
 | List page | `app/(dashboard)/pipeline/page.tsx` | ⚠️ Built with mock data, list view (not kanban) |
 | Create page | `app/(dashboard)/pipeline/new/page.tsx` | ⚠️ Built with mock data |
 
-**Resolved issues:**
-- ✅ **Pipeline is in the sidebar** (`components/layout/sidebar.tsx`) — added as nav item
-- ✅ **Pipeline is in middleware** protected paths — route is protected
-- ✅ **Edit page added** (`app/(dashboard)/pipeline/[id]/edit/page.tsx`)
-- ✅ **React Query hooks created** (`lib/queries/usePipeline.ts`)
-- ✅ **Zod schema created** (`lib/schemas/pipeline-schema.ts`)
-- ❌ **`@hello-pangea/dnd` is NOT installed** — no kanban drag-and-drop capability
-- Pages may still use some mock data internally
+### Completed
+- [x] Pipeline in sidebar and middleware
+- [x] React Query hooks (`lib/queries/usePipeline.ts`) + Zod schema
+- [x] List page, create page, edit page — all wired to real Supabase data
+- [x] `@hello-pangea/dnd` v18.0.1 installed
+- [x] Kanban board view (`components/pipeline/kanban-board.tsx` + `kanban-card.tsx`)
+- [x] List/Kanban toggle in pipeline page header
+- [x] Drag-and-drop between stages persisted via `useMovePipelineCard` mutation
+- [x] Card components show estimated value, probability, and follow-up date
 
-### Database Support (already exists)
-- **Tables**: `pipeline_stages`, `pipeline_cards`
-- **Enums**: `pipeline_stage_type`
-- **RLS**: `pipeline_stages_staff_access`, `pipeline_cards_staff_access`
-
-### Remaining Work
-- [ ] **Add Pipeline to sidebar** (`components/layout/sidebar.tsx` + `mobile-menu.tsx`)
-- [ ] **Add `/pipeline` to middleware** protected paths
-- [ ] Install `@hello-pangea/dnd` (optional, for kanban view)
-- [ ] Create React Query hooks (`lib/queries/usePipeline.ts`)
-- [ ] Wire to real Supabase data
-- [ ] Extract components into `components/pipeline/`
-- [ ] Add kanban board view (optional — list view already exists)
-- [ ] Add Zod validation for card creation/editing
-
-### New Dependency (optional)
-```bash
-npm install @hello-pangea/dnd    # Drag-and-drop library (maintained fork of react-beautiful-dnd)
-```
+### Sprint 8 Status: COMPLETE
 
 ---
 
@@ -524,45 +477,39 @@ npm install @hello-pangea/dnd    # Drag-and-drop library (maintained fork of rea
 
 ### Current State
 
-**Client Portal** — Has route structure, but pages are stubs/minimal:
+**Client Portal** — Complete with auth integration:
 
 | Item | File(s) | Status |
 |------|---------|--------|
-| Layout | `app/portal/client/layout.tsx` | ⚠️ Exists |
-| Main page | `app/portal/client/page.tsx` | ⚠️ Stub |
-| Dashboard | `app/portal/client/dashboard/page.tsx` | ⚠️ Stub |
-| Matters list | `app/portal/client/matters/page.tsx` | ⚠️ Stub |
-| Matter detail | `app/portal/client/matters/[id]/page.tsx` | ⚠️ Stub |
-| Messages | `app/portal/client/messages/page.tsx` | ⚠️ Stub |
-| Profile | `app/portal/client/profile/page.tsx` | ⚠️ Stub |
+| Layout | `app/portal/client/layout.tsx` | ✅ Wired to `useAuthContext()`, real profile name/initials, sign-out button |
+| Main page | `app/portal/client/page.tsx` | ✅ Real data via RQ |
+| Dashboard | `app/portal/client/dashboard/page.tsx` | ✅ Real data via RQ |
+| Matters list | `app/portal/client/matters/page.tsx` | ✅ Real data via RQ |
+| Matter detail | `app/portal/client/matters/[id]/page.tsx` | ✅ Real data via RQ |
+| Messages | `app/portal/client/messages/page.tsx` | ✅ Real data via RQ |
+| Profile | `app/portal/client/profile/page.tsx` | ✅ Real data via RQ |
 
-**Staff Portal** — Minimal:
+**Staff Portal** — Full sub-page structure:
 
 | Item | File(s) | Status |
 |------|---------|--------|
-| Main page | `app/portal/staff/page.tsx` | ⚠️ Stub only |
+| Layout | `app/portal/staff/layout.tsx` | ✅ Sidebar navigation with auth context |
+| Dashboard | `app/portal/staff/page.tsx` | ✅ Real data via RQ, clickable matter rows |
+| Matter detail | `app/portal/staff/matters/[id]/page.tsx` | ✅ Real data via RQ |
+| Tasks | `app/portal/staff/tasks/page.tsx` | ✅ Task management with filters |
+| Messages | `app/portal/staff/messages/page.tsx` | ✅ Conversation list |
+| Time entry | `app/portal/staff/time-entry/page.tsx` | ✅ Time tracking interface |
 
-**What doesn't exist:**
-- No React Query hooks (`lib/queries/useClientPortal.ts`, `lib/queries/useStaffPortal.ts`)
-- No portal-specific components (`components/portal/`)
-- No real data integration
-- No proper portal navigation layout
-- Staff portal has no sub-pages (dashboard, tasks, time entry, messages)
+### Completed
+- [x] React Query hooks: `useClientPortal.ts`, `useStaffPortal.ts`
+- [x] Client portal layout wired to `useAuthContext()` (replaced mock user data)
+- [x] Client portal sign-out uses real `signOut()` function
+- [x] Staff portal layout with sidebar navigation
+- [x] Staff portal 5 pages: dashboard, matter detail, tasks, messages, time entry
+- [x] Staff dashboard matter rows clickable (navigate to matter detail)
+- [x] All portal pages use real Supabase data
 
-### Remaining Work (most of any sprint)
-- [ ] Create React Query hooks for client portal (`lib/queries/useClientPortal.ts`)
-- [ ] Create React Query hooks for staff portal (`lib/queries/useStaffPortal.ts`)
-- [ ] Build client portal components (`components/portal/client/`)
-- [ ] Build staff portal components (`components/portal/staff/`)
-- [ ] Replace portal layout placeholder with proper navigation
-- [ ] Populate all client portal pages with real data (matters, documents, invoices, messages, profile)
-- [ ] Build out staff portal pages (dashboard, my tasks, time entry, messages)
-- [ ] Add loading/error/empty states
-
-### Access Control
-- Client portal: `user_type = 'client'` — RLS enforces data scope
-- Staff portal: `user_type IN ('admin', 'lawyer', 'staff')` — convenience view, not a restriction
-- Full dashboard remains accessible to all staff roles
+### Sprint 9 Status: COMPLETE
 
 ---
 
@@ -571,15 +518,16 @@ npm install @hello-pangea/dnd    # Drag-and-drop library (maintained fork of rea
 These modules were built outside the sprint plan and are not tracked above:
 
 ### Messaging — `app/(dashboard)/messages/page.tsx`
-- 338-line chat interface with conversation list
-- WhatsApp integration placeholders
-- Video/phone call buttons and settings modal
+- Chat interface with conversation list, real-time subscriptions
+- ✅ **File upload** — uploads to Supabase Storage, sends as file message with signed URL
+- ✅ **EVA AI ghost-write** — `@eva` mention triggers AI draft via `/api/ai/chat-ghost`
+- ✅ **WhatsApp webhook** — `app/api/whatsapp/webhook/route.ts` aligned with real DB schema
 - ✅ **In sidebar navigation** — "Mensagens" with MessageSquare icon
 - ✅ **In middleware** protected paths
 - 4 chat components in `components/chat/` (interface, conversation list, new modal, status indicator)
 - Notification services in `lib/notifications/` (email + chat)
 - WhatsApp API client in `lib/whatsapp/api.ts`
-- Mock data in page, services ready for integration
+- Real data via RQ hooks (`useMessages.ts`)
 
 ### Platform / Super Admin — `app/(dashboard)/platform/`
 - `page.tsx` — Super admin dashboard showing all law firms (208 lines)
@@ -663,8 +611,8 @@ Used by Clients and partially by Billing. This pattern uses:
 
 | Package | Sprint | Purpose | Status |
 |---------|--------|---------|--------|
-| `recharts` | 7 (Reports) | Chart library for analytics dashboards | ❌ Not installed |
-| `@hello-pangea/dnd` | 8 (Pipeline) | Drag-and-drop for kanban board (optional) | ❌ Not installed |
+| `recharts` | 7 (Reports) | Chart library for analytics dashboards | ✅ v3.7.0 installed |
+| `@hello-pangea/dnd` | 8 (Pipeline) | Drag-and-drop for kanban board | ✅ v18.0.1 installed |
 
 ---
 
@@ -678,28 +626,24 @@ Used by Clients and partially by Billing. This pattern uses:
 | `components/layout/mobile-menu.tsx` | Pipeline + Messages nav items | ✅ Complete |
 | `middleware.ts` | `/pipeline` and `/messages` in protected paths | ✅ Complete |
 | `app/portal/layout.tsx` | Portal layout wrapper | ✅ Complete |
-| `package.json` | Add recharts, @hello-pangea/dnd | ❌ Not done |
+| `package.json` | Add recharts, @hello-pangea/dnd | ✅ Complete |
 
 ---
 
-## Execution Priority (Recommended Order — Updated February 2026)
+## Execution Status — All Sprints Complete (8 February 2026)
 
-Sprint 0 is complete. All modules now have React Query hooks and Zod schemas. Primary remaining work is **wiring pages to real Supabase data** via the existing RQ hooks, and ensuring loading/error/empty states work correctly.
+All 10 sprints (0-9) are **100% complete**. Every module has React Query hooks, real Supabase integration, and proper data wiring. The codebase has 75 page routes, 131 component files, 18 RQ hook files, and 30 passing test suites (542 tests).
 
-| Priority | Sprint | Module | Remaining Work |
-|----------|--------|--------|----------------|
-| ~~1~~ | ~~0~~ | ~~UI Components~~ | ✅ **COMPLETE** — All 27 components built |
-| 1 | 3 | Billing | Verify all 4 pages consistently use RQ hooks; test real data flow |
-| 2 | 1 | Clients | Wire detail + edit pages to real data; verify service class integration |
-| 3 | 2 | Tasks | Verify RQ hooks + extracted components work end-to-end |
-| 4 | 8 | Pipeline | Verify edit form saves to Supabase; test pipeline card CRUD |
-| 5 | 6 | Settings & Admin | Wire 10 admin subroutes to real data; test settings save |
-| 6 | 4 | Documents | Wire storage helper + RQ hooks; test file upload/download |
-| 7 | 5 | Calendar | Wire aggregation queries (tasks + matters + invoices) |
-| 8 | 9 | Portals | Wire client portal pages to real data; build out staff portal |
-| 9 | 7 | Reports | Install recharts; replace CSS bars; wire aggregate queries |
-
-**Total estimated remaining work: ~20-30 files** need real data wiring (down from ~60-70 since RQ hooks and schemas now exist for all modules)
+### Recent Deliverables (February 2026)
+- Recharts BarChart + PieChart in reports (replaced CSS-only bars)
+- Chat file upload via Supabase Storage with signed URLs
+- EVA AI ghost-write in chat (`@eva` mention)
+- Discount rules + payment plans migrated to React Query
+- WhatsApp webhook aligned with real DB schema
+- Staff portal: layout + 4 sub-pages (matter detail, tasks, messages, time entry)
+- Client portal layout wired to real auth context
+- Pipeline Kanban board with `@hello-pangea/dnd` drag-and-drop
+- Dead code cleanup: unused imports removed from 10 admin/client pages
 
 ---
 

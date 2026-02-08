@@ -928,6 +928,8 @@ export type AIConversationUpdate = Partial<Omit<AIConversationInsert, 'user_id' 
 // AI MESSAGES
 // =====================================================
 
+export type AIMessageSourceType = 'widget' | 'chat_ghost' | 'client_portal' | 'proactive'
+
 export interface AIMessage extends BaseEntity {
   conversation_id: string
   law_firm_id: string | null
@@ -937,6 +939,8 @@ export interface AIMessage extends BaseEntity {
   tool_results?: Record<string, unknown>[]
   tokens_input: number
   tokens_output: number
+  source_type?: AIMessageSourceType
+  source_conversation_id?: string
 }
 
 export type AIMessageInsert = Omit<AIMessage, 'id' | 'created_at' | 'updated_at'>

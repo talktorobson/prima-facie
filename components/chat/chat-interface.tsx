@@ -8,7 +8,8 @@ import {
   EllipsisVerticalIcon,
   UserIcon,
   PhoneIcon,
-  VideoCameraIcon
+  VideoCameraIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline'
 import { useConversationMessages, useSendMessage, useMarkAsRead } from '@/lib/queries/useMessages'
 import { useConversationRealtime, useTypingBroadcast, formatMessageTime, isMessageFromCurrentUser } from '@/lib/supabase/realtime'
@@ -18,6 +19,13 @@ import MessageStatusIndicator from './message-status-indicator'
 import { useToast } from '@/components/ui/toast-provider'
 
 const COMMON_EMOJIS = ['😀', '😂', '👍', '❤️', '🙏', '👋', '✅', '⚖️', '📄', '📎', '🔔', '⏰', '📅', '💼', '🏛️', '📝', '🤝', '👏', '🎉', '✨']
+
+const EVA_MENTION_RE = /^@eva\s+([\s\S]+)/i
+
+function extractEvaQuery(text: string): string | null {
+  const match = text.match(EVA_MENTION_RE)
+  return match ? match[1].trim() : null
+}
 
 interface ChatInterfaceProps {
   conversation: Conversation
@@ -167,6 +175,7 @@ export default function ChatInterface({
   const toast = useToast()
   const [newMessage, setNewMessage] = useState('')
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [isEvaProcessing, setIsEvaProcessing] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
@@ -218,10 +227,63 @@ export default function ChatInterface({
     }, 3000)
   }
 
-  // Send message
+  // Send message (with @eva ghost-write support)
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || sendMessageMutation.isPending) return
+    if (!newMessage.trim() || sendMessageMutation.isPending || isEvaProcessing) return
 
+    const evaQuery = extractEvaQuery(newMessage.trim())
+
+    if (evaQuery && !isClient) {
+      // @eva ghost-write flow
+      setIsEvaProcessing(true)
+      setNewMessage('')
+      sendTyping(false)
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+
+      try {
+        const response = await fetch('/api/ai/chat-ghost', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: evaQuery,
+            conversationId: conversation.id,
+          }),
+        })
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}))
+          throw new Error(errData.error || 'Erro ao processar')
+        }
+
+        const { content } = await response.json()
+
+        // Send EVA's response as the user's own message
+        sendMessageMutation.mutate(
+          {
+            law_firm_id: lawFirmId,
+            conversation_id: conversation.id,
+            content,
+            message_type: 'text',
+            sender_id: currentUserId,
+            sender_type: 'user',
+            status: 'sent',
+          },
+          {
+            onError: () => {
+              toast.error('Erro ao enviar a resposta da EVA.')
+            },
+          }
+        )
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Erro desconhecido'
+        toast.error(`EVA nao conseguiu processar: ${msg}`)
+      } finally {
+        setIsEvaProcessing(false)
+      }
+      return
+    }
+
+    // Normal message flow
     sendMessageMutation.mutate(
       {
         law_firm_id: lawFirmId,
@@ -346,6 +408,27 @@ export default function ChatInterface({
         ) : (
           <>
             {renderedMessages}
+            {isEvaProcessing && (
+              <div className="flex justify-start mb-4">
+                <div className="flex max-w-xs">
+                  <div className="flex-shrink-0 mr-2">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <SparklesIcon className="h-5 w-5 text-primary" />
+                    </div>
+                  </div>
+                  <div className="ml-2">
+                    <p className="text-xs text-primary font-medium mb-1">EVA esta preparando uma resposta...</p>
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <TypingIndicatorComponent typing={typingUsers} />
             <div ref={messagesEndRef} />
           </>
@@ -376,8 +459,9 @@ export default function ChatInterface({
                 handleTyping()
               }}
               onKeyPress={handleKeyPress}
-              placeholder="Digite sua mensagem..."
-              className="w-full resize-none border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder={isClient ? 'Digite sua mensagem...' : 'Digite sua mensagem ou @eva para usar a assistente de IA...'}
+              disabled={isEvaProcessing}
+              className="w-full resize-none border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:bg-gray-50"
               rows={1}
               style={{ maxHeight: '120px' }}
             />
@@ -410,7 +494,7 @@ export default function ChatInterface({
 
           <button
             onClick={handleSendMessage}
-            disabled={!newMessage.trim() || sendMessageMutation.isPending}
+            disabled={!newMessage.trim() || sendMessageMutation.isPending || isEvaProcessing}
             className="p-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <PaperAirplaneIcon className="h-5 w-5" />

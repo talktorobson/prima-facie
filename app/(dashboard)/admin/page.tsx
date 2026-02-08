@@ -17,6 +17,7 @@ import {
   CreditCardIcon,
   BellIcon,
   GlobeAltIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -43,6 +44,7 @@ export default function AdminPage() {
     { title: 'Faturamento', description: 'Plano de assinatura e historico de pagamentos', icon: CreditCardIcon, href: '/admin/billing', color: 'bg-amber-50 text-amber-600 border-amber-200' },
     { title: 'Notificações', description: 'Configurar alertas e comunicações automatizadas', icon: BellIcon, href: '/admin/notifications', color: 'bg-rose-50 text-rose-600 border-rose-200' },
     { title: 'Website', description: 'Editar o site público do escritório', icon: GlobeAltIcon, href: '/admin/website', color: 'bg-cyan-50 text-cyan-600 border-cyan-200' },
+    { title: 'EVA Notificacoes', description: 'Configurar notificacoes automaticas da EVA para clientes', icon: SparklesIcon, href: '/admin/eva-notifications', color: 'bg-violet-50 text-violet-600 border-violet-200' },
   ]
 
   return (

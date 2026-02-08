@@ -1,5 +1,7 @@
 # CLAUDE.md - Prima Facie Project
 
+Inherits: `personal/CLAUDE.md`
+
 ## Project Overview
 Prima Facie is a Next.js 14 legal practice management SaaS (Sistema de Gestao para Escritorios de Advocacia) with TypeScript, Tailwind CSS, Supabase (PostgreSQL + Auth + RLS + Storage), and TanStack Query. UI is localized in Portuguese (pt-BR).
 
@@ -267,7 +269,6 @@ All exported via barrel file `components/ui/index.ts`.
 - `@/hooks/*` -> `./lib/hooks/*`
 
 ## Development Guidelines
-- Use snake_case for DB, camelCase for TS, PascalCase for components
 - Keep components simple and focused
 - Use Server Components by default, Client Components when needed
 - Implement proper error boundaries

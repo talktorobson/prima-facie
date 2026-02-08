@@ -61,3 +61,6 @@ test-screenshots/
 
 # Supabase CLI temp
 supabase/.temp/
+
+# Seed scripts with credentials
+database/seed-data/seed-auth-users.mjs

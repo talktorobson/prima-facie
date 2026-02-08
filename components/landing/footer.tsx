@@ -49,7 +49,7 @@ export default function Footer() {
             </h4>
             <div className="space-y-3 text-sm text-gray-400">
               <p>(15) 3384-4013</p>
-              <p>financeiro@davilareisadvogados.com.br</p>
+              <p>recepcao@davilareisadvogados.com.br</p>
               <p>
                 Av. Dr. Vinício Gagliardi, 675
                 <br />

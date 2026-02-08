@@ -165,7 +165,7 @@ export default function CookiesPage() {
                   D&apos;Avila Reis Advogados
                 </p>
                 <p className="text-landing-stone text-sm">
-                  E-mail: financeiro@davilareisadvogados.com.br
+                  E-mail: recepcao@davilareisadvogados.com.br
                 </p>
                 <p className="text-landing-stone text-sm">Telefone: (15) 3384-4013</p>
                 <p className="text-landing-stone text-sm">

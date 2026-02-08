@@ -47,7 +47,7 @@ const sections = [
     ],
     contact: {
       name: 'D\'Avila Reis Advogados',
-      email: 'financeiro@davilareisadvogados.com.br',
+      email: 'recepcao@davilareisadvogados.com.br',
       phone: '(15) 3384-4013',
       address: 'Av. Dr. Vinicio Gagliardi, 675, Centro, Cerquilho/SP — CEP 18520-091',
     },

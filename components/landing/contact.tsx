@@ -13,7 +13,7 @@ const contactInfo = [
   {
     icon: Mail,
     title: 'E-mail',
-    detail: 'financeiro@davilareisadvogados.com.br',
+    detail: 'recepcao@davilareisadvogados.com.br',
   },
   {
     icon: MapPin,

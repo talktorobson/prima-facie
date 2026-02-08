@@ -154,16 +154,7 @@ export default function SobrePage() {
             </ScrollReveal>
 
             <ScrollReveal delay="100ms">
-              <div className="mt-16 flex flex-col md:flex-row items-center gap-8 justify-center">
-                <div className="text-center">
-                  <div className="w-24 h-24 bg-landing-charcoal rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-white font-serif font-bold text-xl">RDR</span>
-                  </div>
-                  <h3 className="text-lg font-serif font-semibold text-landing-ink">
-                    Dr. Ruy D&apos;Avila Reis
-                  </h3>
-                  <p className="text-landing-gold text-sm font-medium">Sócio-Fundador</p>
-                </div>
+              <div className="mt-16 flex justify-center">
                 <div className="text-center">
                   <div className="w-24 h-24 bg-landing-charcoal rounded-full mx-auto mb-4 flex items-center justify-center">
                     <span className="text-white font-serif font-bold text-xl">LDR</span>
@@ -171,7 +162,7 @@ export default function SobrePage() {
                   <h3 className="text-lg font-serif font-semibold text-landing-ink">
                     Dra. Larissa D&apos;Avila Reis
                   </h3>
-                  <p className="text-landing-gold text-sm font-medium">Sócia-Fundadora</p>
+                  <p className="text-landing-gold text-sm font-medium">Sócia Fundadora</p>
                 </div>
               </div>
             </ScrollReveal>

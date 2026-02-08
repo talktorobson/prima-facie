@@ -1,20 +1,12 @@
 import Link from 'next/link'
 import ScrollReveal from '@/components/landing/scroll-reveal'
 
-const founders = [
-  {
-    name: 'Dr. Ruy D\'Avila Reis',
-    title: 'Sócio Fundador',
-    oab: 'OAB/SP',
-    bio: 'Sócio fundador com mais de 20 anos de experiência na defesa de empresas em demandas trabalhistas. Especialista em blindagem patrimonial e estratégia processual para o empregador.',
-  },
-  {
-    name: 'Dra. Larissa D\'Avila Reis',
-    title: 'Sócia Fundadora',
-    oab: 'OAB/SP · OAB/MG · OAB/PR · Ordem dos Advogados de Portugal',
-    bio: 'Sócia fundadora com inscrição ativa na OAB/SP, OAB/MG, OAB/PR e na Ordem dos Advogados de Portugal (OAP). Experiência em direito empresarial com dimensão transfronteiriça entre Brasil e Europa.',
-  },
-]
+const founder = {
+  name: 'Dra. Larissa D\'Avila Reis',
+  title: 'Sócia Fundadora',
+  oab: 'OAB/SP · OAB/MG · OAB/PR · Ordem dos Advogados de Portugal',
+  bio: 'Sócia fundadora com inscrição ativa na OAB/SP, OAB/MG, OAB/PR e na Ordem dos Advogados de Portugal (OAP). Experiência em direito empresarial com dimensão transfronteiriça entre Brasil e Europa.',
+}
 
 export default function Founders() {
   return (
@@ -28,26 +20,24 @@ export default function Founders() {
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {founders.map((founder, index) => (
-            <ScrollReveal key={founder.name} delay={`${index * 150}ms`}>
-              <div className="border border-white/10 p-8 md:p-10">
-                <h3 className="text-2xl font-serif font-bold text-white mb-1">
-                  {founder.name}
-                </h3>
-                <p className="text-landing-gold text-sm font-medium tracking-wide uppercase mb-2">
-                  {founder.title}
-                </p>
-                <p className="text-xs text-gray-500 tracking-wide mb-6">
-                  {founder.oab}
-                </p>
-                <div className="w-10 h-[1px] bg-landing-gold mb-6" />
-                <p className="text-gray-400 leading-relaxed">
-                  {founder.bio}
-                </p>
-              </div>
-            </ScrollReveal>
-          ))}
+        <div className="max-w-xl mx-auto">
+          <ScrollReveal>
+            <div className="border border-white/10 p-8 md:p-10">
+              <h3 className="text-2xl font-serif font-bold text-white mb-1">
+                {founder.name}
+              </h3>
+              <p className="text-landing-gold text-sm font-medium tracking-wide uppercase mb-2">
+                {founder.title}
+              </p>
+              <p className="text-xs text-gray-500 tracking-wide mb-6">
+                {founder.oab}
+              </p>
+              <div className="w-10 h-[1px] bg-landing-gold mb-6" />
+              <p className="text-gray-400 leading-relaxed">
+                {founder.bio}
+              </p>
+            </div>
+          </ScrollReveal>
         </div>
 
         <ScrollReveal delay="300ms">

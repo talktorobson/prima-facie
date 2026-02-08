@@ -14,6 +14,7 @@ import { useFirmContext } from '@/lib/providers/firm-context'
 import { EditFirmDialog } from '@/components/platform/edit-firm-dialog'
 import { CreateUserDialog } from '@/components/platform/create-user-dialog'
 import { EditUserDialog } from '@/components/platform/edit-user-dialog'
+import { useToast } from '@/components/ui/toast-provider'
 import {
   ArrowLeftIcon,
   BuildingOffice2Icon,
@@ -39,6 +40,7 @@ export default function PlatformFirmDetailPage() {
   const deactivateUser = useDeactivatePlatformUser()
   const resetPassword = useResetUserPassword()
 
+  const toast = useToast()
   const [showEditFirm, setShowEditFirm] = useState(false)
   const [showCreateUser, setShowCreateUser] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
@@ -68,7 +70,7 @@ export default function PlatformFirmDetailPage() {
 
   const handleResetPassword = async (userId: string) => {
     await resetPassword.mutateAsync(userId)
-    alert('Link de recuperação enviado.')
+    toast.success('Link de recuperacao enviado.')
   }
 
   const loading = firmLoading || usersLoading

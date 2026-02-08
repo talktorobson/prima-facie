@@ -43,9 +43,8 @@ function ArticleCard({ article }: { article: Article }) {
     <div className="bg-white border border-landing-mist/60 p-6 flex flex-col h-full hover:border-landing-gold/40 transition-colors">
       <div className="flex items-center gap-3 mb-4">
         <span
-          className={`inline-block px-2.5 py-0.5 text-xs font-medium ${
-            categoryBadgeColors[article.category] || 'bg-gray-100 text-gray-800'
-          }`}
+          className={`inline-block px-2.5 py-0.5 text-xs font-medium ${categoryBadgeColors[article.category] || 'bg-gray-100 text-gray-800'
+            }`}
         >
           {categoryLabels[article.category] || article.category}
         </span>
@@ -85,7 +84,7 @@ function EmptyState() {
         Nenhum conteudo encontrado
       </h3>
       <p className="text-sm text-landing-stone max-w-md mx-auto">
-        Estamos preparando novos conteudos para voce. Volte em breve ou inscreva-se na nossa
+        Estamos preparando novos conteúdos para você. Volte em breve ou inscreva-se na nossa
         newsletter para ser notificado.
       </p>
     </div>
@@ -130,7 +129,7 @@ export default function ConteudosPage() {
                   Conteudos
                 </h1>
                 <p className="text-landing-stone mt-8 text-lg max-w-2xl mx-auto">
-                  Alertas juridicos, guias praticos e artigos para manter sua empresa protegida e informada.
+                  Alertas jurídicos, guias práticos e artigos para manter sua empresa protegida e informada.
                 </p>
               </div>
             </ScrollReveal>
@@ -144,11 +143,10 @@ export default function ConteudosPage() {
                     <button
                       key={cat.label}
                       onClick={() => setActiveCategory(cat.key)}
-                      className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium border transition-colors ${
-                        isActive
+                      className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium border transition-colors ${isActive
                           ? 'border-landing-gold bg-landing-gold text-white'
                           : 'border-landing-mist text-landing-stone hover:border-landing-gold/50 hover:text-landing-ink'
-                      }`}
+                        }`}
                     >
                       <cat.icon className="h-4 w-4" />
                       {cat.label}
@@ -177,10 +175,10 @@ export default function ConteudosPage() {
             <ScrollReveal>
               <div className="mt-16 max-w-xl mx-auto text-center">
                 <h3 className="text-lg font-serif font-semibold text-landing-ink mb-2">
-                  Receba nossos conteudos por e-mail
+                  Receba nossos conteúdos por e-mail
                 </h3>
                 <p className="text-sm text-landing-stone mb-6">
-                  Inscreva-se e fique por dentro de alertas juridicos e novidades.
+                  Inscreva-se e fique por dentro de alertas jurídicos e novidades.
                 </p>
                 <NewsletterForm />
               </div>
@@ -215,7 +213,7 @@ function NewsletterForm() {
       }
 
       setStatus('success')
-      setMessage('Inscricao realizada com sucesso!')
+      setMessage('Inscrição realizada com sucesso!')
       setEmail('')
     } catch (err) {
       setStatus('error')

@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/lib/hooks/use-auth'
+import { useAuthContext } from '@/lib/providers/auth-provider'
 import ConversationList from '@/components/chat/conversation-list'
 import ChatInterface from '@/components/chat/chat-interface'
 import NotificationPanel from '@/components/notifications/notification-panel'
-import NewConversationModal from '@/components/chat/new-conversation-modal'
-import { Conversation } from '@/lib/supabase/realtime'
+import type { Conversation } from '@/types/database'
 import { useToast } from '@/components/ui/toast-provider'
 import {
   ChatBubbleLeftRightIcon,
@@ -16,22 +15,24 @@ import {
 } from '@heroicons/react/24/outline'
 
 export default function MessagesPage() {
-  const { user } = useAuth()
+  const { profile } = useAuthContext()
   const toast = useToast()
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [isMobileView, setIsMobileView] = useState(false)
-  const [showNewConversationModal, setShowNewConversationModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
 
-  // Check for mobile view
+  const lawFirmId = profile?.law_firm_id
+  const userId = profile?.id
+  const userType = profile?.user_type
+  const userName = profile?.full_name || profile?.first_name || profile?.email || ''
+  const isClient = userType === 'client'
+
   useEffect(() => {
     const checkMobileView = () => {
       setIsMobileView(window.innerWidth < 1024)
     }
-    
     checkMobileView()
     window.addEventListener('resize', checkMobileView)
-    
     return () => window.removeEventListener('resize', checkMobileView)
   }, [])
 
@@ -43,46 +44,27 @@ export default function MessagesPage() {
     setSelectedConversation(null)
   }
 
-  const handleNewConversation = () => {
-    setShowNewConversationModal(true)
-  }
-
-  const handleCreateConversation = (data: {
-    clientId: string
-    topicId: string
-    title: string
-    conversationType: 'internal' | 'client' | 'whatsapp'
-    priority: 'low' | 'normal' | 'high' | 'urgent'
-  }) => {
-    // The conversation list component will handle the actual creation
-    setShowNewConversationModal(false)
-  }
-
   const handlePhoneCall = () => {
-    toast.info('Funcionalidade de ligação em breve')
+    toast.info('Funcionalidade de ligacao em breve')
   }
 
   const handleVideoCall = () => {
     toast.info('Funcionalidade de videochamada em breve')
   }
 
-  const handleSettings = () => {
-    setShowSettingsModal(true)
-  }
-
   const handleWhatsAppIntegration = () => {
-    toast.info('Integração WhatsApp Business em breve')
+    toast.info('Integracao WhatsApp Business em breve')
   }
 
   const handlePhoneIntegration = () => {
-    toast.info('Integração telefônica em breve')
+    toast.info('Integracao telefonica em breve')
   }
 
   const handleVideoIntegration = () => {
-    toast.info('Integração de vídeo em breve')
+    toast.info('Integracao de video em breve')
   }
 
-  if (!user) {
+  if (!profile || !lawFirmId || !userId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -100,15 +82,17 @@ export default function MessagesPage() {
         {selectedConversation ? (
           <ChatInterface
             conversation={selectedConversation}
-            currentUserId={user.id}
-            currentUserName={user.name || user.email}
-            isClient={user.role === 'client'}
+            currentUserId={userId}
+            currentUserName={userName}
+            lawFirmId={lawFirmId}
+            isClient={isClient}
             onClose={handleCloseChat}
           />
         ) : (
           <ConversationList
-            currentUserId={user.id}
-            isClient={user.role === 'client'}
+            lawFirmId={lawFirmId}
+            currentUserId={userId}
+            isClient={isClient}
             onSelectConversation={handleSelectConversation}
             selectedConversationId={selectedConversation?.id}
           />
@@ -128,42 +112,42 @@ export default function MessagesPage() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Mensagens</h1>
               <p className="text-gray-500">
-                {user.role === 'client' 
+                {isClient
                   ? 'Converse com seu advogado'
-                  : 'Central de comunicação com clientes'
+                  : 'Central de comunicacao com clientes'
                 }
               </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-4">
-            {user.role !== 'client' && (
+            {!isClient && (
               <>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span>Online</span>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
-                  <button 
+                  <button
                     onClick={handlePhoneCall}
                     className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-                    title="Fazer ligação"
+                    title="Fazer ligacao"
                   >
                     <PhoneIcon className="h-5 w-5" />
                   </button>
-                  <button 
+                  <button
                     onClick={handleVideoCall}
                     className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
                     title="Videochamada"
                   >
                     <VideoCameraIcon className="h-5 w-5" />
                   </button>
-                  <NotificationPanel userId={user.id} isClient={user.role === 'client'} />
-                  <button 
-                    onClick={handleSettings}
+                  <NotificationPanel userId={userId} isClient={isClient} />
+                  <button
+                    onClick={() => setShowSettingsModal(true)}
                     className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-                    title="Configurações"
+                    title="Configuracoes"
                   >
                     <CogIcon className="h-5 w-5" />
                   </button>
@@ -179,8 +163,9 @@ export default function MessagesPage() {
         {/* Conversation List - Left Sidebar */}
         <div className="w-80 border-r border-gray-200 bg-white h-full">
           <ConversationList
-            currentUserId={user.id}
-            isClient={user.role === 'client'}
+            lawFirmId={lawFirmId}
+            currentUserId={userId}
+            isClient={isClient}
             onSelectConversation={handleSelectConversation}
             selectedConversationId={selectedConversation?.id}
           />
@@ -191,9 +176,10 @@ export default function MessagesPage() {
           {selectedConversation ? (
             <ChatInterface
               conversation={selectedConversation}
-              currentUserId={user.id}
-              currentUserName={user.name || user.email}
-              isClient={user.role === 'client'}
+              currentUserId={userId}
+              currentUserName={userName}
+              lawFirmId={lawFirmId}
+              isClient={isClient}
             />
           ) : (
             <div className="h-full flex items-center justify-center bg-gray-50">
@@ -203,42 +189,34 @@ export default function MessagesPage() {
                   Selecione uma conversa
                 </h3>
                 <p className="text-gray-500 mb-6 max-w-sm">
-                  Escolha uma conversa da lista à esquerda para começar a enviar mensagens.
+                  Escolha uma conversa da lista a esquerda para comecar a enviar mensagens.
                 </p>
-                
-                {user.role !== 'client' && (
+
+                {!isClient && (
                   <div className="space-y-3">
-                    <button 
-                      onClick={handleNewConversation}
-                      className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
-                    >
-                      <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
-                      Nova Conversa
-                    </button>
-                    
                     <div className="text-sm text-gray-500">
-                      <p>Ou use as integrações disponíveis:</p>
+                      <p>Ou use as integracoes disponiveis:</p>
                       <div className="flex items-center justify-center space-x-4 mt-2">
-                        <button 
+                        <button
                           onClick={handleWhatsAppIntegration}
                           className="flex items-center space-x-1 text-green-600 hover:text-green-700"
                         >
                           <span>📱</span>
                           <span>WhatsApp</span>
                         </button>
-                        <button 
+                        <button
                           onClick={handlePhoneIntegration}
                           className="flex items-center space-x-1 text-blue-600 hover:text-blue-700"
                         >
                           <PhoneIcon className="h-4 w-4" />
                           <span>Telefone</span>
                         </button>
-                        <button 
+                        <button
                           onClick={handleVideoIntegration}
                           className="flex items-center space-x-1 text-purple-600 hover:text-purple-700"
                         >
                           <VideoCameraIcon className="h-4 w-4" />
-                          <span>Vídeo</span>
+                          <span>Video</span>
                         </button>
                       </div>
                     </div>
@@ -250,42 +228,35 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      {/* New Conversation Modal */}
-      <NewConversationModal
-        isOpen={showNewConversationModal}
-        onClose={() => setShowNewConversationModal(false)}
-        onCreateConversation={handleCreateConversation}
-      />
-
       {/* Settings Modal */}
       {showSettingsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Configurações de Mensagens</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuracoes de Mensagens</h3>
             <div className="space-y-4">
               <div className="border-b border-gray-200 pb-3">
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Notificações</h4>
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Notificacoes</h4>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Notificações por email</span>
+                  <span className="text-sm text-gray-600">Notificacoes por email</span>
                   <input type="checkbox" defaultChecked className="rounded" />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Sons de notificação</span>
+                  <span className="text-sm text-gray-600">Sons de notificacao</span>
                   <input type="checkbox" defaultChecked className="rounded" />
                 </div>
               </div>
-              
+
               <div className="border-b border-gray-200 pb-3">
                 <h4 className="text-sm font-medium text-gray-900 mb-2">WhatsApp Business</h4>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Integração ativa</span>
-                  <span className="text-sm text-green-600">✓ Conectado</span>
+                  <span className="text-sm text-gray-600">Integracao ativa</span>
+                  <span className="text-sm text-green-600">Conectado</span>
                 </div>
                 <button className="text-sm text-blue-600 hover:text-blue-700">
-                  Gerenciar integração
+                  Gerenciar integracao
                 </button>
               </div>
-              
+
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Privacidade</h4>
                 <div className="flex items-center justify-between">
@@ -298,7 +269,7 @@ export default function MessagesPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowSettingsModal(false)}
@@ -308,7 +279,7 @@ export default function MessagesPage() {
               </button>
               <button
                 onClick={() => {
-                  toast.info('Configurações de mensagens em breve')
+                  toast.info('Configuracoes de mensagens em breve')
                   setShowSettingsModal(false)
                 }}
                 className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90"
@@ -318,14 +289,6 @@ export default function MessagesPage() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Settings Modal Backdrop */}
-      {showSettingsModal && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setShowSettingsModal(false)}
-        />
       )}
     </div>
   )

@@ -2,7 +2,7 @@
 // Handles message notifications, status indicators, and real-time alerts
 
 import { createClient } from '@/lib/supabase/client'
-import { Message, Conversation } from '@/lib/supabase/realtime'
+import type { Message, Conversation } from '@/types/database'
 
 const supabase = createClient()
 

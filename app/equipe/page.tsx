@@ -34,7 +34,7 @@ export default function EquipePage() {
             </h1>
             <div className="w-12 h-[2px] bg-landing-gold mx-auto mb-6" />
             <p className="text-landing-stone text-lg max-w-2xl mx-auto">
-              Profissionais dedicados a protecao do seu patrimonio e dos seus negocios.
+              Profissionais dedicados a proteção do seu patrimônio e dos seus negócios.
             </p>
           </div>
         </section>
@@ -44,7 +44,7 @@ export default function EquipePage() {
           <div className="container mx-auto px-6 max-w-5xl">
             <ScrollReveal>
               <h2 className="text-3xl md:text-4xl font-serif font-bold text-white text-center mb-16 gold-line mx-auto inline-block w-full">
-                Socios Fundadores
+                Sócios Fundadores
               </h2>
             </ScrollReveal>
 

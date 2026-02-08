@@ -5,9 +5,9 @@ import PublicPageShell from '@/components/landing/public-page-shell'
 import ScrollReveal from '@/components/landing/scroll-reveal'
 
 export const metadata: Metadata = {
-  title: "Area de Atuacao Geografica | D'Avila Reis Advogados",
+  title: "Área de Atuação Geográfica | D'Avila Reis Advogados",
   description:
-    'O escritorio D\'Avila Reis Advogados atua a partir de Cerquilho/SP, no eixo Sorocaba-Campinas-Piracicaba, com cobertura estadual em Sao Paulo e nacional via correspondentes.',
+    'O escritório D\'Avila Reis Advogados atua a partir de Cerquilho/SP, no eixo Sorocaba-Campinas-Piracicaba, com cobertura estadual em São Paulo e nacional via correspondentes.',
 }
 
 const cities = [
@@ -50,13 +50,13 @@ export default function AreaDeAtuacaoPage() {
             <ScrollReveal>
               <div className="space-y-6 mb-16">
                 <p className="text-landing-stone leading-relaxed text-lg">
-                  O escritorio D&apos;Avila Reis Advogados esta sediado em Cerquilho, no interior
-                  de Sao Paulo, posicionado estrategicamente no eixo Sorocaba-Campinas-Piracicaba.
-                  Essa localizacao permite atendimento agil e presencial a empresas e empresarios
-                  de uma das regioes mais dinamicas do estado.
+                  O escritório D&apos;Avila Reis Advogados está sediado em Cerquilho, no interior
+                  de São Paulo, posicionado estrategicamente no eixo Sorocaba-Campinas-Piracicaba.
+                  Essa localização permite atendimento agil e presencial a empresas e empresários
+                  de uma das regiões mais dinâmicas do estado.
                 </p>
                 <p className="text-landing-stone leading-relaxed text-lg">
-                  Nosso escritorio esta localizado na Av. Dr. Vinicio Gagliardi, 675, Centro,
+                  Nosso escritório está localizado na Av. Dr. Vinicio Gagliardi, 675, Centro,
                   Cerquilho/SP, com facil acesso pelas rodovias que conectam as principais cidades
                   da regiao.
                 </p>
@@ -102,8 +102,8 @@ export default function AreaDeAtuacaoPage() {
                     Cobertura Estadual
                   </h3>
                   <p className="text-landing-stone leading-relaxed">
-                    Alem do atendimento presencial na regiao de Cerquilho, o escritorio atua em
-                    todo o estado de Sao Paulo, com acompanhamento processual nas varas do
+                    Alem do atendimento presencial na regiao de Cerquilho, o escritório atua em
+                    todo o estado de São Paulo, com acompanhamento processual nas varas do
                     trabalho, tribunais regionais e instancias superiores. A inscricao dos socios
                     tambem em Minas Gerais e Parana amplia o alcance de atuacao direta.
                   </p>
@@ -112,12 +112,12 @@ export default function AreaDeAtuacaoPage() {
               <ScrollReveal delay="100ms">
                 <div className="bg-white border border-landing-mist p-8">
                   <h3 className="text-xl font-serif font-semibold text-landing-ink mb-4">
-                    Atuacao Nacional
+                    Atuação Nacional
                   </h3>
                   <p className="text-landing-stone leading-relaxed">
-                    Para demandas em outros estados, o escritorio conta com uma rede consolidada
-                    de advogados correspondentes, garantindo representacao em todo o territorio
-                    nacional sem perda de qualidade ou controle sobre a estrategia processual.
+                    Para demandas em outros estados, o escritório conta com uma rede consolidada
+                    de advogados correspondentes, garantindo representação em todo o território
+                    nacional sem perda de qualidade ou controle sobre a estratégia processual.
                     A coordenacao centralizada assegura que cada caso seja tratado com o mesmo
                     padrao de excelencia.
                   </p>
@@ -128,12 +128,12 @@ export default function AreaDeAtuacaoPage() {
             <ScrollReveal delay="200ms">
               <div className="mt-8 bg-white border border-landing-mist p-8">
                 <h3 className="text-xl font-serif font-semibold text-landing-ink mb-4">
-                  Atuacao Internacional
+                  Atuação Internacional
                 </h3>
                 <p className="text-landing-stone leading-relaxed">
                   Com a inscricao da Dra. Larissa D&apos;Avila Reis na Ordem dos Advogados de
-                  Portugal, o escritorio tambem atende demandas com dimensao transfronteiriça,
-                  especialmente em questoes empresariais e contratuais envolvendo Brasil e
+                  Portugal, o escritório também atende demandas com dimensão transfronteiriça,
+                  especialmente em questões empresariais e contratuais envolvendo Brasil e
                   Europa.
                 </p>
               </div>
@@ -146,7 +146,7 @@ export default function AreaDeAtuacaoPage() {
           <div className="container mx-auto px-6 text-center max-w-2xl">
             <ScrollReveal>
               <h2 className="text-2xl md:text-3xl font-serif font-bold text-landing-ink mb-4">
-                Sua empresa esta na nossa regiao?
+                Sua empresa está na nossa região?
               </h2>
               <p className="text-landing-stone mb-8">
                 Entre em contato e agende uma conversa com nossos especialistas.

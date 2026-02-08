@@ -1,16 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
+import {
   XMarkIcon,
   ChatBubbleLeftRightIcon,
   UserIcon,
   TagIcon,
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
-import { supabase } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers'
+import { useCreateConversation } from '@/lib/queries/useMessages'
+import { useToast } from '@/components/ui/toast-provider'
+import type { Conversation, ConversationType, ConversationPriority } from '@/types/database'
 
-interface Client {
+interface Contact {
   id: string
   name: string
   email: string
@@ -23,46 +26,49 @@ interface ConversationTopic {
   name: string
   description: string
   color: string
-  icon: string
-  is_active: boolean
-}
-
-interface NewConversationModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onCreateConversation: (data: {
-    clientId: string
-    topicId: string
-    title: string
-    conversationType: 'internal' | 'client' | 'whatsapp'
-    priority: 'low' | 'normal' | 'high' | 'urgent'
-  }) => void
 }
 
 const CONVERSATION_TOPICS: ConversationTopic[] = [
-  { id: '1', name: 'Geral', description: 'Conversas gerais com clientes', color: '#0066CC', icon: 'ChatBubbleLeftRightIcon', is_active: true },
-  { id: '2', name: 'Consulta Jurídica', description: 'Consultas e dúvidas jurídicas', color: '#10B981', icon: 'DocumentTextIcon', is_active: true },
-  { id: '3', name: 'Documentos', description: 'Envio e recebimento de documentos', color: '#F59E0B', icon: 'PaperClipIcon', is_active: true },
-  { id: '4', name: 'Audiências', description: 'Informações sobre audiências e prazos', color: '#EF4444', icon: 'CalendarIcon', is_active: true },
-  { id: '5', name: 'Urgente', description: 'Comunicações urgentes', color: '#DC2626', icon: 'ExclamationTriangleIcon', is_active: true },
+  { id: '1', name: 'Geral', description: 'Conversas gerais com clientes', color: '#0066CC' },
+  { id: '2', name: 'Consulta Juridica', description: 'Consultas e duvidas juridicas', color: '#10B981' },
+  { id: '3', name: 'Documentos', description: 'Envio e recebimento de documentos', color: '#F59E0B' },
+  { id: '4', name: 'Audiencias', description: 'Informacoes sobre audiencias e prazos', color: '#EF4444' },
+  { id: '5', name: 'Urgente', description: 'Comunicacoes urgentes', color: '#DC2626' },
 ]
 
-export default function NewConversationModal({ isOpen, onClose, onCreateConversation }: NewConversationModalProps) {
-  const [step, setStep] = useState(1) // 1: Select Client, 2: Select Topic & Details
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+interface NewConversationModalProps {
+  lawFirmId: string
+  currentUserId: string
+  isOpen: boolean
+  onClose: () => void
+  onConversationCreated: (conversation: Conversation) => void
+}
+
+export default function NewConversationModal({
+  lawFirmId,
+  currentUserId,
+  isOpen,
+  onClose,
+  onConversationCreated
+}: NewConversationModalProps) {
+  const supabase = useSupabase()
+  const toast = useToast()
+  const createConversation = useCreateConversation()
+
+  const [step, setStep] = useState(1)
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [selectedTopic, setSelectedTopic] = useState<ConversationTopic | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [title, setTitle] = useState('')
-  const [conversationType, setConversationType] = useState<'internal' | 'client' | 'whatsapp'>('client')
-  const [priority, setPriority] = useState<'low' | 'normal' | 'high' | 'urgent'>('normal')
-  const [clients, setClients] = useState<Client[]>([])
-  const [topics] = useState<ConversationTopic[]>(CONVERSATION_TOPICS)
+  const [conversationType, setConversationType] = useState<ConversationType>('client')
+  const [priority, setPriority] = useState<ConversationPriority>('normal')
+  const [contacts, setContacts] = useState<Contact[]>([])
 
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       setStep(1)
-      setSelectedClient(null)
+      setSelectedContact(null)
       setSelectedTopic(null)
       setSearchTerm('')
       setTitle('')
@@ -71,39 +77,37 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
     }
   }, [isOpen])
 
-  // Load clients from Supabase
+  // Load contacts from Supabase
   useEffect(() => {
-    const loadClients = async () => {
+    const loadContacts = async () => {
       try {
         const { data, error } = await supabase
           .from('contacts')
-          .select('id, full_name, email, phone, cpf_cnpj')
+          .select('id, full_name, email, phone')
+          .eq('law_firm_id', lawFirmId)
           .order('full_name')
         if (error) throw error
-        setClients((data || []).map(c => ({
+        setContacts((data || []).map(c => ({
           id: c.id,
-          name: c.full_name,
-          email: c.email,
+          name: c.full_name || 'Sem nome',
+          email: c.email || '',
           phone: c.phone || undefined,
-          cpf_cnpj: c.cpf_cnpj || undefined,
         })))
       } catch (error) {
-        console.error('Error loading clients:', error)
+        console.error('Error loading contacts:', error)
       }
     }
-    if (isOpen) loadClients()
-  }, [isOpen])
+    if (isOpen) loadContacts()
+  }, [isOpen, lawFirmId, supabase])
 
-  // Filter clients based on search term
-  const filteredClients = clients.filter(client => 
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (client.cpf_cnpj && client.cpf_cnpj.includes(searchTerm))
+  const filteredContacts = contacts.filter(contact =>
+    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleClientSelect = (client: Client) => {
-    setSelectedClient(client)
-    setTitle(`Conversa com ${client.name}`)
+  const handleContactSelect = (contact: Contact) => {
+    setSelectedContact(contact)
+    setTitle(`Conversa com ${contact.name}`)
     setStep(2)
   }
 
@@ -112,17 +116,34 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
   }
 
   const handleCreateConversation = () => {
-    if (!selectedClient || !selectedTopic) return
+    if (!selectedContact || !selectedTopic) return
 
-    onCreateConversation({
-      clientId: selectedClient.id,
-      topicId: selectedTopic.id,
-      title: title || `Conversa com ${selectedClient.name}`,
-      conversationType,
-      priority
-    })
-
-    onClose()
+    createConversation.mutate(
+      {
+        conversation: {
+          law_firm_id: lawFirmId,
+          contact_id: selectedContact.id,
+          title: title || `Conversa com ${selectedContact.name}`,
+          conversation_type: conversationType,
+          priority,
+          status: 'active',
+          topic: selectedTopic.name,
+          created_by: currentUserId,
+        },
+        participants: [
+          { user_id: currentUserId, role: 'owner' as const },
+        ],
+      },
+      {
+        onSuccess: (conversation) => {
+          onConversationCreated(conversation)
+        },
+        onError: (error) => {
+          console.error('Error creating conversation:', error)
+          toast.error('Erro ao criar conversa. Tente novamente.')
+        },
+      }
+    )
   }
 
   const handleBack = () => {
@@ -144,7 +165,7 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
                 {step === 1 ? 'Nova Conversa - Selecionar Cliente' : 'Nova Conversa - Detalhes'}
               </h3>
               <p className="text-sm text-gray-500">
-                {step === 1 ? 'Escolha o cliente para iniciar a conversa' : 'Configure o tópico e detalhes da conversa'}
+                {step === 1 ? 'Escolha o cliente para iniciar a conversa' : 'Configure o topico e detalhes da conversa'}
               </p>
             </div>
           </div>
@@ -156,16 +177,15 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
           </button>
         </div>
 
-        {/* Step 1: Select Client */}
+        {/* Step 1: Select Contact */}
         {step === 1 && (
           <div className="p-6">
-            {/* Search */}
             <div className="mb-6">
               <div className="relative">
                 <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Buscar cliente por nome, email ou CPF/CNPJ..."
+                  placeholder="Buscar cliente por nome ou email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -173,12 +193,11 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
               </div>
             </div>
 
-            {/* Client List */}
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {filteredClients.map((client) => (
+              {filteredContacts.map((contact) => (
                 <div
-                  key={client.id}
-                  onClick={() => handleClientSelect(client)}
+                  key={contact.id}
+                  onClick={() => handleContactSelect(contact)}
                   className="p-4 border border-gray-200 rounded-lg hover:border-primary hover:bg-primary/5 cursor-pointer transition-all"
                 >
                   <div className="flex items-center space-x-3">
@@ -186,23 +205,18 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
                       <UserIcon className="h-5 w-5 text-gray-600" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{client.name}</h4>
-                      <p className="text-sm text-gray-500">{client.email}</p>
-                      <div className="flex items-center space-x-4 mt-1">
-                        {client.phone && (
-                          <span className="text-xs text-gray-500">{client.phone}</span>
-                        )}
-                        {client.cpf_cnpj && (
-                          <span className="text-xs text-gray-500">{client.cpf_cnpj}</span>
-                        )}
-                      </div>
+                      <h4 className="font-medium text-gray-900">{contact.name}</h4>
+                      <p className="text-sm text-gray-500">{contact.email}</p>
+                      {contact.phone && (
+                        <span className="text-xs text-gray-500">{contact.phone}</span>
+                      )}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {filteredClients.length === 0 && (
+            {filteredContacts.length === 0 && (
               <div className="text-center py-8">
                 <UserIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">Nenhum cliente encontrado</p>
@@ -213,17 +227,17 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
         )}
 
         {/* Step 2: Select Topic & Details */}
-        {step === 2 && selectedClient && (
+        {step === 2 && selectedContact && (
           <div className="p-6">
-            {/* Selected Client */}
+            {/* Selected Contact */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <UserIcon className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">{selectedClient.name}</h4>
-                  <p className="text-sm text-gray-500">{selectedClient.email}</p>
+                  <h4 className="font-medium text-gray-900">{selectedContact.name}</h4>
+                  <p className="text-sm text-gray-500">{selectedContact.email}</p>
                 </div>
               </div>
             </div>
@@ -231,10 +245,10 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
             {/* Topic Selection */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Tópico da Conversa *
+                Topico da Conversa *
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {topics.filter(topic => topic.is_active).map((topic) => (
+                {CONVERSATION_TOPICS.map((topic) => (
                   <div
                     key={topic.id}
                     onClick={() => handleTopicSelect(topic)}
@@ -245,7 +259,7 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
                     }`}
                   >
                     <div className="flex items-center space-x-3">
-                      <div 
+                      <div
                         className="p-2 rounded-lg"
                         style={{ backgroundColor: `${topic.color}20`, color: topic.color }}
                       >
@@ -264,14 +278,14 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
             {/* Title */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Título da Conversa
+                Titulo da Conversa
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder={`Conversa com ${selectedClient.name}`}
+                placeholder={`Conversa com ${selectedContact.name}`}
               />
             </div>
 
@@ -283,7 +297,7 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
                 </label>
                 <select
                   value={conversationType}
-                  onChange={(e) => setConversationType(e.target.value as 'internal' | 'client' | 'whatsapp')}
+                  onChange={(e) => setConversationType(e.target.value as ConversationType)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 >
                   <option value="client">Cliente</option>
@@ -298,7 +312,7 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
                 </label>
                 <select
                   value={priority}
-                  onChange={(e) => setPriority(e.target.value as 'low' | 'normal' | 'high' | 'urgent')}
+                  onChange={(e) => setPriority(e.target.value as ConversationPriority)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 >
                   <option value="low">Baixa</option>
@@ -319,10 +333,10 @@ export default function NewConversationModal({ isOpen, onClose, onCreateConversa
               </button>
               <button
                 onClick={handleCreateConversation}
-                disabled={!selectedTopic}
+                disabled={!selectedTopic || createConversation.isPending}
                 className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Criar Conversa
+                {createConversation.isPending ? 'Criando...' : 'Criar Conversa'}
               </button>
             </div>
           </div>

@@ -62,7 +62,7 @@ SELECT
   -- footer
   '{"firm_name":"D''Avila Reis","tagline":"Advocacia empresarial e trabalhista preventiva. Protegendo empresários há mais de 20 anos.","nav_links":[{"href":"/sobre","label":"Sobre o Escritório"},{"href":"/atuacao","label":"Áreas de Atuação"},{"href":"/conteudos","label":"Conteúdos"},{"href":"/contato","label":"Contato"},{"href":"/login","label":"Portal do Cliente"}],"contact_phone":"(15) 3384-4013","contact_email":"financeiro@davilareisadvogados.com.br","contact_address":"Av. Dr. Vinício Gagliardi, 675\nCentro, Cerquilho/SP","social_links":[{"platform":"linkedin","url":"#"}],"legal_links":[{"href":"/politica-de-privacidade","label":"Política de Privacidade"},{"href":"/cookies","label":"Cookies"},{"href":"/aviso-legal","label":"Aviso Legal"}],"copyright_text":"2026 D''Avila Reis Advogados. Todos os direitos reservados."}'::jsonb,
   -- contact_info
-  '{"phone":"(15) 3384-4013","email":"financeiro@davilareisadvogados.com.br","address":"Av. Dr. Vinício Gagliardi, 675\nCentro, Cerquilho/SP","address_cep":"18520-091","hours":"Seg a Sex, 8h às 18h","whatsapp_number":"551533844013","whatsapp_message":"Olá, gostaria de agendar uma consultoria."}'::jsonb,
+  '{"phone":"(15) 3384-4013","email":"recepcao@davilareisadvogados.com.br","address":"Av. Dr. Vinício Gagliardi, 675\nCentro, Cerquilho/SP","address_cep":"18520-091","hours":"Seg a Sex, 8h às 18h","whatsapp_number":"551533844013","whatsapp_message":"Olá, gostaria de agendar uma consultoria."}'::jsonb,
   -- seo
   '{"title":"D''Avila Reis Advogados — Advocacia Empresarial e Trabalhista","description":"Escritório especializado na defesa de empresas em demandas trabalhistas, contratos empresariais e cobrança de crédito. Mais de 20 anos de experiência."}'::jsonb,
   -- section_order

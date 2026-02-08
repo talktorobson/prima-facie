@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '@/components/providers'
 import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useToast } from '@/components/ui/toast-provider'
+import { useUploadDocument } from '@/lib/queries/useDocuments'
 import {
   ArrowLeftIcon,
   DocumentTextIcon,
@@ -146,11 +147,14 @@ export default function ClientMatterDetailPage() {
   const matterId = params.id as string
 
   const { data: matter, isLoading, error } = useMatterDetail(matterId)
+  const { profile } = useAuthContext()
   const toast = useToast()
+  const queryClient = useQueryClient()
+  const uploadDocument = useUploadDocument()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [activeTab, setActiveTab] = useState('overview')
   const [showUploadModal, setShowUploadModal] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR')
@@ -163,36 +167,53 @@ export default function ClientMatterDetailPage() {
     }).format(amount)
   }
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Arquivo muito grande. Tamanho maximo: 10MB.')
+        return
+      }
+      setSelectedFile(file)
+    }
+  }
+
   const handleFileUpload = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    setIsUploading(true)
-    setUploadProgress(0)
+    const form = e.target as HTMLFormElement
+    const description = (form.elements.namedItem('description') as HTMLTextAreaElement)?.value
+
+    if (!selectedFile) {
+      toast.error('Selecione um arquivo para enviar.')
+      return
+    }
+
+    const lawFirmId = matter?.law_firm_id
+    if (!lawFirmId) {
+      toast.error('Erro ao identificar o escritorio.')
+      return
+    }
 
     try {
-      const uploadInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(uploadInterval)
-            return 90
-          }
-          return prev + 10
-        })
-      }, 200)
-
-      setTimeout(() => {
-        setUploadProgress(100)
-        setTimeout(() => {
-          setIsUploading(false)
-          setUploadProgress(0)
-          setShowUploadModal(false)
-          toast.success('Documento enviado com sucesso! Aguarde análise da equipe jurídica.')
-        }, 500)
-      }, 2000)
+      await uploadDocument.mutateAsync({
+        file: selectedFile,
+        metadata: {
+          law_firm_id: lawFirmId,
+          matter_id: matterId,
+          name: selectedFile.name,
+          description: description || undefined,
+          access_level: 'internal',
+          uploaded_by: profile?.id,
+        },
+      })
+      setShowUploadModal(false)
+      setSelectedFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      queryClient.invalidateQueries({ queryKey: ['portal', 'matter-detail', matterId] })
+      toast.success('Documento enviado com sucesso! Aguarde analise da equipe juridica.')
     } catch (err) {
       console.error('Upload error:', err)
-      setIsUploading(false)
-      setUploadProgress(0)
       toast.error('Erro ao enviar documento. Tente novamente.')
     }
   }
@@ -592,25 +613,33 @@ export default function ClientMatterDetailPage() {
                         <span className="text-gray-500"> ou arraste e solte</span>
                         <input
                           id="client-file-upload"
+                          ref={fileInputRef}
                           name="file-upload"
                           type="file"
                           className="sr-only"
                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
                           required
+                          onChange={handleFileSelect}
                         />
                       </label>
                     </div>
-                    <p className="text-sm text-gray-500">
-                      PDF, DOC, DOCX, JPG, PNG, TXT até 10MB
-                    </p>
+                    {selectedFile ? (
+                      <p className="text-sm text-primary font-medium mt-1">
+                        {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        PDF, DOC, DOCX, JPG, PNG, TXT ate 10MB
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {isUploading && (
+                {uploadDocument.isPending && (
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className="bg-primary h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
+                      className="bg-primary h-2 rounded-full transition-all duration-300 animate-pulse"
+                      style={{ width: '60%' }}
                     ></div>
                   </div>
                 )}
@@ -638,18 +667,18 @@ export default function ClientMatterDetailPage() {
                 <div className="flex justify-end space-x-3 pt-4 border-t">
                   <button
                     type="button"
-                    onClick={() => setShowUploadModal(false)}
+                    onClick={() => { setShowUploadModal(false); setSelectedFile(null) }}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                    disabled={isUploading}
+                    disabled={uploadDocument.isPending}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50"
-                    disabled={isUploading}
+                    disabled={uploadDocument.isPending || !selectedFile}
                   >
-                    {isUploading ? 'Enviando...' : 'Enviar Documento'}
+                    {uploadDocument.isPending ? 'Enviando...' : 'Enviar Documento'}
                   </button>
                 </div>
               </div>

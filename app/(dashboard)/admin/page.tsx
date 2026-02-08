@@ -34,15 +34,15 @@ export default function AdminPage() {
   const recentLogs = (activityLogs ?? []).slice(0, 5)
 
   const adminSections = [
-    { title: 'Configuracoes do Escritorio', description: 'Gerenciar informacoes basicas, endereco e contatos', icon: BuildingOfficeIcon, href: '/admin/law-firm', color: 'bg-blue-50 text-blue-600 border-blue-200' },
-    { title: 'Gestao de Usuarios', description: 'Adicionar, editar e gerenciar usuarios do sistema', icon: UsersIcon, href: '/admin/users', color: 'bg-green-50 text-green-600 border-green-200' },
-    { title: 'Personalizacao', description: 'Logo, cores, temas e identidade visual', icon: SwatchIcon, href: '/admin/branding', color: 'bg-purple-50 text-purple-600 border-purple-200' },
-    { title: 'Configuracoes do Sistema', description: 'Preferencias gerais, notificacoes e integracoes', icon: CogIcon, href: '/admin/settings', color: 'bg-gray-50 text-gray-600 border-gray-200' },
-    { title: 'Analiticos', description: 'Estatisticas de uso e relatorios administrativos', icon: ChartBarIcon, href: '/admin/analytics', color: 'bg-indigo-50 text-indigo-600 border-indigo-200' },
-    { title: 'Seguranca', description: 'Logs de acesso, auditoria e permissoes', icon: ShieldCheckIcon, href: '/admin/security', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+    { title: 'Configurações do Escritório', description: 'Gerenciar informações básicas, endereço e contatos', icon: BuildingOfficeIcon, href: '/admin/law-firm', color: 'bg-blue-50 text-blue-600 border-blue-200' },
+    { title: 'Gestão de Usuários', description: 'Adicionar, editar e gerenciar usuários do sistema', icon: UsersIcon, href: '/admin/users', color: 'bg-green-50 text-green-600 border-green-200' },
+    { title: 'Personalização', description: 'Logo, cores, temas e identidade visual', icon: SwatchIcon, href: '/admin/branding', color: 'bg-purple-50 text-purple-600 border-purple-200' },
+    { title: 'Configurações do Sistema', description: 'Preferências gerais, notificações e integrações', icon: CogIcon, href: '/admin/settings', color: 'bg-gray-50 text-gray-600 border-gray-200' },
+    { title: 'Analíticos', description: 'Estatísticas de uso e relatórios administrativos', icon: ChartBarIcon, href: '/admin/analytics', color: 'bg-indigo-50 text-indigo-600 border-indigo-200' },
+    { title: 'Segurança', description: 'Logs de acesso, auditoria e permissões', icon: ShieldCheckIcon, href: '/admin/security', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
     { title: 'Faturamento', description: 'Plano de assinatura e historico de pagamentos', icon: CreditCardIcon, href: '/admin/billing', color: 'bg-amber-50 text-amber-600 border-amber-200' },
-    { title: 'Notificacoes', description: 'Configurar alertas e comunicacoes automatizadas', icon: BellIcon, href: '/admin/notifications', color: 'bg-rose-50 text-rose-600 border-rose-200' },
-    { title: 'Website', description: 'Editar o site publico do escritorio', icon: GlobeAltIcon, href: '/admin/website', color: 'bg-cyan-50 text-cyan-600 border-cyan-200' },
+    { title: 'Notificações', description: 'Configurar alertas e comunicações automatizadas', icon: BellIcon, href: '/admin/notifications', color: 'bg-rose-50 text-rose-600 border-rose-200' },
+    { title: 'Website', description: 'Editar o site público do escritório', icon: GlobeAltIcon, href: '/admin/website', color: 'bg-cyan-50 text-cyan-600 border-cyan-200' },
   ]
 
   return (

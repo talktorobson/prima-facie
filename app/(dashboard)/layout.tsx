@@ -6,6 +6,7 @@ import { DashboardHeader } from '@/components/layout/dashboard-header'
 import { useAuthContext } from '@/lib/providers/auth-provider'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { FirmContextGuard } from '@/components/platform/firm-context-guard'
+import { AIAssistantWidget } from '@/components/ai/ai-assistant-widget'
 
 export default function DashboardLayout({
   children,
@@ -37,6 +38,8 @@ export default function DashboardLayout({
           </FirmContextGuard>
         </div>
       </main>
+
+      <AIAssistantWidget />
     </div>
   )
 }

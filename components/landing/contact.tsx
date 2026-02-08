@@ -22,8 +22,8 @@ const contactInfo = [
   },
   {
     icon: Clock,
-    title: 'Horario',
-    detail: 'Seg a Sex, 8h as 18h',
+    title: 'Horário',
+    detail: 'Seg a Sex, 8h30 às 17h30',
   },
 ]
 

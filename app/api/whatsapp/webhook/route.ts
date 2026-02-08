@@ -321,8 +321,7 @@ async function sendAutoReply(to: string, conversation: any) {
     const autoReplyMessage = `Olá! Recebemos sua mensagem fora do horário de atendimento.
 
 📞 Horário de Atendimento:
-• Segunda a Sexta: 9h às 18h
-• Sábado: 9h às 12h
+• Segunda a Sexta: 8h30 às 17h30
 
 ⚡ Para urgências, use a palavra "URGENTE" que responderemos em até 1 hora.
 

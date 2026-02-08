@@ -301,7 +301,7 @@ export function getDefaultWebsiteContent(firm: FirmInfo): DefaultWebsiteContent 
     email: firm.email,
     address,
     address_cep: '00000-000',
-    hours: 'Seg a Sex, 8h às 18h',
+    hours: 'Seg a Sex, 8h30 às 17h30',
     whatsapp_number: '',
     whatsapp_message: 'Olá, gostaria de agendar uma consulta.',
   }

@@ -478,8 +478,8 @@ function Step4Form({
           </label>
           <select {...register('preferred_time')} className={selectClass}>
             <option value="">Selecione...</option>
-            <option value="manha">Manhã (8h-12h)</option>
-            <option value="tarde">Tarde (13h-18h)</option>
+            <option value="manha">Manhã (8h30-12h)</option>
+            <option value="tarde">Tarde (13h-17h30)</option>
             <option value="sem_preferencia">Sem preferência</option>
           </select>
         </div>

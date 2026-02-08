@@ -122,8 +122,17 @@ export default function WebsiteContactForm({ lawFirmId, customFields = [] }: Web
     return selectedArea !== ''
   }
 
+  function isValidEmail(value: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+  }
+
+  function isValidPhone(value: string) {
+    // Accept Brazilian formats: (XX) XXXXX-XXXX, (XX) XXXX-XXXX, or just digits 10-11
+    return /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/.test(value.replace(/\s/g, ''))
+  }
+
   function canAdvanceStep2() {
-    return name.trim() !== '' && email.trim() !== '' && phone.trim() !== ''
+    return name.trim().length >= 2 && isValidEmail(email) && isValidPhone(phone)
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -340,6 +349,9 @@ export default function WebsiteContactForm({ lawFirmId, customFields = [] }: Web
                 placeholder="seu@email.com"
                 className={inputClass}
               />
+              {email && !isValidEmail(email) && (
+                <p className="text-xs text-red-500 mt-1">Informe um e-mail valido</p>
+              )}
             </div>
             <div>
               <label className={labelClass}>
@@ -352,6 +364,9 @@ export default function WebsiteContactForm({ lawFirmId, customFields = [] }: Web
                 placeholder="(00) 00000-0000"
                 className={inputClass}
               />
+              {phone && !isValidPhone(phone) && (
+                <p className="text-xs text-red-500 mt-1">Informe um telefone valido: (XX) XXXXX-XXXX</p>
+              )}
             </div>
             <div>
               <label className={labelClass}>Empresa</label>

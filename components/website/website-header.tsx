@@ -120,7 +120,7 @@ export default function WebsiteHeaderSection({ data, slug, variant = 'solid' }: 
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="md:hidden bg-website-bg border-t border-website-mist">
-          <nav className="container mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4">
+          <nav role="navigation" aria-label="Menu principal" className="container mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4">
             {data.nav_links.map((link) => (
               <Link
                 key={link.href}

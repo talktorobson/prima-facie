@@ -12,9 +12,9 @@ export default function AdminLayout({
   const isAdminRoot = pathname === '/admin'
 
   return (
-    <div>
+    <>
       {!isAdminRoot && <AdminSubNav />}
-      {children}
-    </div>
+      <main>{children}</main>
+    </>
   )
 }

@@ -24,6 +24,33 @@ function getTransform(direction: 'up' | 'down' | 'left' | 'right'): string {
   }
 }
 
+// Shared observer pool — one IntersectionObserver per threshold value
+const observerPool = new Map<number, IntersectionObserver>()
+const callbacks = new WeakMap<Element, () => void>()
+
+function getSharedObserver(threshold: number): IntersectionObserver {
+  let observer = observerPool.get(threshold)
+  if (!observer) {
+    observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const cb = callbacks.get(entry.target)
+            if (cb) {
+              cb()
+              callbacks.delete(entry.target)
+            }
+            observer!.unobserve(entry.target)
+          }
+        }
+      },
+      { threshold }
+    )
+    observerPool.set(threshold, observer)
+  }
+  return observer
+}
+
 export default function WebsiteScrollReveal({
   children,
   delay = 0,
@@ -38,19 +65,18 @@ export default function WebsiteScrollReveal({
     const el = ref.current
     if (!el) return
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.style.opacity = '1'
-          el.style.transform = 'none'
-          observer.unobserve(el)
-        }
-      },
-      { threshold }
-    )
+    const observer = getSharedObserver(threshold)
+
+    callbacks.set(el, () => {
+      el.style.opacity = '1'
+      el.style.transform = 'none'
+    })
 
     observer.observe(el)
-    return () => observer.disconnect()
+    return () => {
+      observer.unobserve(el)
+      callbacks.delete(el)
+    }
   }, [threshold])
 
   return (

@@ -91,10 +91,9 @@ export function useSendMessage() {
       return data as Message
     },
     onSuccess: (data) => {
-      // Invalidate messages for this conversation only
       queryClient.invalidateQueries({ queryKey: ['conversation-messages', data.conversation_id] })
-      // Don't invalidate conversations list — useConversationListRealtime handles it
-      // via the DB trigger that updates conversations.last_message_at
+      // DB trigger updates conversations.last_message_at — refetch list for preview
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
     },
   })
 }

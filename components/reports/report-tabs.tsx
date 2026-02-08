@@ -9,7 +9,7 @@ import {
   useClientReport,
 } from '@/lib/queries/useReports'
 import {
-  SummaryCard, BarChart, ExportButton,
+  SummaryCard, BarChart, PieChartComponent, ExportButton,
   LoadingState, ErrorState, EmptyState,
   formatCurrency, formatDate, translateStatus, downloadCSV,
 } from './report-shared'
@@ -153,7 +153,7 @@ export function MattersTab({ lawFirmId, dateRange }: TabProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white border border-gray-200 rounded-lg p-5">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">Processos por Status</h3>
-          {byStatusData.length > 0 ? <BarChart data={byStatusData} /> : <p className="text-sm text-gray-500">Sem dados</p>}
+          {byStatusData.length > 0 ? <PieChartComponent data={byStatusData} /> : <p className="text-sm text-gray-500">Sem dados</p>}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">Processos por Tipo</h3>
@@ -294,7 +294,7 @@ export function ClientsTab({ lawFirmId, dateRange }: TabProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white border border-gray-200 rounded-lg p-5">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">Clientes por Status</h3>
-          {byStatusData.length > 0 ? <BarChart data={byStatusData} /> : <p className="text-sm text-gray-500">Sem dados</p>}
+          {byStatusData.length > 0 ? <PieChartComponent data={byStatusData} /> : <p className="text-sm text-gray-500">Sem dados</p>}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">Receita por Cliente (Top 10)</h3>

@@ -2,6 +2,19 @@
 
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { ChartBarIcon } from '@heroicons/react/24/outline'
+import {
+  ResponsiveContainer,
+  BarChart as RechartsBarChart,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Bar,
+  CartesianGrid,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  Legend,
+} from 'recharts'
 
 const STATUS_LABELS: Record<string, string> = {
   active: 'Ativo', closed: 'Encerrado', pending: 'Pendente', suspended: 'Suspenso',
@@ -40,29 +53,53 @@ export function SummaryCard({ label, value, color }: { label: string; value: str
   )
 }
 
+const PIE_COLORS = ['#0066CC', '#059669', '#7C3AED', '#EA580C', '#DC2626', '#0891B2', '#CA8A04', '#6366F1']
+
+const numberFormatter = new Intl.NumberFormat('pt-BR')
+const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+
 export function BarChart({ data, valuePrefix }: { data: { label: string; value: number }[]; valuePrefix?: string }) {
-  const maxValue = Math.max(...data.map(d => d.value), 1)
+  const height = Math.max(data.length * 40 + 40, 200)
   return (
-    <div className="space-y-3">
-      {data.map((item) => (
-        <div key={item.label}>
-          <div className="flex justify-between text-sm mb-1">
-            <span className="text-gray-700 truncate mr-2">{item.label}</span>
-            <span className="text-gray-900 font-medium whitespace-nowrap">
-              {valuePrefix}{typeof item.value === 'number' && valuePrefix === 'R$ '
-                ? item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
-                : item.value}
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3">
-            <div
-              className="bg-primary h-3 rounded-full transition-all duration-300"
-              style={{ width: `${(item.value / maxValue) * 100}%` }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
+    <ResponsiveContainer width="100%" height={height}>
+      <RechartsBarChart data={data} layout="horizontal" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+        <YAxis tick={{ fontSize: 12 }} />
+        <Tooltip
+          formatter={(value: number | string | undefined) =>
+            valuePrefix
+              ? currencyFormatter.format(Number(value ?? 0))
+              : numberFormatter.format(Number(value ?? 0))
+          }
+        />
+        <Bar dataKey="value" fill="hsl(211, 100%, 40%)" radius={[4, 4, 0, 0]} />
+      </RechartsBarChart>
+    </ResponsiveContainer>
+  )
+}
+
+export function PieChartComponent({ data }: { data: { label: string; value: number }[] }) {
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <RechartsPieChart>
+        <Pie
+          data={data}
+          dataKey="value"
+          nameKey="label"
+          cx="50%"
+          cy="50%"
+          outerRadius={100}
+          label={({ name, percent }) => `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`}
+        >
+          {data.map((_, index) => (
+            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip formatter={(value: number | string | undefined) => numberFormatter.format(Number(value ?? 0))} />
+        <Legend />
+      </RechartsPieChart>
+    </ResponsiveContainer>
   )
 }
 

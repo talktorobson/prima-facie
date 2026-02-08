@@ -1,8 +1,14 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useState } from 'react'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
+import {
+  usePaymentPlans,
+  useCreatePaymentPlan,
+  useUpdatePaymentPlan,
+  useActivatePaymentPlan,
+  useCancelPaymentPlan,
+} from '@/lib/queries/usePaymentPlans'
 import { 
   PlusIcon,
   CalendarDaysIcon,
@@ -21,7 +27,6 @@ import {
   PAYMENT_FREQUENCY_OPTIONS,
   PAYMENT_PLAN_STATUS_OPTIONS
 } from '@/lib/billing/payment-plan-types'
-import { paymentPlanService } from '@/lib/billing/payment-plan-service'
 
 const initialFormData: PaymentPlanFormData = {
   matter_id: '',
@@ -38,33 +43,18 @@ const initialFormData: PaymentPlanFormData = {
 }
 
 export default function PaymentPlansPage(): JSX.Element {
-  const { profile } = useAuthContext()
   const effectiveLawFirmId = useEffectiveLawFirmId()
-  const [plans, setPlans] = useState<PaymentPlan[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const { data: plans = [], isLoading } = usePaymentPlans(effectiveLawFirmId)
+  const createPlanMutation = useCreatePaymentPlan()
+  const updatePlanMutation = useUpdatePaymentPlan()
+  const activatePlanMutation = useActivatePaymentPlan()
+  const cancelPlanMutation = useCancelPaymentPlan()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<PaymentPlan | null>(null)
   const [formData, setFormData] = useState<PaymentPlanFormData>(initialFormData)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<PaymentPlanStatus | 'all'>('all')
   const [sortBy, setSortBy] = useState<'name' | 'amount' | 'created' | 'due_date'>('created')
-
-  const loadPaymentPlans = useCallback(async () => {
-    if (!effectiveLawFirmId) return
-    try {
-      setIsLoading(true)
-      const plansData = await paymentPlanService.getPaymentPlans(effectiveLawFirmId)
-      setPlans(plansData)
-    } catch (error) {
-      console.error('Error loading payment plans:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [effectiveLawFirmId])
-
-  useEffect(() => {
-    loadPaymentPlans()
-  }, [loadPaymentPlans])
 
   // Filter and sort plans
   const filteredPlans = plans
@@ -136,31 +126,23 @@ export default function PaymentPlansPage(): JSX.Element {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     try {
-      setIsLoading(true)
-      
       if (editingPlan) {
-        await paymentPlanService.updatePaymentPlan(editingPlan.id, formData)
+        await updatePlanMutation.mutateAsync({ planId: editingPlan.id, formData })
       } else {
         if (!effectiveLawFirmId) return
-        await paymentPlanService.createPaymentPlan(effectiveLawFirmId, formData.matter_id, formData)
+        await createPlanMutation.mutateAsync({ lawFirmId: effectiveLawFirmId, matterId: formData.matter_id, formData })
       }
-      
-      await loadPaymentPlans()
       setIsModalOpen(false)
       setFormData(initialFormData)
     } catch (error) {
       console.error('Error saving payment plan:', error)
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const handleActivatePlan = async (planId: string) => {
     try {
-      await paymentPlanService.activatePaymentPlan(planId)
-      await loadPaymentPlans()
+      await activatePlanMutation.mutateAsync(planId)
     } catch (error) {
       console.error('Error activating payment plan:', error)
     }
@@ -169,8 +151,7 @@ export default function PaymentPlansPage(): JSX.Element {
   const handleCancelPlan = async (planId: string) => {
     if (confirm('Tem certeza que deseja cancelar este plano de pagamento?')) {
       try {
-        await paymentPlanService.cancelPaymentPlan(planId)
-        await loadPaymentPlans()
+        await cancelPlanMutation.mutateAsync(planId)
       } catch (error) {
         console.error('Error cancelling payment plan:', error)
       }
@@ -257,12 +238,7 @@ export default function PaymentPlansPage(): JSX.Element {
           </div>
           
           <div className="flex items-end">
-            <button
-              onClick={loadPaymentPlans}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-            >
-              Atualizar
-            </button>
+            {/* Data refreshes automatically via React Query */}
           </div>
         </div>
       </div>
@@ -550,10 +526,10 @@ export default function PaymentPlansPage(): JSX.Element {
                   </button>
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={createPlanMutation.isPending || updatePlanMutation.isPending}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {isLoading ? 'Salvando...' : editingPlan ? 'Atualizar' : 'Criar Plano'}
+                    {(createPlanMutation.isPending || updatePlanMutation.isPending) ? 'Salvando...' : editingPlan ? 'Atualizar' : 'Criar Plano'}
                   </button>
                 </div>
               </form>

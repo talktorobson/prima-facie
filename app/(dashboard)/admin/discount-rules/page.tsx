@@ -1,8 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useAuthContext } from '@/lib/providers/auth-provider'
+import { useState } from 'react'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
+import {
+  useDiscountRules,
+  useCreateDiscountRule,
+  useUpdateDiscountRule,
+  useToggleDiscountRule,
+  useDeleteDiscountRule,
+  useCreatePresetRules,
+} from '@/lib/queries/useDiscountRules'
 import {
   PlusIcon,
   PencilIcon,
@@ -29,7 +36,6 @@ import {
   CONDITION_TYPE_OPTIONS,
   CONDITION_OPERATOR_OPTIONS
 } from '@/lib/billing/discount-types'
-import { discountService } from '@/lib/billing/discount-service'
 
 const initialFormData: DiscountRuleFormData = {
   rule_name: '',
@@ -51,33 +57,19 @@ const initialFormData: DiscountRuleFormData = {
 }
 
 export default function DiscountRulesPage(): JSX.Element {
-  const { profile } = useAuthContext()
   const effectiveLawFirmId = useEffectiveLawFirmId()
-  const [rules, setRules] = useState<DiscountRule[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const { data: rules = [], isLoading } = useDiscountRules(effectiveLawFirmId)
+  const createRuleMutation = useCreateDiscountRule()
+  const updateRuleMutation = useUpdateDiscountRule()
+  const toggleRuleMutation = useToggleDiscountRule()
+  const deleteRuleMutation = useDeleteDiscountRule()
+  const createPresetMutation = useCreatePresetRules()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingRule, setEditingRule] = useState<DiscountRule | null>(null)
   const [formData, setFormData] = useState<DiscountRuleFormData>(initialFormData)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterType, setFilterType] = useState<DiscountRuleType | 'all'>('all')
   const [sortBy, setSortBy] = useState<'name' | 'priority' | 'created' | 'uses'>('priority')
-
-  const loadDiscountRules = useCallback(async () => {
-    if (!effectiveLawFirmId) return
-    try {
-      setIsLoading(true)
-      const rulesData = await discountService.getDiscountRules(effectiveLawFirmId)
-      setRules(rulesData)
-    } catch (error) {
-      console.error('Error loading discount rules:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [effectiveLawFirmId])
-
-  useEffect(() => {
-    loadDiscountRules()
-  }, [loadDiscountRules])
 
   // Filter and sort rules
   const filteredRules = rules
@@ -160,31 +152,23 @@ export default function DiscountRulesPage(): JSX.Element {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     try {
-      setIsLoading(true)
-      
       if (editingRule) {
-        await discountService.updateDiscountRule(editingRule.id, formData)
+        await updateRuleMutation.mutateAsync({ ruleId: editingRule.id, formData })
       } else {
         if (!effectiveLawFirmId) return
-        await discountService.createDiscountRule(effectiveLawFirmId, formData)
+        await createRuleMutation.mutateAsync({ lawFirmId: effectiveLawFirmId, formData })
       }
-      
-      await loadDiscountRules()
       setIsModalOpen(false)
       setFormData(initialFormData)
     } catch (error) {
       console.error('Error saving discount rule:', error)
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const handleToggleRule = async (ruleId: string) => {
     try {
-      await discountService.toggleDiscountRule(ruleId)
-      await loadDiscountRules()
+      await toggleRuleMutation.mutateAsync(ruleId)
     } catch (error) {
       console.error('Error toggling discount rule:', error)
     }
@@ -193,8 +177,7 @@ export default function DiscountRulesPage(): JSX.Element {
   const handleDeleteRule = async (ruleId: string) => {
     if (confirm('Tem certeza que deseja excluir esta regra de desconto?')) {
       try {
-        await discountService.deleteDiscountRule(ruleId)
-        await loadDiscountRules()
+        await deleteRuleMutation.mutateAsync(ruleId)
       } catch (error) {
         console.error('Error deleting discount rule:', error)
       }
@@ -204,13 +187,9 @@ export default function DiscountRulesPage(): JSX.Element {
   const handleCreatePresetRules = async () => {
     if (!effectiveLawFirmId) return
     try {
-      setIsLoading(true)
-      await discountService.createPresetRules(effectiveLawFirmId)
-      await loadDiscountRules()
+      await createPresetMutation.mutateAsync(effectiveLawFirmId)
     } catch (error) {
       console.error('Error creating preset rules:', error)
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -324,12 +303,7 @@ export default function DiscountRulesPage(): JSX.Element {
           </div>
           
           <div className="flex items-end">
-            <button
-              onClick={loadDiscountRules}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-            >
-              Atualizar
-            </button>
+            {/* Data refreshes automatically via React Query */}
           </div>
         </div>
       </div>
@@ -762,10 +736,10 @@ export default function DiscountRulesPage(): JSX.Element {
                   </button>
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={createRuleMutation.isPending || updateRuleMutation.isPending}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {isLoading ? 'Salvando...' : editingRule ? 'Atualizar' : 'Criar Regra'}
+                    {(createRuleMutation.isPending || updateRuleMutation.isPending) ? 'Salvando...' : editingRule ? 'Atualizar' : 'Criar Regra'}
                   </button>
                 </div>
               </form>

@@ -9,8 +9,8 @@ interface HeaderProps {
 }
 
 const navLinks = [
-  { href: '/atuacao', label: 'Atuacao' },
-  { href: '/conteudos', label: 'Conteudos' },
+  { href: '/atuacao', label: 'Atuação' },
+  { href: '/conteudos', label: 'Conteúdos' },
   { href: '/equipe', label: 'Equipe' },
   { href: '/sobre', label: 'Sobre' },
   { href: '/contato', label: 'Contato' },
@@ -67,7 +67,7 @@ export default function Header({ variant = 'solid' }: HeaderProps) {
             className="text-sm font-medium px-5 py-2.5 border transition-colors tracking-wide
               bg-landing-gold border-landing-gold text-white hover:bg-landing-gold-light"
           >
-            Agendar reuniao inicial
+            Agendar reunião inicial
           </Link>
           <Link
             href="/login"
@@ -112,7 +112,7 @@ export default function Header({ variant = 'solid' }: HeaderProps) {
               onClick={() => setMobileOpen(false)}
               className="text-center text-sm font-medium px-5 py-3 bg-landing-gold text-white mt-2"
             >
-              Agendar reuniao inicial
+              Agendar reunião inicial
             </Link>
             <Link
               href="/login"

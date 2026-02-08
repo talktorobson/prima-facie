@@ -3,17 +3,17 @@ import Link from 'next/link'
 export default function PrivacyPage() {
   return (
     <div className="max-w-3xl mx-auto py-12 px-6">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Politica de Privacidade</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Política de Privacidade</h1>
 
       <div className="prose prose-gray max-w-none space-y-6 text-sm text-gray-700">
         <p>
           Última atualização: Janeiro de 2025
         </p>
 
-        <h2 className="text-lg font-semibold text-gray-900 mt-8">1. Introducao</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mt-8">1. Introdução</h2>
         <p>
-          Esta Politica de Privacidade descreve como a plataforma Prima Facie coleta, utiliza, armazena
-          e protege os dados pessoais dos usuários, em conformidade com a Lei Geral de Protecao de
+          Esta Política de Privacidade descreve como a plataforma Prima Facie coleta, utiliza, armazena
+          e protege os dados pessoais dos usuários, em conformidade com a Lei Geral de Proteção de
           Dados (LGPD - Lei n. 13.709/2018).
         </p>
 
@@ -27,11 +27,11 @@ export default function PrivacyPage() {
         </ul>
 
         <h2 className="text-lg font-semibold text-gray-900 mt-8">3. Finalidade do Tratamento</h2>
-        <p>Os dados pessoais sao tratados para as seguintes finalidades:</p>
+        <p>Os dados pessoais são tratados para as seguintes finalidades:</p>
         <ul className="list-disc pl-6 space-y-1">
           <li>Prestação dos serviços contratados</li>
           <li>Comunicação com o usuário</li>
-          <li>Melhoria continua da plataforma</li>
+          <li>Melhoria contínua da plataforma</li>
           <li>Cumprimento de obrigações legais e regulatórias</li>
           <li>Segurança e prevenção a fraudes</li>
         </ul>
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
           <li>Solicitar a portabilidade dos dados</li>
         </ul>
 
-        <h2 className="text-lg font-semibold text-gray-900 mt-8">7. Retencao de Dados</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mt-8">7. Retenção de Dados</h2>
         <p>
           Os dados pessoais serão mantidos pelo período necessário para o cumprimento das finalidades
           descritas nesta política, ou conforme exigido pela legislação aplicável.
@@ -69,7 +69,7 @@ export default function PrivacyPage() {
 
         <h2 className="text-lg font-semibold text-gray-900 mt-8">8. Contato</h2>
         <p>
-          Para exercer seus direitos ou esclarecer dúvidas sobre esta Politica de Privacidade,
+          Para exercer seus direitos ou esclarecer dúvidas sobre esta Política de Privacidade,
           entre em contato pelo email: recepcao@davilareisadvogados.com.br
         </p>
       </div>

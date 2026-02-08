@@ -4,15 +4,15 @@ import ScrollReveal from '@/components/landing/scroll-reveal'
 const founders = [
   {
     name: 'Dr. Ruy D\'Avila Reis',
-    title: 'Socio Fundador',
+    title: 'Sócio Fundador',
     oab: 'OAB/SP',
-    bio: 'Socio fundador com mais de 20 anos de experiencia na defesa de empresas em demandas trabalhistas. Especialista em blindagem patrimonial e estrategia processual para o empregador.',
+    bio: 'Sócio fundador com mais de 20 anos de experiência na defesa de empresas em demandas trabalhistas. Especialista em blindagem patrimonial e estratégia processual para o empregador.',
   },
   {
     name: 'Dra. Larissa D\'Avila Reis',
-    title: 'Socia Fundadora',
+    title: 'Sócia Fundadora',
     oab: 'OAB/SP · OAB/MG · OAB/PR · Ordem dos Advogados de Portugal',
-    bio: 'Socia fundadora com inscricao ativa na OAB/SP, OAB/MG, OAB/PR e na Ordem dos Advogados de Portugal (OAP). Experiencia em direito empresarial com dimensao transfronteirica entre Brasil e Europa.',
+    bio: 'Sócia fundadora com inscrição ativa na OAB/SP, OAB/MG, OAB/PR e na Ordem dos Advogados de Portugal (OAP). Experiência em direito empresarial com dimensão transfronteiriça entre Brasil e Europa.',
   },
 ]
 

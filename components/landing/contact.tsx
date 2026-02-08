@@ -154,7 +154,7 @@ export default function Contact() {
                     name="message"
                     value={form.message}
                     onChange={handleChange}
-                    placeholder="Descreva sua necessidade juridica..."
+                    placeholder="Descreva sua necessidade jurídica..."
                     rows={4}
                     className={inputClass}
                   />

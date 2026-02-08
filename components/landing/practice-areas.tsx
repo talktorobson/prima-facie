@@ -7,25 +7,25 @@ const areas = [
     icon: Scale,
     title: 'Direito Trabalhista Empresarial (Patronal)',
     description:
-      'Defesa completa do empregador em reclamacoes trabalhistas. Audiencias, recursos, execucao. Estrategia para reduzir passivo e proteger patrimonio dos socios.',
+      'Defesa completa do empregador em reclamações trabalhistas. Audiências, recursos, execução. Estratégia para reduzir passivo e proteger patrimônio dos sócios.',
   },
   {
     icon: Shield,
     title: 'Consultoria Preventiva Trabalhista',
     description:
-      'Auditorias trabalhistas, elaboracao de politicas internas, treinamento de gestores e adequacao de contratos para evitar acoes judiciais.',
+      'Auditorias trabalhistas, elaboração de políticas internas, treinamento de gestores e adequação de contratos para evitar ações judiciais.',
   },
   {
     icon: FileText,
     title: 'Contratos Empresariais',
     description:
-      'Elaboracao, revisao e negociacao de contratos comerciais, de prestacao de servicos, societarios e de locacao. Protecao juridica para operacoes do dia a dia.',
+      'Elaboração, revisão e negociação de contratos comerciais, de prestação de serviços, societários e de locação. Proteção jurídica para operações do dia a dia.',
   },
   {
     icon: Gavel,
-    title: 'Cobranca e Recuperacao de Credito',
+    title: 'Cobrança e Recuperação de Crédito',
     description:
-      'Cobranca extrajudicial e judicial de titulos, duplicatas e contratos inadimplidos. Execucoes fiscais e acoes monitorias com foco em resultado.',
+      'Cobrança extrajudicial e judicial de títulos, duplicatas e contratos inadimplidos. Execuções fiscais e ações monitórias com foco em resultado.',
   },
 ]
 
@@ -36,7 +36,7 @@ export default function PracticeAreas() {
         <ScrollReveal>
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-white gold-line mx-auto inline-block">
-              Areas de Atuacao
+              Áreas de Atuação
             </h2>
           </div>
         </ScrollReveal>
@@ -71,7 +71,7 @@ export default function PracticeAreas() {
               href="/atuacao"
               className="inline-flex items-center justify-center px-8 py-4 bg-landing-gold text-white font-medium text-base tracking-wide hover:bg-landing-gold-light transition-colors"
             >
-              Ver detalhes da atuacao
+              Ver detalhes da atuação
             </Link>
           </div>
         </ScrollReveal>

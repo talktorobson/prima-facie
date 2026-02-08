@@ -8,20 +8,20 @@ const articles = [
   {
     title: '5 erros que aumentam o passivo trabalhista da sua empresa',
     excerpt:
-      'Conhea as falhas mais comuns na gestao de pessoal que geram reclamacoes trabalhistas — e como corrigi-las antes que virem processo.',
+      'Conheça as falhas mais comuns na gestão de pessoal que geram reclamações trabalhistas — e como corrigi-las antes que virem processo.',
     category: 'Trabalhista',
   },
   {
-    title: 'Clausulas essenciais em contratos de prestacao de servicos',
+    title: 'Cláusulas essenciais em contratos de prestação de serviços',
     excerpt:
-      'Um contrato mal redigido pode custar caro. Veja quais clausulas protegem sua empresa em disputas comerciais.',
+      'Um contrato mal redigido pode custar caro. Veja quais cláusulas protegem sua empresa em disputas comerciais.',
     category: 'Contratos',
   },
   {
-    title: 'Como funciona a cobranca judicial de duplicatas',
+    title: 'Como funciona a cobrança judicial de duplicatas',
     excerpt:
-      'Entenda o passo a passo da execucao de titulos e quando vale a pena acionar o judiciario para recuperar creditos.',
-    category: 'Cobranca',
+      'Entenda o passo a passo da execução de títulos e quando vale a pena acionar o judiciário para recuperar créditos.',
+    category: 'Cobrança',
   },
 ]
 
@@ -34,7 +34,7 @@ export default function ContentPreview() {
         <ScrollReveal>
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-white gold-line mx-auto inline-block">
-              Alertas e guias praticos para empresas
+              Alertas e guias práticos para empresas
             </h2>
           </div>
         </ScrollReveal>
@@ -62,7 +62,7 @@ export default function ContentPreview() {
         <ScrollReveal delay="300ms">
           <div className="max-w-xl mx-auto text-center">
             <h3 className="text-xl font-serif font-semibold text-white mb-4">
-              Receba alertas juridicos no seu e-mail
+              Receba alertas jurídicos no seu e-mail
             </h3>
             <div className="flex flex-col sm:flex-row gap-3 mb-3">
               <input
@@ -80,8 +80,8 @@ export default function ContentPreview() {
               </button>
             </div>
             <p className="text-xs text-gray-500">
-              Ao se inscrever, voce concorda com nossa Politica de Privacidade.
-              Voce pode cancelar a qualquer momento.
+              Ao se inscrever, você concorda com nossa Política de Privacidade.
+              Você pode cancelar a qualquer momento.
             </p>
           </div>
         </ScrollReveal>
@@ -93,7 +93,7 @@ export default function ContentPreview() {
               href="/conteudos"
               className="inline-flex items-center justify-center px-8 py-4 border border-white/40 text-white font-medium text-base tracking-wide hover:bg-white/10 transition-colors"
             >
-              Ver todos os conteudos
+              Ver todos os conteúdos
             </Link>
           </div>
         </ScrollReveal>

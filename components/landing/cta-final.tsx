@@ -8,11 +8,11 @@ export default function CtaFinal() {
         <ScrollReveal>
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-white leading-tight mb-6">
-              Voce representa uma empresa e precisa de apoio juridico?
+              Você representa uma empresa e precisa de apoio jurídico?
             </h2>
             <div className="w-12 h-[2px] bg-landing-gold mx-auto mb-8" />
             <p className="text-lg text-gray-400 leading-relaxed mb-10">
-              Envie as informacoes essenciais para triagem.
+              Envie as informações essenciais para triagem.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -30,7 +30,7 @@ export default function CtaFinal() {
               </Link>
             </div>
             <p className="text-xs text-gray-500 mt-6">
-              Responderemos em ate 24 horas uteis (triagem).
+              Responderemos em até 24 horas úteis (triagem).
             </p>
           </div>
         </ScrollReveal>

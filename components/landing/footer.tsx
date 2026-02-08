@@ -13,20 +13,20 @@ export default function Footer() {
             <h3 className="text-2xl font-serif font-bold mb-3">D&apos;Avila Reis</h3>
             <p className="text-sm text-gray-400 leading-relaxed max-w-xs">
               Advocacia empresarial e trabalhista preventiva.
-              Protegendo empresarios ha mais de 20 anos.
+              Protegendo empresários há mais de 20 anos.
             </p>
           </div>
 
           {/* Quick links */}
           <div>
             <h4 className="text-xs uppercase tracking-[0.2em] text-gray-400 mb-5">
-              Navegacao
+              Navegação
             </h4>
             <ul className="space-y-3">
               {[
-                { href: '/sobre', label: 'Sobre o Escritorio' },
-                { href: '/atuacao', label: 'Areas de Atuacao' },
-                { href: '/conteudos', label: 'Conteudos' },
+                { href: '/sobre', label: 'Sobre o Escritório' },
+                { href: '/atuacao', label: 'Áreas de Atuação' },
+                { href: '/conteudos', label: 'Conteúdos' },
                 { href: '/contato', label: 'Contato' },
                 { href: '/login', label: 'Portal do Cliente' },
               ].map((link) => (
@@ -51,7 +51,7 @@ export default function Footer() {
               <p>(15) 3384-4013</p>
               <p>financeiro@davilareisadvogados.com.br</p>
               <p>
-                Av. Dr. Vinicio Gagliardi, 675
+                Av. Dr. Vinício Gagliardi, 675
                 <br />
                 Centro, Cerquilho/SP
               </p>
@@ -79,7 +79,7 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-4 text-xs text-gray-500">
             <Link href="/politica-de-privacidade" className="hover:text-gray-300 transition-colors">
-              Politica de Privacidade
+              Política de Privacidade
             </Link>
             <span>|</span>
             <Link href="/cookies" className="hover:text-gray-300 transition-colors">

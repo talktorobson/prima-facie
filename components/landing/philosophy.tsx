@@ -3,21 +3,21 @@ import ScrollReveal from '@/components/landing/scroll-reveal'
 const values = [
   {
     number: '01',
-    title: 'Etica',
+    title: 'Ética',
     description:
-      'Atuacao pautada pela integridade, transparencia e respeito ao cliente e a profissao.',
+      'Atuação pautada pela integridade, transparência e respeito ao cliente e à profissão.',
   },
   {
     number: '02',
-    title: 'Excelencia',
+    title: 'Excelência',
     description:
-      'Profundidade tecnica, atualizacao constante e dedicacao maxima a cada caso.',
+      'Profundidade técnica, atualização constante e dedicação máxima a cada caso.',
   },
   {
     number: '03',
     title: 'Compromisso',
     description:
-      'Cada cliente recebe atencao integral — tratamos seu caso como se fosse o unico.',
+      'Cada cliente recebe atenção integral — tratamos seu caso como se fosse o único.',
   },
 ]
 
@@ -28,7 +28,7 @@ export default function Philosophy() {
         <ScrollReveal>
           <div className="max-w-3xl mx-auto text-center mb-20">
             <blockquote className="text-2xl md:text-3xl lg:text-4xl font-serif font-semibold text-landing-ink leading-snug italic">
-              &ldquo;A melhor defesa e a que acontece antes do ataque.&rdquo;
+              &ldquo;A melhor defesa é a que acontece antes do ataque.&rdquo;
             </blockquote>
             <div className="w-12 h-[2px] bg-landing-gold mx-auto mt-8" />
           </div>

@@ -15,17 +15,17 @@ export default function Hero() {
           <div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-landing-ink leading-[1.1] mb-6">
               Protegemos Seu{' '}
-              <span className="block">Negocio.</span>
+              <span className="block">Negócio.</span>
               <span className="block text-landing-gold">Blindamos Seu</span>
-              <span className="block text-landing-gold">Patrimonio.</span>
+              <span className="block text-landing-gold">Patrimônio.</span>
             </h1>
 
             {/* Gold separator */}
             <div className="w-16 h-[2px] bg-landing-gold mb-8" />
 
             <p className="text-lg md:text-xl text-landing-stone leading-relaxed max-w-lg mb-10">
-              Ha mais de 20 anos atuamos na defesa de empresas em demandas trabalhistas (lado patronal),
-              elaboracao e revisao de contratos empresariais e cobranca e recuperacao de credito.
+              Há mais de 20 anos atuamos na defesa de empresas em demandas trabalhistas (lado patronal),
+              elaboração e revisão de contratos empresariais e cobrança e recuperação de crédito.
             </p>
 
             {/* CTAs */}
@@ -34,10 +34,10 @@ export default function Hero() {
                 href="/contato"
                 className="inline-flex items-center justify-center px-8 py-4 bg-landing-gold text-white font-medium text-base tracking-wide hover:bg-landing-gold-light transition-colors"
               >
-                Agendar reuniao inicial
+                Agendar reunião inicial
               </Link>
               <Link
-                href="https://wa.me/551533844013?text=Ola%2C%20gostaria%20de%20agendar%20uma%20reuniao."
+                href="https://wa.me/551533844013?text=Ola%2C%20gostaria%20de%20agendar%20uma%20reuni%C3%A3o."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center px-8 py-4 border border-landing-ink text-landing-ink font-medium text-base tracking-wide hover:bg-landing-ink hover:text-white transition-colors"
@@ -54,7 +54,7 @@ export default function Hero() {
 
             {/* Microcopy */}
             <p className="text-xs text-landing-stone mt-4">
-              Atendemos exclusivamente pessoas juridicas (empresas).
+              Atendemos exclusivamente pessoas jurídicas (empresas).
             </p>
           </div>
 
@@ -64,7 +64,7 @@ export default function Hero() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80&auto=format&fit=crop"
-                alt="Escritorio moderno"
+                alt="Escritório moderno"
                 className="absolute inset-0 w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-landing-ink/10" />
@@ -77,7 +77,7 @@ export default function Hero() {
           {[
             { number: '2.500+', label: 'Processos Gerenciados' },
             { number: '200+', label: 'Empresas Protegidas' },
-            { number: '20', label: 'Anos de Experiencia' },
+            { number: '20', label: 'Anos de Experiência' },
           ].map((stat) => (
             <div key={stat.label} className="text-center sm:text-left">
               <div className="text-4xl md:text-5xl font-serif font-bold text-landing-ink mb-2">

@@ -299,7 +299,7 @@ function Step2Form({
         </label>
         <input
           {...register('segment')}
-          placeholder="Ex: Industria, Comércio, Serviços..."
+          placeholder="Ex: Indústria, Comércio, Serviços..."
           className={inputClass}
         />
       </div>
@@ -355,7 +355,7 @@ function Step3Form({
       </div>
 
       <div>
-        <label className={labelClass}>Urgencia *</label>
+        <label className={labelClass}>Urgência *</label>
         <select {...register('urgency')} className={selectClass}>
           <option value="">Selecione...</option>
           <option value="urgente">Urgente (preciso de resposta imediata)</option>
@@ -372,7 +372,7 @@ function Step3Form({
         </label>
         <textarea
           {...register('details.description')}
-          placeholder="Conte-nos um pouco sobre a situacao..."
+          placeholder="Conte-nos um pouco sobre a situação..."
           rows={4}
           className={inputClass}
         />
@@ -391,7 +391,7 @@ function Step3Form({
           type="submit"
           className="flex-1 bg-landing-gold text-white py-3.5 text-sm font-medium tracking-wide hover:bg-landing-gold-light transition-colors flex items-center justify-center gap-2"
         >
-          Proximo
+          Próximo
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>
@@ -480,7 +480,7 @@ function Step4Form({
             <option value="">Selecione...</option>
             <option value="manha">Manhã (8h-12h)</option>
             <option value="tarde">Tarde (13h-18h)</option>
-            <option value="sem_preferencia">Sem preferencia</option>
+            <option value="sem_preferencia">Sem preferência</option>
           </select>
         </div>
       </div>
@@ -555,7 +555,7 @@ function Step5Form({
               target="_blank"
               className="text-landing-gold hover:text-landing-gold-light underline"
             >
-              Politica de Privacidade
+              Política de Privacidade
             </Link>{' '}
             e autorizo o tratamento dos meus dados para atendimento. *
           </span>
@@ -691,7 +691,7 @@ export default function ContactTriageForm() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => null)
-        throw new Error(body?.error || 'Erro ao enviar formulario')
+        throw new Error(body?.error || 'Erro ao enviar formulário')
       }
 
       setIsSuccess(true)

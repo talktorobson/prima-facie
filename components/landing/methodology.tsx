@@ -5,17 +5,17 @@ const steps = [
   {
     number: '01',
     title: 'Triagem e direcionamento',
-    description: 'Voce preenche o formulario de contato. Avaliamos a demanda e identificamos a area juridica adequada.',
+    description: 'Você preenche o formulário de contato. Avaliamos a demanda e identificamos a área jurídica adequada.',
   },
   {
     number: '02',
-    title: 'Plano de acao',
-    description: 'Reuniao inicial para entender o caso em profundidade. Apresentamos estrategia, prazos e honorarios.',
+    title: 'Plano de ação',
+    description: 'Reunião inicial para entender o caso em profundidade. Apresentamos estratégia, prazos e honorários.',
   },
   {
     number: '03',
-    title: 'Execucao e acompanhamento',
-    description: 'Equipe dedicada conduz o caso com relatorios periodicos. Voce acompanha tudo pelo Portal do Cliente.',
+    title: 'Execução e acompanhamento',
+    description: 'Equipe dedicada conduz o caso com relatórios periódicos. Você acompanha tudo pelo Portal do Cliente.',
   },
 ]
 
@@ -26,7 +26,7 @@ export default function Methodology() {
         <ScrollReveal>
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-landing-ink gold-line mx-auto inline-block">
-              Metodo de trabalho
+              Método de trabalho
             </h2>
           </div>
         </ScrollReveal>

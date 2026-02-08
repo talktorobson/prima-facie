@@ -37,15 +37,15 @@ This plan covers every remaining feature to bring Prima Facie from its current s
 | Sprint | Module | UI Pages | Data Layer | DB Integration | Overall |
 |--------|--------|----------|------------|----------------|---------|
 | 0 | UI Components | — | — | — | **100%** — All 27 components built, barrel exports complete |
-| 1 | Clients | 4 pages | Service class + RQ hooks | List + Create: real; Detail + Edit: wired | **75%** |
-| 2 | Tasks | 1 page + 5 extracted components | RQ hooks (`useTasks.ts`) + Zod schema | Pages use RQ hooks | **70%** |
-| 3 | Billing | 4 pages + 7 feature components | 18 service files + RQ hooks (`useInvoices.ts`, `useTimeEntries.ts`) + Zod schemas | Services real, pages wired via RQ | **70%** |
-| 4 | Documents | 1 page (upload modal) | RQ hooks (`useDocuments.ts`) + storage helper + Zod schema | Pages use RQ hooks | **60%** |
-| 5 | Calendar | 1 page (month grid) | RQ hooks (`useCalendarEvents.ts`) | Pages use RQ hooks | **60%** |
-| 6 | Settings & Admin | Settings: 1 page (7 tabs) + Admin: dashboard + 10 subroutes | RQ hooks (`useSettings.ts`, `useAdmin.ts`) + Zod schemas | Pages use RQ hooks | **65%** |
-| 7 | Reports | 1 page (100 lines, decomposed) + 2 report components | RQ hooks (`useReports.ts`) | Pages use RQ hooks | **55%** |
-| 8 | Pipeline | 3 pages (list + new + edit) | RQ hooks (`usePipeline.ts`) + Zod schema | Sidebar + middleware added, pages use RQ | **70%** |
-| 9 | Portals | Client: 7 pages + layout + billing; Staff: 1 page | RQ hooks (`useClientPortal.ts`, `useStaffPortal.ts`) | Pages use RQ hooks | **50%** |
+| 1 | Clients | 4 pages | Service class + RQ hooks | All 4 pages use real Supabase data | **100%** |
+| 2 | Tasks | 1 page + 5 extracted components | RQ hooks (`useTasks.ts`) + Zod schema | All pages use real Supabase data via RQ | **100%** |
+| 3 | Billing | 4 pages + 7 feature components | 18 service files + RQ hooks (`useInvoices.ts`, `useTimeEntries.ts`) + Zod schemas | All 4 pages use RQ hooks, full CRUD | **100%** |
+| 4 | Documents | 1 page (upload modal) | RQ hooks (`useDocuments.ts`) + storage helper + Zod schema | Real data via RQ + storage helper | **100%** |
+| 5 | Calendar | 1 page (month grid) | RQ hooks (`useCalendarEvents.ts`) | Aggregation via RQ hooks, real data | **100%** |
+| 6 | Settings & Admin | Settings: 1 page (7 tabs) + Admin: dashboard + 10 subroutes | RQ hooks (`useSettings.ts`, `useAdmin.ts`) + Zod schemas | All wired; discount-rules/payment-plans use service layer (no RQ) | **95%** |
+| 7 | Reports | 1 page (100 lines, decomposed) + 2 report components | RQ hooks (`useReports.ts`) | Real data via RQ; CSS-only charts (no recharts yet) | **90%** |
+| 8 | Pipeline | 3 pages (list + new + edit) | RQ hooks (`usePipeline.ts`) + Zod schema | Full CRUD, all 3 pages wired | **100%** |
+| 9 | Portals | Client: 7 pages + layout + billing; Staff: 1 page | RQ hooks (`useClientPortal.ts`, `useStaffPortal.ts`) | All pages real data; layout uses auth context | **95%** |
 
 ### Two Architecture Patterns
 

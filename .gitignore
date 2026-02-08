@@ -64,3 +64,6 @@ supabase/.temp/
 
 # Seed scripts with credentials
 database/seed-data/seed-auth-users.mjs
+
+# Website assets (managed externally)
+Website-Assets/

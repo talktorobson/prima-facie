@@ -55,7 +55,7 @@ export function useConversationMessages(conversationId?: string | null) {
         .from('messages')
         .select(`
           id, conversation_id, content, message_type, sender_id, sender_type,
-          parent_message_id, status, file_url, file_name, file_size, file_type,
+          parent_message_id, status, attachments,
           created_at, updated_at,
           sender:users!messages_sender_id_fkey(id, first_name, last_name, full_name, avatar_url)
         `)

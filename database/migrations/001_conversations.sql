@@ -51,6 +51,16 @@ CREATE TABLE IF NOT EXISTS conversation_participants (
 
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS conversation_id UUID REFERENCES conversations(id);
 
+-- Add FK from sender_id to users for PostgREST join support
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'messages_sender_id_fkey'
+  ) THEN
+    ALTER TABLE messages ADD CONSTRAINT messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES users(id);
+  END IF;
+END $$;
+
 -- =====================================================
 -- SECTION 3: Indexes
 -- =====================================================
@@ -99,17 +109,24 @@ CREATE TRIGGER update_conversations_updated_at
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversation_participants ENABLE ROW LEVEL SECURITY;
 
+-- Helper: SECURITY DEFINER function to look up a conversation's law_firm_id
+-- without triggering RLS on conversations (breaks circular recursion)
+CREATE OR REPLACE FUNCTION public.get_conversation_law_firm_id(conv_id UUID)
+RETURNS UUID AS $$
+  SELECT law_firm_id FROM conversations WHERE id = conv_id;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
 -- Staff access (same law firm)
 DROP POLICY IF EXISTS "conversations_staff_access" ON conversations;
 CREATE POLICY "conversations_staff_access" ON conversations FOR ALL USING (
   law_firm_id = public.current_user_law_firm_id() AND public.current_user_is_staff()
 );
 
+-- Uses SECURITY DEFINER function to avoid recursive RLS check on conversations
 DROP POLICY IF EXISTS "conv_participants_staff_access" ON conversation_participants;
 CREATE POLICY "conv_participants_staff_access" ON conversation_participants FOR ALL USING (
-  conversation_id IN (
-    SELECT id FROM conversations WHERE law_firm_id = public.current_user_law_firm_id()
-  ) AND public.current_user_is_staff()
+  public.get_conversation_law_firm_id(conversation_id) = public.current_user_law_firm_id()
+  AND public.current_user_is_staff()
 );
 
 -- Client access (own conversations only)

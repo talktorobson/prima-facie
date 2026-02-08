@@ -15,9 +15,12 @@ import {
   UserPlusIcon,
   ChevronDownIcon,
   UserIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  Squares2X2Icon,
+  ListBulletIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthContext } from '@/lib/providers/auth-provider'
+import KanbanBoard from '@/components/pipeline/kanban-board'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { usePipelineCards, usePipelineStages, useMovePipelineCard } from '@/lib/queries/usePipeline'
 import { useSupabase } from '@/components/providers'
@@ -101,6 +104,7 @@ export default function PipelinePage() {
   const [areaFilter, setAreaFilter] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [viewingLead, setViewingLead] = useState<Lead | null>(null)
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
 
   const { data: pipelineCards, isLoading: cardsLoading } = usePipelineCards()
   const { data: pipelineStages } = usePipelineStages()
@@ -140,6 +144,23 @@ export default function PipelinePage() {
       }
     })
   }, [pipelineCards, stageMap])
+
+  // Map pipeline cards to kanban format
+  const kanbanCards = useMemo(() => {
+    if (!pipelineCards) return []
+    return pipelineCards.map((card) => {
+      const contact = card.contact as { id: string; full_name: string } | null
+      return {
+        id: card.id,
+        name: contact?.full_name || card.title,
+        estimated_value: card.estimated_value ?? undefined,
+        probability: card.probability ?? 0,
+        source: card.source || 'outros',
+        next_follow_up: card.next_follow_up_date || undefined,
+        pipeline_stage_id: card.pipeline_stage_id,
+      }
+    })
+  }, [pipelineCards])
 
   // Filter leads
   const filteredLeads = useMemo(() => {
@@ -280,13 +301,31 @@ export default function PipelinePage() {
             Gerencie leads e oportunidades comerciais
           </p>
         </div>
-        <button
-          onClick={handleCreateLead}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-        >
-          <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-          Novo Lead
-        </button>
+        <div className="flex items-center">
+          <div className="flex items-center space-x-2 mr-3">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              title="Lista"
+            >
+              <ListBulletIcon className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setViewMode('kanban')}
+              className={`p-2 rounded-md ${viewMode === 'kanban' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              title="Kanban"
+            >
+              <Squares2X2Icon className="h-5 w-5" />
+            </button>
+          </div>
+          <button
+            onClick={handleCreateLead}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+          >
+            <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+            Novo Lead
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -483,137 +522,163 @@ export default function PipelinePage() {
         </div>
       </div>
 
-      {/* Results Summary */}
-      <div className="text-sm text-gray-700">
-        Mostrando {filteredLeads.length} de {leads.length} leads
-      </div>
+      {viewMode === 'kanban' ? (
+        <KanbanBoard
+          stages={(pipelineStages || []).map(s => ({
+            id: s.id,
+            name: s.name,
+            sort_order: s.sort_order ?? 0,
+            stage_type: s.stage_type ?? undefined,
+          }))}
+          cards={kanbanCards}
+          onMoveCard={async (cardId, stageId) => {
+            try {
+              await movePipelineCard.mutateAsync({ id: cardId, stageId })
+            } catch {
+              toast.error('Erro ao mover lead')
+            }
+          }}
+          onViewCard={(cardId) => {
+            const lead = leads.find(l => l.id === cardId)
+            if (lead) setViewingLead(lead)
+          }}
+          onEditCard={(cardId) => router.push(`/pipeline/${cardId}/edit`)}
+        />
+      ) : (
+        <>
+          {/* Results Summary */}
+          <div className="text-sm text-gray-700">
+            Mostrando {filteredLeads.length} de {leads.length} leads
+          </div>
 
-      {/* Leads List */}
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {filteredLeads.map((lead) => (
-            <li key={lead.id}>
-              <div className="px-4 py-4 sm:px-6 hover:bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
+          {/* Leads List */}
+          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            <ul className="divide-y divide-gray-200">
+              {filteredLeads.map((lead) => (
+                <li key={lead.id}>
+                  <div className="px-4 py-4 sm:px-6 hover:bg-gray-50">
                     <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <p className="text-lg font-medium text-gray-900 truncate">
-                            {lead.name}
-                          </p>
-                          {getStatusBadge(lead.status)}
-                          {lead.isNewWebsite && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 animate-pulse">
-                              Novo
-                            </span>
-                          )}
-                          {lead.company && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                              <BuildingOfficeIcon className="w-3 h-3 mr-1" />
-                              {lead.company}
-                            </span>
-                          )}
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 space-x-4">
-                          <span className="flex items-center">
-                            <EnvelopeIcon className="w-4 h-4 mr-1" />
-                            {lead.email}
-                          </span>
-                          {lead.phone && (
-                            <span className="flex items-center">
-                              <PhoneIcon className="w-4 h-4 mr-1" />
-                              {lead.phone}
-                            </span>
-                          )}
-                          <span>Área: {lead.legal_area}</span>
-                          <span>Origem: {lead.source}</span>
-                        </div>
-                        <div className="mt-1 text-sm text-gray-900">
-                          {lead.description}
-                        </div>
-                        {lead.estimated_value && (
-                          <div className="mt-1 flex items-center text-sm text-green-600">
-                            <CurrencyDollarIcon className="w-4 h-4 mr-1" />
-                            Valor estimado: {formatCurrency(lead.estimated_value)} 
-                            <span className="ml-2 text-gray-500">
-                              ({lead.probability}% probabilidade)
-                            </span>
-                          </div>
-                        )}
-                        {lead.next_action && (
-                          <div className="mt-1 flex items-center text-sm text-orange-600">
-                            <CalendarIcon className="w-4 h-4 mr-1" />
-                            Próxima ação: {lead.next_action}
-                            {lead.next_action_date && (
-                              <span className="ml-1">
-                                ({formatDate(lead.next_action_date)})
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <p className="text-lg font-medium text-gray-900 truncate">
+                                {lead.name}
+                              </p>
+                              {getStatusBadge(lead.status)}
+                              {lead.isNewWebsite && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 animate-pulse">
+                                  Novo
+                                </span>
+                              )}
+                              {lead.company && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                  <BuildingOfficeIcon className="w-3 h-3 mr-1" />
+                                  {lead.company}
+                                </span>
+                              )}
+                            </div>
+                            <div className="mt-2 flex items-center text-sm text-gray-500 space-x-4">
+                              <span className="flex items-center">
+                                <EnvelopeIcon className="w-4 h-4 mr-1" />
+                                {lead.email}
                               </span>
+                              {lead.phone && (
+                                <span className="flex items-center">
+                                  <PhoneIcon className="w-4 h-4 mr-1" />
+                                  {lead.phone}
+                                </span>
+                              )}
+                              <span>Area: {lead.legal_area}</span>
+                              <span>Origem: {lead.source}</span>
+                            </div>
+                            <div className="mt-1 text-sm text-gray-900">
+                              {lead.description}
+                            </div>
+                            {lead.estimated_value && (
+                              <div className="mt-1 flex items-center text-sm text-green-600">
+                                <CurrencyDollarIcon className="w-4 h-4 mr-1" />
+                                Valor estimado: {formatCurrency(lead.estimated_value)}
+                                <span className="ml-2 text-gray-500">
+                                  ({lead.probability}% probabilidade)
+                                </span>
+                              </div>
+                            )}
+                            {lead.next_action && (
+                              <div className="mt-1 flex items-center text-sm text-orange-600">
+                                <CalendarIcon className="w-4 h-4 mr-1" />
+                                Proxima acao: {lead.next_action}
+                                {lead.next_action_date && (
+                                  <span className="ml-1">
+                                    ({formatDate(lead.next_action_date)})
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="ml-5 flex-shrink-0 flex space-x-2">
+                        <button
+                          onClick={() => setViewingLead(lead)}
+                          className="inline-flex items-center p-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                          title="Visualizar"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => router.push(`/pipeline/${lead.id}/edit`)}
+                          className="inline-flex items-center p-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                          title="Editar"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                        {lead.status === 'qualificado' && (
+                          <button
+                            onClick={() => handleConvertToClient(lead.id)}
+                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                          >
+                            <UserPlusIcon className="h-4 w-4 mr-1" />
+                            Converter
+                          </button>
                         )}
                       </div>
                     </div>
                   </div>
+                </li>
+              ))}
+            </ul>
 
-                  {/* Actions */}
-                  <div className="ml-5 flex-shrink-0 flex space-x-2">
+            {/* Empty State */}
+            {filteredLeads.length === 0 && (
+              <div className="text-center py-12">
+                <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">
+                  Nenhum lead encontrado
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {searchTerm || statusFilter || sourceFilter || areaFilter
+                    ? 'Tente ajustar os filtros de busca.'
+                    : 'Comece criando um novo lead.'}
+                </p>
+                {!searchTerm && !statusFilter && !sourceFilter && !areaFilter && (
+                  <div className="mt-6">
                     <button
-                      onClick={() => setViewingLead(lead)}
-                      className="inline-flex items-center p-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                      title="Visualizar"
+                      onClick={handleCreateLead}
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                     >
-                      <EyeIcon className="h-4 w-4" />
+                      <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                      Novo Lead
                     </button>
-                    <button
-                      onClick={() => router.push(`/pipeline/${lead.id}/edit`)}
-                      className="inline-flex items-center p-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                      title="Editar"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </button>
-                    {lead.status === 'qualificado' && (
-                      <button
-                        onClick={() => handleConvertToClient(lead.id)}
-                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                      >
-                        <UserPlusIcon className="h-4 w-4 mr-1" />
-                        Converter
-                      </button>
-                    )}
                   </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-
-        {/* Empty State */}
-        {filteredLeads.length === 0 && (
-          <div className="text-center py-12">
-            <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
-              Nenhum lead encontrado
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || statusFilter || sourceFilter || areaFilter
-                ? 'Tente ajustar os filtros de busca.'
-                : 'Comece criando um novo lead.'}
-            </p>
-            {!searchTerm && !statusFilter && !sourceFilter && !areaFilter && (
-              <div className="mt-6">
-                <button
-                  onClick={handleCreateLead}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                >
-                  <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-                  Novo Lead
-                </button>
+                )}
               </div>
             )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* Lead Detail Dialog */}
       {viewingLead && (

@@ -9,7 +9,7 @@ export function useLawFirm(lawFirmId?: string) {
   const supabase = useSupabase()
 
   return useQuery({
-    queryKey: ['settings', 'law-firm'],
+    queryKey: ['settings', 'law-firm', lawFirmId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('law_firms')

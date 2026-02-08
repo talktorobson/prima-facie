@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   XMarkIcon,
   ChatBubbleLeftRightIcon,
@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useSupabase } from '@/components/providers'
 import { useCreateConversation } from '@/lib/queries/useMessages'
+import { useLawFirm } from '@/lib/queries/useSettings'
 import { useToast } from '@/components/ui/toast-provider'
 import type { Conversation, ConversationType, ConversationPriority } from '@/types/database'
 
@@ -28,7 +29,7 @@ interface ConversationTopic {
   color: string
 }
 
-const CONVERSATION_TOPICS: ConversationTopic[] = [
+const DEFAULT_TOPICS: ConversationTopic[] = [
   { id: '1', name: 'Geral', description: 'Conversas gerais com clientes', color: '#0066CC' },
   { id: '2', name: 'Consulta Juridica', description: 'Consultas e duvidas juridicas', color: '#10B981' },
   { id: '3', name: 'Documentos', description: 'Envio e recebimento de documentos', color: '#F59E0B' },
@@ -54,6 +55,19 @@ export default function NewConversationModal({
   const supabase = useSupabase()
   const toast = useToast()
   const createConversation = useCreateConversation()
+  const { data: lawFirm } = useLawFirm(lawFirmId)
+
+  // Use admin-configured topics from law_firm.features.chat_topics, fallback to defaults
+  const conversationTopics = useMemo<ConversationTopic[]>(() => {
+    const features = lawFirm?.features as Record<string, unknown> | undefined
+    const saved = features?.chat_topics as Array<{ id: string; name: string; color: string; description: string; is_active: boolean }> | undefined
+    if (saved && Array.isArray(saved) && saved.length > 0) {
+      return saved
+        .filter((t) => t.is_active)
+        .map((t) => ({ id: t.id, name: t.name, description: t.description, color: t.color }))
+    }
+    return DEFAULT_TOPICS
+  }, [lawFirm?.features])
 
   const [step, setStep] = useState(1)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
@@ -248,7 +262,7 @@ export default function NewConversationModal({
                 Topico da Conversa *
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {CONVERSATION_TOPICS.map((topic) => (
+                {conversationTopics.map((topic) => (
                   <div
                     key={topic.id}
                     onClick={() => handleTopicSelect(topic)}

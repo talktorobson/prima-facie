@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/lib/hooks/use-auth'
+import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { subscriptionService } from '@/lib/billing/subscription-service'
 import { SubscriptionPlan, PlanFormData } from '@/lib/billing/subscription-types'
 import { 
@@ -75,7 +75,7 @@ const initialFormData: PlanFormData = {
 }
 
 export default function SubscriptionPlansPage() {
-  const { user } = useAuth()
+  const effectiveLawFirmId = useEffectiveLawFirmId()
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingData, setIsLoadingData] = useState(true)
@@ -90,12 +90,12 @@ export default function SubscriptionPlansPage() {
   // Load subscription plans from database
   useEffect(() => {
     const loadPlans = async () => {
-      if (!user?.law_firm_id) return
-      
+      if (!effectiveLawFirmId) return
+
       try {
         setIsLoadingData(true)
         setError(null)
-        const loadedPlans = await subscriptionService.getSubscriptionPlans(user.law_firm_id)
+        const loadedPlans = await subscriptionService.getSubscriptionPlans(effectiveLawFirmId)
         setPlans(loadedPlans)
       } catch (error) {
         console.error('Error loading subscription plans:', error)
@@ -106,7 +106,7 @@ export default function SubscriptionPlansPage() {
     }
 
     loadPlans()
-  }, [user?.law_firm_id])
+  }, [effectiveLawFirmId])
 
   // Filter and sort plans
   const filteredPlans = plans
@@ -185,14 +185,14 @@ export default function SubscriptionPlansPage() {
     setError(null)
 
     try {
-      if (!user?.law_firm_id) {
+      if (!effectiveLawFirmId) {
         throw new Error('Law firm ID not found')
       }
 
       if (editingPlan) {
         // Update existing plan
         const updatedPlan = await subscriptionService.updateSubscriptionPlan(
-          editingPlan.id, 
+          editingPlan.id,
           formData
         )
         setPlans(plans.map(p => p.id === editingPlan.id ? updatedPlan : p))
@@ -200,7 +200,7 @@ export default function SubscriptionPlansPage() {
       } else {
         // Create new plan
         const newPlan = await subscriptionService.createSubscriptionPlan(
-          user.law_firm_id,
+          effectiveLawFirmId,
           formData
         )
         setPlans([...plans, newPlan])

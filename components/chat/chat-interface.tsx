@@ -13,6 +13,8 @@ import {
 } from '@heroicons/react/24/outline'
 import { useConversationMessages, useSendMessage, useMarkAsRead } from '@/lib/queries/useMessages'
 import { useConversationRealtime, useTypingBroadcast, formatMessageTime, isMessageFromCurrentUser } from '@/lib/supabase/realtime'
+import { useSupabase } from '@/components/providers'
+import { uploadFile, getSignedUrl } from '@/lib/supabase/storage'
 import type { Conversation, Message } from '@/types/database'
 import type { TypingIndicator } from '@/lib/supabase/realtime'
 import MessageStatusIndicator from './message-status-indicator'
@@ -48,15 +50,29 @@ const MessageBubble = memo(({ message, isFromCurrentUser, showAvatar = true, sho
 
   const renderMessageContent = () => {
     switch (message.message_type) {
-      case 'file':
+      case 'file': {
+        const attachment = (message as unknown as Record<string, unknown>).attachments as { name: string; size: number; type: string; url: string }[] | undefined
+        const fileInfo = attachment?.[0]
+        const formatSize = (bytes: number) => {
+          if (bytes < 1024) return `${bytes} B`
+          if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+          return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+        }
         return (
-          <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
-            <PaperClipIcon className="h-4 w-4 text-gray-500" />
+          <a
+            href={fileInfo?.url || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center space-x-2 p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
+          >
+            <PaperClipIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">Documento</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{fileInfo?.name || message.content || 'Documento'}</p>
+              {fileInfo?.size && <p className="text-xs text-gray-500">{formatSize(fileInfo.size)}</p>}
             </div>
-          </div>
+          </a>
         )
+      }
       case 'system':
         return (
           <p className="text-sm italic text-gray-600 text-center">
@@ -173,10 +189,12 @@ export default function ChatInterface({
   onClose
 }: ChatInterfaceProps) {
   const toast = useToast()
+  const supabase = useSupabase()
   const [newMessage, setNewMessage] = useState('')
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [isEvaProcessing, setIsEvaProcessing] = useState(false)
   const [evaDraft, setEvaDraft] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
@@ -320,10 +338,37 @@ export default function ChatInterface({
       return
     }
 
-    toast.info('Upload de arquivos em breve')
+    try {
+      setIsUploading(true)
+      const timestamp = Date.now()
+      const storagePath = `${lawFirmId}/messages/${conversation.id}/${timestamp}_${file.name}`
+      await uploadFile(supabase, 'documents', storagePath, file)
+      const signedUrl = await getSignedUrl(supabase, 'documents', storagePath, 86400)
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      sendMessageMutation.mutate(
+        {
+          law_firm_id: lawFirmId,
+          conversation_id: conversation.id,
+          content: file.name,
+          message_type: 'file',
+          sender_id: currentUserId,
+          sender_type: 'user',
+          status: 'sent',
+          attachments: [{ name: file.name, size: file.size, type: file.type, path: storagePath, url: signedUrl }],
+        },
+        {
+          onError: () => {
+            toast.error('Erro ao enviar arquivo. Tente novamente.')
+          },
+        }
+      )
+    } catch {
+      toast.error('Erro ao fazer upload do arquivo.')
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
@@ -484,12 +529,12 @@ export default function ChatInterface({
         <div className="flex items-end space-x-2">
           <button
             onClick={() => fileInputRef.current?.click()}
-            disabled={sendMessageMutation.isPending}
+            disabled={isUploading || sendMessageMutation.isPending}
             className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50"
             title="Enviar arquivo"
             aria-label="Enviar arquivo"
           >
-            {sendMessageMutation.isPending ? (
+            {isUploading || sendMessageMutation.isPending ? (
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
             ) : (
               <PaperClipIcon className="h-5 w-5" />

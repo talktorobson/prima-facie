@@ -2336,7 +2336,593 @@ LEFT JOIN (
 GRANT SELECT ON platform_law_firm_stats TO authenticated;
 
 -- =====================================================
+-- SECTION: CONVERSATIONS & PARTICIPANTS
+-- Added: Conversation threading for messages
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS conversations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    law_firm_id UUID NOT NULL REFERENCES law_firms(id) ON DELETE CASCADE,
+    matter_id UUID REFERENCES matters(id),
+    contact_id UUID REFERENCES contacts(id),
+    title VARCHAR(255),
+    description TEXT,
+    conversation_type VARCHAR(20) DEFAULT 'client'
+      CHECK (conversation_type IN ('internal','client','whatsapp')),
+    status VARCHAR(20) DEFAULT 'active'
+      CHECK (status IN ('active','archived','closed')),
+    priority VARCHAR(10) DEFAULT 'normal'
+      CHECK (priority IN ('low','normal','high','urgent')),
+    topic VARCHAR(50),
+    last_message_at TIMESTAMPTZ,
+    last_message_preview TEXT,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS conversation_participants (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id),
+    contact_id UUID REFERENCES contacts(id),
+    role VARCHAR(20) DEFAULT 'participant'
+      CHECK (role IN ('owner','moderator','participant')),
+    is_active BOOLEAN DEFAULT true,
+    last_read_at TIMESTAMPTZ,
+    joined_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(conversation_id, user_id),
+    UNIQUE(conversation_id, contact_id),
+    CHECK (user_id IS NOT NULL OR contact_id IS NOT NULL)
+);
+
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS conversation_id UUID REFERENCES conversations(id);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'messages_sender_id_fkey'
+  ) THEN
+    ALTER TABLE messages ADD CONSTRAINT messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES users(id);
+  END IF;
+END $$;
+
+-- Conversation indexes
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_time ON messages(conversation_id, created_at DESC);
+
+-- Trigram index for ILIKE message search
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_messages_content_trgm ON messages USING GIN (content gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_conversations_law_firm ON conversations(law_firm_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_last_msg ON conversations(law_firm_id, last_message_at DESC);
+CREATE INDEX IF NOT EXISTS idx_conversation_participants_conv ON conversation_participants(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_conversation_participants_user ON conversation_participants(user_id);
+CREATE INDEX IF NOT EXISTS idx_conversation_participants_contact ON conversation_participants(contact_id);
+
+-- Conversation last message trigger
+CREATE OR REPLACE FUNCTION update_conversation_last_message()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE conversations
+    SET last_message_at = NEW.created_at,
+        last_message_preview = LEFT(NEW.content, 100),
+        updated_at = now()
+    WHERE id = NEW.conversation_id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_update_conversation_last_message ON messages;
+CREATE TRIGGER trg_update_conversation_last_message
+    AFTER INSERT ON messages
+    FOR EACH ROW
+    WHEN (NEW.conversation_id IS NOT NULL)
+    EXECUTE FUNCTION update_conversation_last_message();
+
+DROP TRIGGER IF EXISTS update_conversations_updated_at ON conversations;
+CREATE TRIGGER update_conversations_updated_at
+    BEFORE UPDATE ON conversations
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Conversation RLS
+ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conversation_participants ENABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE FUNCTION public.get_conversation_law_firm_id(conv_id UUID)
+RETURNS UUID AS $$
+  SELECT law_firm_id FROM conversations WHERE id = conv_id;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+DROP POLICY IF EXISTS "conversations_staff_access" ON conversations;
+CREATE POLICY "conversations_staff_access" ON conversations FOR ALL USING (
+  law_firm_id = public.current_user_law_firm_id() AND public.current_user_is_staff()
+);
+
+DROP POLICY IF EXISTS "conv_participants_staff_access" ON conversation_participants;
+CREATE POLICY "conv_participants_staff_access" ON conversation_participants FOR ALL USING (
+  public.get_conversation_law_firm_id(conversation_id) = public.current_user_law_firm_id()
+  AND public.current_user_is_staff()
+);
+
+DROP POLICY IF EXISTS "conversations_client_access" ON conversations;
+CREATE POLICY "conversations_client_access" ON conversations FOR SELECT USING (
+  id IN (
+    SELECT conversation_id FROM conversation_participants
+    WHERE user_id = public.current_user_id() OR
+          contact_id IN (SELECT c.id FROM contacts c WHERE c.user_id = public.current_user_id())
+  )
+);
+
+DROP POLICY IF EXISTS "conv_participants_client_access" ON conversation_participants;
+CREATE POLICY "conv_participants_client_access" ON conversation_participants FOR SELECT USING (
+  user_id = public.current_user_id() OR
+  contact_id IN (SELECT c.id FROM contacts c WHERE c.user_id = public.current_user_id())
+);
+
+DROP POLICY IF EXISTS "conv_participants_client_update" ON conversation_participants;
+CREATE POLICY "conv_participants_client_update" ON conversation_participants FOR UPDATE USING (
+  user_id = public.current_user_id() OR
+  contact_id IN (SELECT c.id FROM contacts c WHERE c.user_id = public.current_user_id())
+);
+
+DROP POLICY IF EXISTS "super_admin_all_conversations" ON conversations;
+CREATE POLICY "super_admin_all_conversations" ON conversations FOR ALL USING (public.is_super_admin());
+
+DROP POLICY IF EXISTS "super_admin_all_conv_participants" ON conversation_participants;
+CREATE POLICY "super_admin_all_conv_participants" ON conversation_participants FOR ALL USING (public.is_super_admin());
+
+CREATE POLICY "service_role_all_conversations" ON conversations FOR ALL TO service_role USING (true);
+CREATE POLICY "service_role_all_conv_participants" ON conversation_participants FOR ALL TO service_role USING (true);
+
+-- =====================================================
+-- SECTION: WEBSITE CONTENT MANAGEMENT
+-- Per-firm editable public websites
+-- =====================================================
+
+ALTER TABLE law_firms ADD COLUMN IF NOT EXISTS slug VARCHAR(100) UNIQUE;
+ALTER TABLE law_firms ADD COLUMN IF NOT EXISTS website_published BOOLEAN DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_law_firms_slug ON law_firms(slug) WHERE slug IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS website_content (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  law_firm_id UUID NOT NULL UNIQUE REFERENCES law_firms(id) ON DELETE CASCADE,
+  theme JSONB DEFAULT '{}',
+  topbar JSONB DEFAULT '{}',
+  header JSONB DEFAULT '{}',
+  hero JSONB DEFAULT '{}',
+  credentials JSONB DEFAULT '{}',
+  practice_areas JSONB DEFAULT '{}',
+  philosophy JSONB DEFAULT '{}',
+  methodology JSONB DEFAULT '{}',
+  content_preview JSONB DEFAULT '{}',
+  coverage_region JSONB DEFAULT '{}',
+  founders JSONB DEFAULT '{}',
+  cta_final JSONB DEFAULT '{}',
+  footer JSONB DEFAULT '{}',
+  contact_info JSONB DEFAULT '{}',
+  seo JSONB DEFAULT '{}',
+  section_order JSONB DEFAULT '["topbar","header","hero","credentials","practice_areas","philosophy","methodology","content_preview","coverage_region","founders","cta_final","footer"]',
+  hidden_sections JSONB DEFAULT '[]',
+  is_published BOOLEAN DEFAULT false,
+  published_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  created_by UUID REFERENCES auth.users(id),
+  updated_by UUID REFERENCES auth.users(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_website_content_law_firm ON website_content(law_firm_id);
+CREATE INDEX IF NOT EXISTS idx_website_content_published ON website_content(is_published) WHERE is_published = true;
+
+CREATE TRIGGER set_website_content_updated_at
+  BEFORE UPDATE ON website_content
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE website_content ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "website_content_public_read"
+  ON website_content FOR SELECT
+  USING (is_published = true);
+
+CREATE POLICY "website_content_staff_manage"
+  ON website_content FOR ALL
+  USING (law_firm_id = public.current_user_law_firm_id())
+  WITH CHECK (law_firm_id = public.current_user_law_firm_id());
+
+CREATE POLICY "website_content_super_admin"
+  ON website_content FOR ALL
+  USING (public.is_super_admin())
+  WITH CHECK (public.is_super_admin());
+
+CREATE POLICY "website_content_service_role"
+  ON website_content FOR ALL
+  USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
+
+-- =====================================================
+-- SECTION: CONTACT FORM LAW FIRM SCOPING
+-- =====================================================
+
+ALTER TABLE contact_submissions ADD COLUMN IF NOT EXISTS law_firm_id UUID REFERENCES law_firms(id);
+ALTER TABLE contact_submissions ADD COLUMN IF NOT EXISTS custom_fields JSONB;
+CREATE INDEX IF NOT EXISTS idx_contact_submissions_law_firm ON contact_submissions(law_firm_id);
+
+DROP POLICY IF EXISTS "contact_submissions_staff_read" ON contact_submissions;
+CREATE POLICY "contact_submissions_staff_read" ON contact_submissions FOR SELECT USING (
+  (law_firm_id IS NULL AND public.current_user_is_staff()) OR
+  (law_firm_id = public.current_user_law_firm_id() AND public.current_user_is_staff())
+);
+
+-- =====================================================
+-- SECTION: AI ASSISTANT TABLES
+-- 4 tables: conversations, messages, feedback, tool executions
+-- =====================================================
+
+-- AI Enums
+DO $$ BEGIN
+  CREATE TYPE ai_conversation_status AS ENUM ('active', 'archived', 'deleted');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE ai_message_role AS ENUM ('user', 'assistant', 'system', 'tool');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE ai_feedback_rating AS ENUM ('positive', 'negative');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE ai_tool_status AS ENUM ('pending', 'approved', 'executed', 'rejected', 'error');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- AI Conversations
+CREATE TABLE IF NOT EXISTS ai_conversations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    law_firm_id UUID REFERENCES law_firms(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) DEFAULT 'Nova conversa',
+    status ai_conversation_status DEFAULT 'active',
+    context_type VARCHAR(50),
+    context_entity_id UUID,
+    provider VARCHAR(50) DEFAULT 'google',
+    model VARCHAR(100) DEFAULT 'gemini-2.0-flash',
+    total_tokens_used INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    created_by UUID,
+    updated_by UUID
+);
+
+-- AI Messages
+CREATE TABLE IF NOT EXISTS ai_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    conversation_id UUID NOT NULL REFERENCES ai_conversations(id) ON DELETE CASCADE,
+    law_firm_id UUID REFERENCES law_firms(id) ON DELETE CASCADE,
+    role ai_message_role NOT NULL,
+    content TEXT,
+    tool_calls JSONB,
+    tool_results JSONB,
+    tokens_input INTEGER DEFAULT 0,
+    tokens_output INTEGER DEFAULT 0,
+    source_type VARCHAR(20) DEFAULT 'widget'
+      CHECK (source_type IN ('widget', 'chat_ghost', 'client_portal', 'proactive')),
+    source_conversation_id UUID,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- AI Message Feedback
+CREATE TABLE IF NOT EXISTS ai_message_feedback (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    message_id UUID NOT NULL REFERENCES ai_messages(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    law_firm_id UUID REFERENCES law_firms(id) ON DELETE CASCADE,
+    rating ai_feedback_rating NOT NULL,
+    comment TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    UNIQUE(message_id, user_id)
+);
+
+-- AI Tool Executions
+CREATE TABLE IF NOT EXISTS ai_tool_executions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    message_id UUID NOT NULL REFERENCES ai_messages(id) ON DELETE CASCADE,
+    law_firm_id UUID REFERENCES law_firms(id) ON DELETE CASCADE,
+    tool_name VARCHAR(100) NOT NULL,
+    tool_input JSONB,
+    tool_output JSONB,
+    status ai_tool_status DEFAULT 'pending',
+    requires_confirmation BOOLEAN DEFAULT false,
+    executed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- AI RLS
+ALTER TABLE ai_conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_message_feedback ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_tool_executions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY ai_conversations_user_select ON ai_conversations
+    FOR SELECT USING (user_id = public.current_user_id());
+CREATE POLICY ai_conversations_user_insert ON ai_conversations
+    FOR INSERT WITH CHECK (user_id = public.current_user_id());
+CREATE POLICY ai_conversations_user_update ON ai_conversations
+    FOR UPDATE USING (user_id = public.current_user_id());
+CREATE POLICY ai_conversations_user_delete ON ai_conversations
+    FOR DELETE USING (user_id = public.current_user_id());
+CREATE POLICY ai_conversations_admin_select ON ai_conversations
+    FOR SELECT USING (
+        public.current_user_is_admin()
+        AND law_firm_id = public.current_user_law_firm_id()
+    );
+CREATE POLICY ai_conversations_super_admin ON ai_conversations
+    USING (public.is_super_admin());
+CREATE POLICY ai_conversations_service_role ON ai_conversations
+    USING (auth.role() = 'service_role');
+
+CREATE POLICY ai_messages_user_select ON ai_messages
+    FOR SELECT USING (
+        conversation_id IN (
+            SELECT id FROM ai_conversations WHERE user_id = public.current_user_id()
+        )
+    );
+CREATE POLICY ai_messages_user_insert ON ai_messages
+    FOR INSERT WITH CHECK (
+        conversation_id IN (
+            SELECT id FROM ai_conversations WHERE user_id = public.current_user_id()
+        )
+    );
+CREATE POLICY ai_messages_admin_select ON ai_messages
+    FOR SELECT USING (
+        public.current_user_is_admin()
+        AND law_firm_id = public.current_user_law_firm_id()
+    );
+CREATE POLICY ai_messages_super_admin ON ai_messages
+    USING (public.is_super_admin());
+CREATE POLICY ai_messages_service_role ON ai_messages
+    USING (auth.role() = 'service_role');
+
+CREATE POLICY ai_message_feedback_user_all ON ai_message_feedback
+    USING (user_id = public.current_user_id());
+CREATE POLICY ai_message_feedback_user_insert ON ai_message_feedback
+    FOR INSERT WITH CHECK (user_id = public.current_user_id());
+CREATE POLICY ai_message_feedback_admin_select ON ai_message_feedback
+    FOR SELECT USING (
+        public.current_user_is_admin()
+        AND law_firm_id = public.current_user_law_firm_id()
+    );
+CREATE POLICY ai_message_feedback_super_admin ON ai_message_feedback
+    USING (public.is_super_admin());
+CREATE POLICY ai_message_feedback_service_role ON ai_message_feedback
+    USING (auth.role() = 'service_role');
+
+CREATE POLICY ai_tool_executions_user_select ON ai_tool_executions
+    FOR SELECT USING (
+        message_id IN (
+            SELECT m.id FROM ai_messages m
+            JOIN ai_conversations c ON c.id = m.conversation_id
+            WHERE c.user_id = public.current_user_id()
+        )
+    );
+CREATE POLICY ai_tool_executions_admin_select ON ai_tool_executions
+    FOR SELECT USING (
+        public.current_user_is_admin()
+        AND law_firm_id = public.current_user_law_firm_id()
+    );
+CREATE POLICY ai_tool_executions_super_admin ON ai_tool_executions
+    USING (public.is_super_admin());
+CREATE POLICY ai_tool_executions_service_role ON ai_tool_executions
+    USING (auth.role() = 'service_role');
+
+-- AI Indexes
+CREATE INDEX IF NOT EXISTS idx_ai_conversations_user ON ai_conversations(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_conversations_law_firm ON ai_conversations(law_firm_id);
+CREATE INDEX IF NOT EXISTS idx_ai_conversations_status ON ai_conversations(status);
+CREATE INDEX IF NOT EXISTS idx_ai_conversations_user_status ON ai_conversations(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_ai_messages_conversation ON ai_messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_ai_messages_law_firm ON ai_messages(law_firm_id);
+CREATE INDEX IF NOT EXISTS idx_ai_messages_conversation_created ON ai_messages(conversation_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_ai_message_feedback_message ON ai_message_feedback(message_id);
+CREATE INDEX IF NOT EXISTS idx_ai_message_feedback_law_firm ON ai_message_feedback(law_firm_id);
+CREATE INDEX IF NOT EXISTS idx_ai_tool_executions_message ON ai_tool_executions(message_id);
+CREATE INDEX IF NOT EXISTS idx_ai_tool_executions_law_firm ON ai_tool_executions(law_firm_id);
+CREATE INDEX IF NOT EXISTS idx_ai_tool_executions_status ON ai_tool_executions(status);
+
+-- AI Triggers
+CREATE TRIGGER update_ai_conversations_updated_at
+    BEFORE UPDATE ON ai_conversations
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_ai_messages_updated_at
+    BEFORE UPDATE ON ai_messages
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_ai_tool_executions_updated_at
+    BEFORE UPDATE ON ai_tool_executions
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- SECTION: EVA CHAT INTEGRATION
+-- Source tracking for cross-context AI memory
+-- =====================================================
+
+CREATE INDEX IF NOT EXISTS idx_ai_messages_source_type ON ai_messages(source_type);
+CREATE INDEX IF NOT EXISTS idx_ai_messages_source_conv ON ai_messages(source_conversation_id);
+CREATE INDEX IF NOT EXISTS idx_ai_conversations_user_status_updated
+  ON ai_conversations(user_id, status, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_conversations_firm_contact_status_updated
+  ON conversations(law_firm_id, contact_id, status, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_messages_proactive_lookup
+  ON ai_messages(source_type, role, created_at DESC)
+  WHERE source_type = 'proactive';
+
+-- =====================================================
+-- SECTION: PORTUGUESE HELPER FUNCTIONS
+-- Map Portuguese labels to English enum values
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION public.map_client_status(portuguese_status TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+    CASE portuguese_status
+        WHEN 'ativo' THEN RETURN 'active';
+        WHEN 'inativo' THEN RETURN 'inactive';
+        WHEN 'prospecto' THEN RETURN 'prospect';
+        ELSE RETURN 'prospect';
+    END CASE;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.map_contact_type(portuguese_type TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+    CASE portuguese_type
+        WHEN 'pessoa_fisica' THEN RETURN 'individual';
+        WHEN 'pessoa_juridica' THEN RETURN 'company';
+        ELSE RETURN 'individual';
+    END CASE;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.map_matter_priority(portuguese_priority TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+    CASE portuguese_priority
+        WHEN 'baixa' THEN RETURN 'low';
+        WHEN 'media' THEN RETURN 'medium';
+        WHEN 'alta' THEN RETURN 'high';
+        WHEN 'urgente' THEN RETURN 'urgent';
+        ELSE RETURN 'medium';
+    END CASE;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.map_matter_status(portuguese_status TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+    CASE portuguese_status
+        WHEN 'novo' THEN RETURN 'active';
+        WHEN 'analise' THEN RETURN 'on_hold';
+        WHEN 'ativo' THEN RETURN 'active';
+        WHEN 'suspenso' THEN RETURN 'on_hold';
+        WHEN 'aguardando_cliente' THEN RETURN 'on_hold';
+        WHEN 'aguardando_documentos' THEN RETURN 'on_hold';
+        WHEN 'finalizado' THEN RETURN 'closed';
+        ELSE RETURN 'active';
+    END CASE;
+END;
+$function$;
+
+-- =====================================================
+-- SECTION: VIEWS
+-- Aggregate and Portuguese-labeled views
+-- =====================================================
+
+CREATE OR REPLACE VIEW client_stats_view AS
+SELECT law_firm_id,
+    count(*) AS total_clients,
+    count(*) FILTER (WHERE client_status = 'active') AS active_clients,
+    count(*) FILTER (WHERE client_status = 'inactive') AS inactive_clients,
+    count(*) FILTER (WHERE client_status = 'prospect') AS prospects,
+    COALESCE(sum(total_billed), 0::numeric) AS total_matters,
+    COALESCE((SELECT count(*) FROM matters m
+        WHERE m.law_firm_id = c.law_firm_id AND m.status = 'active'), 0::bigint) AS active_matters
+FROM contacts c
+WHERE contact_type IN ('individual', 'company')
+GROUP BY law_firm_id;
+
+CREATE OR REPLACE VIEW contacts_with_portuguese_labels AS
+SELECT id, law_firm_id, user_id, contact_type, first_name, last_name, full_name,
+    cpf, rg, birth_date, marital_status, profession, company_name, cnpj, company_type,
+    email, phone, mobile, address_street, address_number, address_complement,
+    address_neighborhood, address_city, address_state, address_zipcode, address_country,
+    client_status, source, credit_limit, total_billed, total_paid, outstanding_balance,
+    preferred_communication, communication_frequency, notes, tags,
+    created_at, updated_at, created_by, updated_by, client_number, portal_enabled,
+    legal_name, trade_name,
+    CASE contact_type
+        WHEN 'individual' THEN 'Pessoa Física'
+        WHEN 'company' THEN 'Pessoa Jurídica'
+        WHEN 'lead' THEN 'Lead'
+        WHEN 'vendor' THEN 'Fornecedor'
+        WHEN 'court' THEN 'Tribunal'
+        ELSE contact_type
+    END AS tipo_portugues,
+    CASE client_status
+        WHEN 'prospect' THEN 'Prospecto'
+        WHEN 'active' THEN 'Ativo'
+        WHEN 'inactive' THEN 'Inativo'
+        WHEN 'former' THEN 'Ex-cliente'
+        ELSE client_status
+    END AS status_portugues
+FROM contacts c;
+
+CREATE OR REPLACE VIEW matter_stats_view AS
+SELECT law_firm_id,
+    count(*) AS total_matters,
+    count(*) FILTER (WHERE status = 'active') AS active_matters,
+    count(*) FILTER (WHERE status = 'on_hold') AS on_hold_matters,
+    count(*) FILTER (WHERE status = 'closed') AS closed_matters,
+    count(*) FILTER (WHERE status = 'cancelled') AS cancelled_matters,
+    COALESCE(sum(total_billed), 0::numeric) AS total_billed,
+    COALESCE(sum(total_paid), 0::numeric) AS total_paid,
+    COALESCE(sum(outstanding_balance), 0::numeric) AS outstanding_balance
+FROM matters
+GROUP BY law_firm_id;
+
+CREATE OR REPLACE VIEW matters_with_portuguese_labels AS
+SELECT id, law_firm_id, matter_type_id, matter_number, title, description,
+    court_name, court_city, court_state, process_number, opposing_party,
+    status, priority, opened_date, closed_date, statute_of_limitations, next_court_date,
+    billing_method, hourly_rate, flat_fee, contingency_percentage,
+    total_time_logged, total_billed, total_paid, outstanding_balance,
+    responsible_lawyer_id, assigned_staff, notes, tags, custom_fields,
+    created_at, updated_at, created_by, updated_by,
+    area_juridica, case_value, probability_success, next_action,
+    CASE status
+        WHEN 'active' THEN 'Ativo'
+        WHEN 'closed' THEN 'Finalizado'
+        WHEN 'on_hold' THEN 'Suspenso'
+        WHEN 'settled' THEN 'Acordo'
+        WHEN 'dismissed' THEN 'Arquivado'
+        ELSE status
+    END AS status_portugues,
+    CASE priority
+        WHEN 'low' THEN 'Baixa'
+        WHEN 'medium' THEN 'Média'
+        WHEN 'high' THEN 'Alta'
+        WHEN 'urgent' THEN 'Urgente'
+        ELSE priority
+    END AS prioridade_portugues
+FROM matters m;
+
+GRANT SELECT ON client_stats_view TO authenticated;
+GRANT SELECT ON contacts_with_portuguese_labels TO authenticated;
+GRANT SELECT ON matter_stats_view TO authenticated;
+GRANT SELECT ON matters_with_portuguese_labels TO authenticated;
+
+-- =====================================================
 -- DONE! Consolidated init for fresh Supabase deploy.
+-- Includes all tables from sprints 0-9 plus:
+--   - Conversations & participants (chat threading)
+--   - Website content management (per-firm CMS)
+--   - Contact form law_firm scoping
+--   - AI assistant tables (EVA conversations, messages, feedback, tools)
+--   - EVA chat integration (source tracking, cross-context memory)
 -- Bug fixes applied:
 --   1. auth.* functions → public.* (Supabase schema restriction)
 --   2. clients(id) FK → contacts(id) (correct table)

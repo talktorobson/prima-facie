@@ -51,7 +51,10 @@ export const MessageBubble = memo(({ message, isFromCurrentUser, showAvatar = tr
                   fallback.target = '_blank'
                   fallback.rel = 'noopener noreferrer'
                   fallback.className = 'flex items-center space-x-2 p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors'
-                  fallback.innerHTML = `<span class="text-sm text-primary">${fileName}</span>`
+                  const textSpan = document.createElement('span')
+                  textSpan.className = 'text-sm text-primary'
+                  textSpan.textContent = fileName
+                  fallback.appendChild(textSpan)
                   target.replaceWith(fallback)
                 }}
               />
@@ -167,6 +170,7 @@ export const MessageBubble = memo(({ message, isFromCurrentUser, showAvatar = tr
 }, (prev, next) => (
   prev.message.id === next.message.id &&
   prev.message.status === next.message.status &&
+  prev.isFromCurrentUser === next.isFromCurrentUser &&
   prev.showAvatar === next.showAvatar &&
   prev.showTime === next.showTime
 ))

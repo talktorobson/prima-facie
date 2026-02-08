@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { useEvaHistory, type EvaHistoryItem } from '@/lib/queries/useEvaHistory'
 import { formatMessageTime } from '@/lib/supabase/realtime'
@@ -40,6 +40,14 @@ function groupByDate(items: EvaHistoryItem[]): Map<string, EvaHistoryItem[]> {
 export default function EvaHistoryPanel({ conversationId, onUseResponse, onClose }: EvaHistoryPanelProps) {
   const { data: history = [], isLoading } = useEvaHistory(conversationId)
   const grouped = useMemo(() => groupByDate(history), [history])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
   return (
     <div className="fixed inset-y-0 right-0 w-80 bg-white border-l border-gray-200 shadow-lg z-50 flex flex-col">

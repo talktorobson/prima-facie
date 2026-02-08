@@ -178,7 +178,7 @@ export default function DashboardPage() {
 
   const { data: activityLogs, isLoading: logsLoading } = useActivityLogs(effectiveLawFirmId)
   const { data: tasks, isLoading: tasksLoading } = useTasks(effectiveLawFirmId)
-  const { data: invoices } = useInvoices(effectiveLawFirmId)
+  const { data: invoices, isLoading: invoicesLoading } = useInvoices(effectiveLawFirmId)
   const { data: newProspects } = useNewProspects(effectiveLawFirmId)
 
   const recentLogs = useMemo(() => (activityLogs ?? []).slice(0, 5), [activityLogs])

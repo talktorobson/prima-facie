@@ -18,11 +18,12 @@ export function useMessageSearch(conversationId?: string | null, query?: string)
     queryFn: async () => {
       if (!conversationId || !query) return []
 
+      const escaped = query.replace(/[%_\\]/g, '\\$&')
       const { data, error } = await supabase
         .from('messages')
         .select('id, content, sender_type, created_at')
         .eq('conversation_id', conversationId)
-        .ilike('content', `%${query}%`)
+        .ilike('content', `%${escaped}%`)
         .order('created_at', { ascending: false })
         .limit(20)
 

@@ -28,7 +28,8 @@ export function useEvaHistory(conversationId?: string | null) {
 
         if (error) throw error
         return (data || []) as EvaHistoryItem[]
-      } catch {
+      } catch (error) {
+        console.error('[useEvaHistory] Failed to fetch EVA history:', error)
         return []
       }
     },

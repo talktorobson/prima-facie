@@ -1,4 +1,8 @@
+'use client'
+
 import Link from 'next/link'
+import { ChevronDown } from 'lucide-react'
+import WebsiteScrollReveal from './website-scroll-reveal'
 import type { WebsiteHero } from './types'
 
 interface Props {
@@ -16,57 +20,73 @@ export default function WebsiteHeroSection({ data, slug }: Props) {
 
   return (
     <section className="relative min-h-screen bg-website-bg">
-      <div className="container mx-auto px-4 sm:px-6 pt-32 pb-20 lg:pt-40 lg:pb-28">
+      {/* Background gradient overlay */}
+      <div className="absolute inset-0" style={{ background: 'var(--ws-gradient)', opacity: 0.05 }} />
+
+      <div className="relative container mx-auto px-4 sm:px-6 pt-32 pb-20 lg:pt-40 lg:pb-28">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center min-h-[70vh]">
           {/* Left: text */}
           <div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-website-ink leading-[1.1] mb-6">
-              {data.headline_lines.map((line, i) => (
-                <span key={i} className={i > 0 ? 'block' : undefined}>{line} </span>
-              ))}
-              {data.headline_gold_lines.map((line, i) => (
-                <span key={i} className="block text-website-accent">{line}</span>
-              ))}
-            </h1>
+            <WebsiteScrollReveal delay={0}>
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-website-ink leading-[1.1] mb-6">
+                {data.headline_lines.map((line, i) => (
+                  <span key={i} className={i > 0 ? 'block' : undefined}>{line} </span>
+                ))}
+              </h1>
+            </WebsiteScrollReveal>
 
-            <div className="w-16 h-[2px] bg-website-accent mb-8" />
+            <WebsiteScrollReveal delay={100}>
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-bold leading-[1.1] mb-6">
+                {data.headline_gold_lines.map((line, i) => (
+                  <span key={i} className="block text-website-accent">{line}</span>
+                ))}
+              </h1>
+            </WebsiteScrollReveal>
 
-            <p className="text-lg md:text-xl text-website-stone leading-relaxed max-w-lg mb-10">
-              {data.subheadline}
-            </p>
+            <WebsiteScrollReveal delay={100}>
+              <div className="w-16 h-[2px] bg-website-accent mb-8" />
+            </WebsiteScrollReveal>
+
+            <WebsiteScrollReveal delay={200}>
+              <p className="text-lg md:text-xl text-website-stone leading-relaxed max-w-lg mb-10">
+                {data.subheadline}
+              </p>
+            </WebsiteScrollReveal>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              {data.cta_primary_text && (
-                <Link
-                  href={resolveHref(data.cta_primary_href || '/contato')}
-                  className="inline-flex items-center justify-center px-8 py-4 bg-website-accent text-white font-medium text-base tracking-wide hover:opacity-90 transition-opacity"
-                >
-                  {data.cta_primary_text}
-                </Link>
-              )}
-              {data.cta_secondary_text && (
-                <Link
-                  href={resolveHref(data.cta_secondary_href || '/contato')}
-                  {...(data.cta_secondary_href?.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className="inline-flex items-center justify-center px-8 py-4 border border-website-ink text-website-ink font-medium text-base tracking-wide hover:bg-website-ink hover:text-white transition-colors"
-                >
-                  {data.cta_secondary_text}
-                </Link>
-              )}
-              {data.cta_tertiary_text && (
-                <Link
-                  href={resolveHref(data.cta_tertiary_href || '/login')}
-                  className="inline-flex items-center justify-center px-8 py-4 text-website-ink font-medium text-base tracking-wide hover:text-website-accent transition-colors"
-                >
-                  {data.cta_tertiary_text}
-                </Link>
-              )}
-            </div>
+            <WebsiteScrollReveal delay={300}>
+              <div className="flex flex-col sm:flex-row gap-4">
+                {data.cta_primary_text && (
+                  <Link
+                    href={resolveHref(data.cta_primary_href || '/contato')}
+                    className="inline-flex items-center justify-center px-8 py-4 bg-website-accent text-white font-medium text-base tracking-wide hover:opacity-90 transition-opacity"
+                  >
+                    {data.cta_primary_text}
+                  </Link>
+                )}
+                {data.cta_secondary_text && (
+                  <Link
+                    href={resolveHref(data.cta_secondary_href || '/contato')}
+                    {...(data.cta_secondary_href?.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    className="inline-flex items-center justify-center px-8 py-4 border border-website-ink text-website-ink font-medium text-base tracking-wide hover:bg-website-ink hover:text-white transition-colors"
+                  >
+                    {data.cta_secondary_text}
+                  </Link>
+                )}
+                {data.cta_tertiary_text && (
+                  <Link
+                    href={resolveHref(data.cta_tertiary_href || '/login')}
+                    className="inline-flex items-center justify-center px-8 py-4 text-website-ink font-medium text-base tracking-wide hover:text-website-accent transition-colors"
+                  >
+                    {data.cta_tertiary_text}
+                  </Link>
+                )}
+              </div>
 
-            {data.microcopy && (
-              <p className="text-xs text-website-stone mt-4">{data.microcopy}</p>
-            )}
+              {data.microcopy && (
+                <p className="text-xs text-website-stone mt-4">{data.microcopy}</p>
+              )}
+            </WebsiteScrollReveal>
           </div>
 
           {/* Right: office images */}
@@ -113,18 +133,25 @@ export default function WebsiteHeroSection({ data, slug }: Props) {
         {/* Stats row */}
         {data.stats.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-20 pt-12 border-t border-website-mist">
-            {data.stats.map((stat) => (
-              <div key={stat.label} className="text-center sm:text-left">
-                <div className="text-4xl md:text-5xl font-serif font-bold text-website-ink mb-2">
-                  {stat.number}
+            {data.stats.map((stat, index) => (
+              <WebsiteScrollReveal key={stat.label} delay={index * 100}>
+                <div className="text-center sm:text-left">
+                  <div className="text-4xl md:text-5xl font-serif font-bold text-website-ink mb-2">
+                    {stat.number}
+                  </div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-website-stone">
+                    {stat.label}
+                  </div>
                 </div>
-                <div className="text-xs uppercase tracking-[0.2em] text-website-stone">
-                  {stat.label}
-                </div>
-              </div>
+              </WebsiteScrollReveal>
             ))}
           </div>
         )}
+      </div>
+
+      {/* Scroll indicator */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+        <ChevronDown className="h-6 w-6 text-website-stone/50" />
       </div>
     </section>
   )

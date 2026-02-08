@@ -34,13 +34,17 @@ import type {
 import {
   Globe,
   Eye,
+  EyeOff,
   Save,
   Plus,
   Trash2,
   ArrowUp,
   ArrowDown,
   ExternalLink,
+  GripVertical,
 } from 'lucide-react'
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd'
+import { GRADIENT_PRESETS } from '@/components/website/website-theme-provider'
 import WebsiteImageUpload, { WebsiteMultiImageUpload } from '@/components/website/website-image-upload'
 
 type TabKey =
@@ -226,6 +230,7 @@ export default function AdminWebsitePage() {
                   onSaveSeo={(data) => handleSaveSection('seo', data as Record<string, unknown>)}
                   onSaveOrder={(order) => handleSaveSection('section_order', order as unknown as Record<string, unknown>)}
                   onSaveHidden={(hidden) => handleSaveSection('hidden_sections', hidden as unknown as Record<string, unknown>)}
+                  onSaveTheme={(data) => handleSaveSection('theme', data as Record<string, unknown>)}
                   saving={saving}
                 />
               )}
@@ -343,6 +348,21 @@ function TextArea({
 // Tab Components
 // ──────────────────────────────────────────
 
+const sectionLabels: Record<string, string> = {
+  topbar: 'Barra Superior',
+  header: 'Cabecalho',
+  hero: 'Hero',
+  credentials: 'Credenciais',
+  practice_areas: 'Areas de Atuacao',
+  philosophy: 'Filosofia',
+  methodology: 'Metodologia',
+  content_preview: 'Conteudos',
+  coverage_region: 'Regiao',
+  founders: 'Equipe',
+  cta_final: 'CTA Final',
+  footer: 'Rodape',
+}
+
 function GeralTab({
   content,
   lawFirm,
@@ -350,9 +370,12 @@ function GeralTab({
   lawFirmId,
   onSaveSlug,
   onSaveSeo,
+  onSaveOrder,
+  onSaveHidden,
+  onSaveTheme,
   saving,
 }: {
-  content: { seo: WebsiteSeo; section_order: string[]; hidden_sections: string[]; is_published: boolean }
+  content: { seo: WebsiteSeo; theme: WebsiteTheme; section_order: string[]; hidden_sections: string[]; is_published: boolean }
   lawFirm: { name: string } | undefined | null
   slug: string
   lawFirmId: string
@@ -360,10 +383,28 @@ function GeralTab({
   onSaveSeo: (data: WebsiteSeo) => void
   onSaveOrder: (order: string[]) => void
   onSaveHidden: (hidden: string[]) => void
+  onSaveTheme: (data: WebsiteTheme) => void
   saving: boolean
 }) {
   const [localSlug, setLocalSlug] = useState(slug)
   const [seo, setSeo] = useState<WebsiteSeo>(content.seo || { title: '', description: '' })
+  const [sectionOrder, setSectionOrder] = useState<string[]>(content.section_order || [])
+  const [hiddenSections, setHiddenSections] = useState<string[]>(content.hidden_sections || [])
+  const [theme, setTheme] = useState<WebsiteTheme>(content.theme || {} as WebsiteTheme)
+
+  function handleDragEnd(result: DropResult) {
+    if (!result.destination) return
+    const items = Array.from(sectionOrder)
+    const [moved] = items.splice(result.source.index, 1)
+    items.splice(result.destination.index, 0, moved)
+    setSectionOrder(items)
+  }
+
+  function toggleSectionVisibility(section: string) {
+    setHiddenSections((prev) =>
+      prev.includes(section) ? prev.filter((s) => s !== section) : [...prev, section]
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -418,6 +459,159 @@ function GeralTab({
           </div>
           <SaveButton saving={saving} onClick={() => onSaveSeo(seo)} />
         </div>
+      </div>
+
+      {/* Section reordering via drag-and-drop */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Ordem das Secoes</h3>
+        <p className="text-sm text-gray-500 mb-4">Arraste para reordenar. Use o icone de olho para ocultar/exibir secoes.</p>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="sections">
+            {(provided) => (
+              <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
+                {sectionOrder.map((section, index) => {
+                  const isHidden = hiddenSections.includes(section)
+                  return (
+                    <Draggable key={section} draggableId={section} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className={`flex items-center gap-3 px-4 py-3 bg-white border rounded-lg ${snapshot.isDragging ? 'shadow-lg border-primary' : 'border-gray-200'} ${isHidden ? 'opacity-50' : ''}`}
+                        >
+                          <div {...provided.dragHandleProps}>
+                            <GripVertical className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <span className="flex-1 text-sm font-medium text-gray-700 capitalize">
+                            {sectionLabels[section] || section}
+                          </span>
+                          <button
+                            onClick={() => toggleSectionVisibility(section)}
+                            className="p-1 text-gray-400 hover:text-gray-600"
+                          >
+                            {isHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      )}
+                    </Draggable>
+                  )
+                })}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+        <div className="mt-4 flex gap-3">
+          <SaveButton saving={saving} onClick={() => onSaveOrder(sectionOrder)} />
+          <button
+            onClick={() => onSaveHidden(hiddenSections)}
+            className="px-4 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            Salvar Visibilidade
+          </button>
+        </div>
+      </div>
+
+      {/* Theme editor */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Tema Visual</h3>
+
+        {/* Font selectors */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div>
+            <FieldLabel>Fonte Serif (titulos)</FieldLabel>
+            <select
+              value={theme.fontSerif || 'Cormorant Garamond'}
+              onChange={(e) => setTheme({ ...theme, fontSerif: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="Cormorant Garamond">Cormorant Garamond</option>
+              <option value="Playfair Display">Playfair Display</option>
+              <option value="Merriweather">Merriweather</option>
+              <option value="Lora">Lora</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1" style={{ fontFamily: theme.fontSerif || 'Cormorant Garamond' }}>
+              Exemplo de texto
+            </p>
+          </div>
+          <div>
+            <FieldLabel>Fonte Sans (corpo)</FieldLabel>
+            <select
+              value={theme.fontSans || 'Inter'}
+              onChange={(e) => setTheme({ ...theme, fontSans: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="Inter">Inter</option>
+              <option value="Open Sans">Open Sans</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Source Sans Pro">Source Sans Pro</option>
+            </select>
+          </div>
+          <div>
+            <FieldLabel>Fonte Display (destaques)</FieldLabel>
+            <select
+              value={theme.fontDisplay || 'Outfit'}
+              onChange={(e) => setTheme({ ...theme, fontDisplay: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="Outfit">Outfit</option>
+              <option value="Montserrat">Montserrat</option>
+              <option value="Raleway">Raleway</option>
+              <option value="Poppins">Poppins</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Gradient preset picker */}
+        <div className="mb-6">
+          <FieldLabel>Gradiente</FieldLabel>
+          <div className="grid grid-cols-6 gap-3 mt-2">
+            {Object.entries(GRADIENT_PRESETS).map(([name, gradient]) => (
+              <button
+                key={name}
+                onClick={() => setTheme({ ...theme, gradientPreset: name })}
+                className={`h-12 rounded-lg border-2 transition-all ${
+                  theme.gradientPreset === name ? 'border-primary scale-105' : 'border-transparent hover:border-gray-300'
+                }`}
+                style={{ background: gradient }}
+                title={name}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Section spacing */}
+        <div className="mb-6">
+          <FieldLabel>Espacamento entre Secoes</FieldLabel>
+          <div className="flex gap-3 mt-2">
+            {(['compact', 'normal', 'spacious'] as const).map((spacing) => (
+              <button
+                key={spacing}
+                onClick={() => setTheme({ ...theme, sectionSpacing: spacing })}
+                className={`px-4 py-2 text-sm rounded-lg border transition-all ${
+                  (theme.sectionSpacing || 'normal') === spacing
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                {spacing === 'compact' ? 'Compacto (64px)' : spacing === 'normal' ? 'Normal (96px)' : 'Espacoso (128px)'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Grain texture toggle */}
+        <div className="flex items-center gap-3 mb-6">
+          <input
+            type="checkbox"
+            checked={theme.enableGrainTexture || false}
+            onChange={(e) => setTheme({ ...theme, enableGrainTexture: e.target.checked })}
+            className="h-4 w-4 rounded border-gray-300"
+          />
+          <span className="text-sm font-medium text-gray-700">Textura granulada (grain)</span>
+        </div>
+
+        <SaveButton saving={saving} onClick={() => onSaveTheme(theme)} />
       </div>
 
       <div>

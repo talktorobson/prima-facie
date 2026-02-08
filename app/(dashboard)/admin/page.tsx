@@ -1,7 +1,6 @@
 'use client'
 
 import { AdminOnly } from '@/components/auth/role-guard'
-import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useUsers, useActivityLogs } from '@/lib/queries/useAdmin'
 import { useLawFirm } from '@/lib/queries/useSettings'
@@ -23,7 +22,6 @@ import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export default function AdminPage() {
-  const { profile } = useAuthContext()
   const effectiveLawFirmId = useEffectiveLawFirmId()
   const { data: users } = useUsers(effectiveLawFirmId)
   const { data: lawFirm } = useLawFirm(effectiveLawFirmId ?? undefined)

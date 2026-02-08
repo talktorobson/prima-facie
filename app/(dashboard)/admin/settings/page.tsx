@@ -1,7 +1,6 @@
 'use client'
 
 import { AdminOnly } from '@/components/auth/role-guard'
-import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useLawFirm, useUpdateLawFirm } from '@/lib/queries/useSettings'
 import { useToast } from '@/components/ui/toast-provider'
@@ -10,7 +9,6 @@ import { ArrowLeftIcon, CogIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 
 export default function SystemSettingsPage() {
-  const { profile } = useAuthContext()
   const effectiveLawFirmId = useEffectiveLawFirmId()
   const toast = useToast()
   const { data: lawFirm, isLoading } = useLawFirm(effectiveLawFirmId ?? undefined)

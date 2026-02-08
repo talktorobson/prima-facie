@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react'
 import { AdminOnly } from '@/components/auth/role-guard'
-import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useLawFirm, useUpdateLawFirm } from '@/lib/queries/useSettings'
 import {
@@ -86,7 +85,6 @@ function slugify(text: string) {
 }
 
 export default function AdminWebsitePage() {
-  const { profile } = useAuthContext()
   const effectiveLawFirmId = useEffectiveLawFirmId()
   const { data: lawFirm } = useLawFirm(effectiveLawFirmId ?? undefined)
   const { data: content, isLoading } = useWebsiteContent(effectiveLawFirmId ?? undefined)

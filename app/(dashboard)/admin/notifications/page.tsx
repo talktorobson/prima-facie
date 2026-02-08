@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { AdminOnly } from '@/components/auth/role-guard'
-import { useAuthContext } from '@/lib/providers/auth-provider'
 import { useEffectiveLawFirmId } from '@/lib/hooks/use-effective-law-firm-id'
 import { useLawFirm, useUpdateLawFirm } from '@/lib/queries/useSettings'
 import { useToast } from '@/components/ui/toast-provider'
@@ -30,7 +29,6 @@ const defaults: NotificationSettings = {
 }
 
 export default function AdminNotificationsPage() {
-  const { profile } = useAuthContext()
   const effectiveLawFirmId = useEffectiveLawFirmId()
   const toast = useToast()
   const { data: lawFirm, isLoading } = useLawFirm(effectiveLawFirmId ?? undefined)

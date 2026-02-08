@@ -10,6 +10,8 @@ import { Database } from '@/types/database'
 import { createMonitoringService } from '@/lib/integrations/datajud/monitoring'
 import { createEnrichmentService } from '@/lib/integrations/datajud/enrichment-service'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createRouteHandlerClient<Database>({ cookies })

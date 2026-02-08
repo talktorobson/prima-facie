@@ -63,7 +63,7 @@ export class EmailNotificationService {
       }
       
       if (config.auth.user && config.auth.pass) {
-        this.transporter = nodemailer.createTransporter(config)
+        this.transporter = nodemailer.createTransport(config)
       } else {
         console.warn('Email configuration not complete - notifications will be logged only')
       }

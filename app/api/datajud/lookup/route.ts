@@ -4,6 +4,8 @@ import { cookies } from 'next/headers'
 import { Database } from '@/types/database'
 import { getDataJudApi } from '@/lib/integrations/datajud/api'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createRouteHandlerClient<Database>({ cookies })
